@@ -50,12 +50,12 @@
     "@types/pg": "^8.15.5",
     "@typescript-eslint/eslint-plugin": "^7.8.0",
     "@typescript-eslint/parser": "^7.8.0",
-    "@vitest/ui": "^1.6.1",
-    "drizzle-kit": "^0.28.1",
+    "@vitest/ui": "^3.2.4",
+    "drizzle-kit": "^0.31.5",
     "eslint": "^8.57.0",
     "prettier": "^3.2.5",
     "tsx": "^4.7.2",
     "typescript": "^5.4.5",
-    "vitest": "^1.6.1"
+    "vitest": "^3.2.4"
   }
 }
