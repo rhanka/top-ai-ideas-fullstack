@@ -1,15 +1,30 @@
 import { db, pool } from '../db/client';
-import { and, sql, eq, desc } from 'drizzle-orm';
+import { and, sql, eq, desc, asc } from 'drizzle-orm';
 import { createId } from '../utils/id';
 import { enrichOrganization, type OrganizationData } from './context-organization';
 import { generateUseCaseList, generateUseCaseDetail, type UseCaseListItem } from './context-usecase';
 import { parseMatrixConfig } from '../utils/matrix';
 import type { UseCaseData, UseCaseDataJson } from '../types/usecase';
 import { validateScores, fixScores } from '../utils/score-validation';
-import { folders, organizations, useCases, jobQueue, ADMIN_WORKSPACE_ID, type JobQueueRow } from '../db/schema';
+import {
+  folders,
+  organizations,
+  useCases,
+  jobQueue,
+  ADMIN_WORKSPACE_ID,
+  type JobQueueRow,
+  contextDocuments,
+  contextModificationHistory,
+} from '../db/schema';
 import { settingsService } from './settings';
 import { generateExecutiveSummary } from './executive-summary';
 import { chatService } from './chat-service';
+import type { StreamEventType } from './openai';
+import { getDocumentsBucketName, getObjectBytes } from './storage-s3';
+import { extractDocumentInfoFromDocument } from './document-text';
+import { defaultPrompts } from '../config/default-prompts';
+import { executeWithToolsStream } from './tools';
+import { getNextSequence, writeStreamEvent } from './stream-service';
 
 function parseOrgData(value: unknown): Record<string, unknown> {
   if (!value) return {};
@@ -25,7 +40,13 @@ function parseOrgData(value: unknown): Record<string, unknown> {
   return {};
 }
 
-export type JobType = 'organization_enrich' | 'usecase_list' | 'usecase_detail' | 'executive_summary' | 'chat_message';
+export type JobType =
+  | 'organization_enrich'
+  | 'usecase_list'
+  | 'usecase_detail'
+  | 'executive_summary'
+  | 'chat_message'
+  | 'document_summary';
 
 export interface OrganizationEnrichJobData {
   organizationId: string;
@@ -61,12 +82,19 @@ export interface ChatMessageJobData {
   model?: string;
 }
 
+export interface DocumentSummaryJobData {
+  documentId: string;
+  lang?: string; // default: 'fr'
+  model?: string;
+}
+
 export type JobData =
   | OrganizationEnrichJobData
   | UseCaseListJobData
   | UseCaseDetailJobData
   | ExecutiveSummaryJobData
-  | ChatMessageJobData;
+  | ChatMessageJobData
+  | DocumentSummaryJobData;
 
 export interface Job {
   id: string;
@@ -279,18 +307,19 @@ export class QueueManager {
         if (limit <= 0) return [];
         // Priority: chat > usecase_list > others, then FIFO by created_at.
         // This avoids chat starvation when long jobs (usecase_detail/executive_summary) are running.
-        return (await db.all(sql`
-          SELECT * FROM job_queue
-          WHERE status = 'pending'
-          ORDER BY
-            CASE type
+        return db
+          .select()
+          .from(jobQueue)
+          .where(eq(jobQueue.status, 'pending'))
+          .orderBy(
+            sql`CASE ${jobQueue.type}
               WHEN 'chat_message' THEN 0
               WHEN 'usecase_list' THEN 1
               ELSE 2
-            END,
-            created_at ASC
-          LIMIT ${limit}
-        `)) as JobQueueRow[];
+            END`,
+            asc(jobQueue.createdAt)
+          )
+          .limit(limit);
       };
 
       while (!this.paused) {
@@ -376,6 +405,13 @@ export class QueueManager {
         case 'chat_message':
           await this.processChatMessage(jobData as ChatMessageJobData, controller.signal);
           break;
+        case 'document_summary':
+          await this.processDocumentSummary(
+            jobData as DocumentSummaryJobData,
+            jobId,
+            controller.signal
+          );
+          break;
         default:
           throw new Error(`Unknown job type: ${jobType}`);
       }
@@ -399,6 +435,35 @@ export class QueueManager {
         WHERE id = ${jobId}
       `);
       await this.notifyJobEvent(jobId);
+
+      // Best-effort: also propagate failure to context_documents for document_summary jobs,
+      // so the UI can show `failed` without having to inspect job_queue.
+      if (jobType === 'document_summary') {
+        try {
+          const docId =
+            typeof (jobData as { documentId?: unknown })?.documentId === 'string'
+              ? (jobData as { documentId: string }).documentId
+              : null;
+          if (docId) {
+            const msg = error instanceof Error ? error.message : 'Unknown error';
+            await db
+              .update(contextDocuments)
+              .set({
+                status: 'failed',
+                summary: this.sanitizePgText(`Échec: ${msg}`).slice(0, 5000),
+                updatedAt: new Date(),
+              })
+              .where(eq(contextDocuments.id, docId));
+
+            // Best-effort: also stream an error for observers (streamId derived from documentId).
+            const streamId = `document_${docId}`;
+            const seq = await getNextSequence(streamId);
+            await writeStreamEvent(streamId, 'error', { message: msg }, seq);
+          }
+        } catch {
+          // ignore
+        }
+      }
     } finally {
       this.jobControllers.delete(jobId);
     }
@@ -474,6 +539,159 @@ export class QueueManager {
       .where(eq(organizations.id, organizationId));
 
     await this.notifyOrganizationEvent(organizationId);
+  }
+
+  private sanitizePgText(input: string): string {
+    let out = '';
+    for (let i = 0; i < input.length; i += 1) {
+      const code = input.charCodeAt(i);
+      if (code === 0) continue;
+      if (code < 32 && code !== 9 && code !== 10 && code !== 13) continue;
+      out += input[i];
+    }
+    return out;
+  }
+
+  private async getNextModificationSequence(contextType: string, contextId: string): Promise<number> {
+    const result = await db
+      .select({ maxSequence: sql<number>`MAX(${contextModificationHistory.sequence})` })
+      .from(contextModificationHistory)
+      .where(and(eq(contextModificationHistory.contextType, contextType), eq(contextModificationHistory.contextId, contextId)));
+    const maxSequence = result[0]?.maxSequence ?? 0;
+    return maxSequence + 1;
+  }
+
+  /**
+   * Worker: summarize an uploaded document and update context_documents.
+   * MVP: supports text-like formats only (text/*, application/json).
+   */
+  private async processDocumentSummary(
+    data: DocumentSummaryJobData,
+    jobId: string,
+    signal?: AbortSignal
+  ): Promise<void> {
+    const { documentId } = data;
+    const lang = (data.lang || 'fr').trim() || 'fr';
+    const streamId = `document_${documentId}`;
+
+    const write = async (eventType: StreamEventType, payload: unknown) => {
+      const seq = await getNextSequence(streamId);
+      await writeStreamEvent(streamId, eventType, payload, seq);
+    };
+
+    // Ensure a deterministic "started" exists for monitors and any UI observers.
+    await write('status', { state: 'started', jobType: 'document_summary', documentId });
+
+    const [doc] = await db
+      .select()
+      .from(contextDocuments)
+      .where(eq(contextDocuments.id, documentId))
+      .limit(1);
+    if (!doc) throw new Error('Document not found');
+    const workspaceId = doc.workspaceId;
+
+    await db
+      .update(contextDocuments)
+      .set({ status: 'processing', jobId, updatedAt: new Date() })
+      .where(and(eq(contextDocuments.id, documentId), eq(contextDocuments.workspaceId, workspaceId)));
+
+    const bucket = getDocumentsBucketName();
+    const bytes = await getObjectBytes({ bucket, key: doc.storageKey });
+    let text: string;
+    let extractedMetaTitle: string | undefined;
+    let extractedMetaPages: number | undefined;
+    try {
+      await write('status', { state: 'extracting' });
+      const extracted = await extractDocumentInfoFromDocument({ bytes, filename: doc.filename, mimeType: doc.mimeType });
+      text = extracted.text;
+      extractedMetaTitle = extracted.metadata.title;
+      extractedMetaPages = extracted.metadata.pages;
+    } catch (e) {
+      await db
+        .update(contextDocuments)
+        .set({ status: 'failed', updatedAt: new Date() })
+        .where(and(eq(contextDocuments.id, documentId), eq(contextDocuments.workspaceId, workspaceId)));
+      const msg = e instanceof Error ? e.message : String(e);
+      throw new Error(`Unsupported mime type for summarization: ${doc.mimeType}. ${msg}`);
+    }
+
+    const trimmed = text.trim();
+    if (trimmed.length < 80) {
+      await db
+        .update(contextDocuments)
+        .set({ status: 'failed', updatedAt: new Date() })
+        .where(and(eq(contextDocuments.id, documentId), eq(contextDocuments.workspaceId, workspaceId)));
+      throw new Error('No text extracted from document (empty or image-only PDF).');
+    }
+
+    const clipped = trimmed.length > 50_000 ? trimmed.slice(0, 50_000) : trimmed;
+
+    const template = defaultPrompts.find((p) => p.id === 'document_summary')?.content || '';
+    if (!template) throw new Error('Prompt document_summary non trouvé');
+    const docTitleRaw = (extractedMetaTitle || doc.filename || '-').trim() || '-';
+    const docTitle = docTitleRaw === '-' ? 'Non précisé' : docTitleRaw;
+    const nbPages =
+      typeof extractedMetaPages === 'number' && extractedMetaPages > 0 ? String(extractedMetaPages) : 'Non précisé';
+    const nbWords = (() => {
+      // Use full extracted text when available; fallback to clipped (aligned with what we send to the model).
+      const fromFull = text.split(/\s+/).filter(Boolean).length;
+      if (Number.isFinite(fromFull) && fromFull > 0) return String(fromFull);
+      const fromClipped = clipped.split(/\s+/).filter(Boolean).length;
+      return Number.isFinite(fromClipped) && fromClipped > 0 ? String(fromClipped) : 'Non précisé';
+    })();
+
+    const userPrompt = template
+      .replace('{{lang}}', lang)
+      .replace('{{doc_title}}', docTitle)
+      .replace('{{nb_pages}}', nbPages)
+      .replace('{{nb_mots}}', nbWords)
+      .replace('{{document_text}}', clipped);
+
+    // Reinforce: provide deterministic metadata and require copying them verbatim in the "Fiche document" section.
+    const providedMetaBlock = `\n\nDONNÉES FOURNIES (à recopier telles quelles dans "## Fiche document (réexamen)")\n- doc_title: ${docTitle}\n- nb_pages: ${nbPages}\n- nb_mots: ${nbWords}\n\nRègle stricte:\n- Dans la section "## Fiche document (réexamen)", le champ **Titre** doit être exactement doc_title.\n- Dans la section "## Fiche document (réexamen)", le champ **Taille** doit être exactement "${nbPages} pages ; ${nbWords} mots" (et uniquement "Non précisé" si nb_pages/nb_mots valent "Non précisé").\n`;
+    const finalPrompt = userPrompt + providedMetaBlock;
+
+    await write('status', { state: 'summarizing' });
+    // Align with other generations: use admin-configured default model unless job explicitly overrides it.
+    const aiSettings = await settingsService.getAISettings();
+    const selectedModel = data.model || aiSettings.defaultModel || 'gpt-4.1-nano';
+    const { content: streamedContent } = await executeWithToolsStream(finalPrompt, {
+      model: selectedModel,
+      streamId,
+      promptId: 'document_summary',
+      signal,
+    });
+
+    const summary = this.sanitizePgText(streamedContent).trim();
+    if (!summary) throw new Error('Empty summary');
+
+    await db
+      .update(contextDocuments)
+      .set({ status: 'ready', summary, summaryLang: lang, updatedAt: new Date() })
+      .where(and(eq(contextDocuments.id, documentId), eq(contextDocuments.workspaceId, workspaceId)));
+
+    await write('done', { state: 'done' });
+
+    // History event
+    let seq = await this.getNextModificationSequence(doc.contextType, doc.contextId);
+    await db.insert(contextModificationHistory).values({
+      id: createId(),
+      contextType: doc.contextType,
+      contextId: doc.contextId,
+      sessionId: null,
+      messageId: null,
+      field: 'document_summarized',
+      oldValue: null,
+      newValue: { documentId, status: 'ready', summaryLang: lang },
+      toolCallId: null,
+      promptId: null,
+      promptType: null,
+      promptVersionId: null,
+      jobId,
+      sequence: seq,
+      createdAt: new Date(),
+    });
+    seq += 1;
   }
 
   /**

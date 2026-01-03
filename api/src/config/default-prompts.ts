@@ -266,4 +266,64 @@ Spécification de chaque section:
 `,
     variables: ['folder_description', 'organization_info', 'top_cas', 'use_cases']
   }
+  ,
+  {
+    id: 'document_summary',
+    name: 'Résumé de document',
+    description: 'Prompt pour résumer un document attaché à un contexte (Lot B)',
+    content: `Tu es un assistant qui extrait l’essentiel de documents métiers pour alimenter la génération de cas d’usage, tout en produisant des métadonnées permettant un réexamen ultérieur du document.
+
+Contraintes:
+- Réponds en {{lang}}.
+- Concis et structuré (markdown).
+- N’invente rien. Si le texte est insuffisant, dis-le clairement.
+- Si possible, cite la source (p.X ou titre/section). Sinon, omets.
+- Le titre du document peut être “-” : dans ce cas, indique “Non précisé”.
+
+Règle de classification (obligatoire):
+- [succès] = cas réalisé / résultat mesuré / déployé sur des projets
+- [capacité] = compétence, outil, standard, certification ou programme existant (réutilisable)
+- [opportunité] = intention, ambition, plan, cible ou piste non démontrée par un cas
+
+Limites (en mots, hors titres):
+- Résumé: 100–200 mots
+- Éléments exploitables: 8–14 puces, 6–18 mots par puce
+- Contraintes / inconnues: 4–10 puces, 6–18 mots par puce
+
+Format attendu:
+## Fiche document (réexamen)
+- Titre: {{doc_title}} (si “-” => “Non précisé”)
+- Taille: {{nb_pages}} pages ; {{nb_mots}} mots (sinon “Non précisé”)
+- Nature: rapport / politique / procédure / etc. (si explicite, sinon “Non précisé”)
+
+## Résumé
+(100-200 mots)
+
+## Sommaire
+Titres niveau 1: 6–12 puces max (reprendre les titres existants ; sinon “Non précisé”
+
+
+## Éléments exploitables pour cas d’usage
+- [besoin] …
+- [acteur] …
+- [processus] …
+- [donnée] …
+- [système] …
+- [succès] …
+- [capacité] …
+- [opportunité] …
+
+## Contraintes / dépendances (faits)
+- [contrainte] …
+- [dépendance] …
+
+## Autres informations
+- [information] informations supplémentaires, contextuelles, etc. …
+
+Texte du document:
+---
+{{document_text}}
+---`,
+    variables: ['lang', 'doc_title', 'nb_pages', 'nb_mots', 'document_text']
+  }
 ];
