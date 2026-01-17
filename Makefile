@@ -383,16 +383,16 @@ e2e-set-queue: ## (E2E) Tweak queue settings in DB (defaults: QUEUE_CONCURRENCY=
 	@set -e; \
 	echo "🔧 Updating queue settings in DB for E2E..."; \
 	echo " - ai_concurrency=$(QUEUE_CONCURRENCY)"; \
-	$(DOCKER_COMPOSE) -f docker-compose.yml -f docker-compose.test.yml exec -T postgres sh -lc '\
-	  psql -U "$$POSTGRES_USER" -d "$$POSTGRES_DB" -v ON_ERROR_STOP=1 -c \
-	    "INSERT INTO settings (key,value,description,updated_at) VALUES (''ai_concurrency'',''$(QUEUE_CONCURRENCY)'',''E2E override: concurrent AI jobs'',NOW()) \
-	     ON CONFLICT (key) DO UPDATE SET value=EXCLUDED.value, updated_at=EXCLUDED.updated_at;"; \
-	  if [ -n "$(QUEUE_PROCESSING_INTERVAL)" ]; then \
-	    echo " - queue_processing_interval=$(QUEUE_PROCESSING_INTERVAL)"; \
-	    psql -U "$$POSTGRES_USER" -d "$$POSTGRES_DB" -v ON_ERROR_STOP=1 -c \
-	      "INSERT INTO settings (key,value,description,updated_at) VALUES (''queue_processing_interval'',''$(QUEUE_PROCESSING_INTERVAL)'',''E2E override: queue tick (ms)'',NOW()) \
-	       ON CONFLICT (key) DO UPDATE SET value=EXCLUDED.value, updated_at=EXCLUDED.updated_at;"; \
-	  fi'; \
+	$(DOCKER_COMPOSE) -f docker-compose.yml -f docker-compose.test.yml exec -T postgres sh -lc "\
+	  psql -U \"app\" -d \"app\" -v ON_ERROR_STOP=1 -c \
+	    \"INSERT INTO settings (key,value,description,updated_at) VALUES ('ai_concurrency','$(QUEUE_CONCURRENCY)','E2E override: concurrent AI jobs',NOW()) \
+	     ON CONFLICT (key) DO UPDATE SET value=EXCLUDED.value, updated_at=EXCLUDED.updated_at;\"; \
+	  if [ -n \"$(QUEUE_PROCESSING_INTERVAL)\" ]; then \
+	    echo \" - queue_processing_interval=$(QUEUE_PROCESSING_INTERVAL)\"; \
+	    psql -U \"app\" -d \"app\" -v ON_ERROR_STOP=1 -c \
+	      \"INSERT INTO settings (key,value,description,updated_at) VALUES ('queue_processing_interval','$(QUEUE_PROCESSING_INTERVAL)','E2E override: queue tick (ms)',NOW()) \
+	       ON CONFLICT (key) DO UPDATE SET value=EXCLUDED.value, updated_at=EXCLUDED.updated_at;\"; \
+	  fi"; \
 	echo "🔄 Restarting API to reload queue settings..."; \
 	$(DOCKER_COMPOSE) -f docker-compose.yml -f docker-compose.test.yml restart api >/dev/null
 
@@ -506,25 +506,25 @@ sh-ui:
 sh-api:
 	$(COMPOSE_RUN_API) sh
 
-.PHONY: exec-api
-exec-api: ## Exec a command in the running api container: make exec-api CMD="node -v"
+.PHONY: exec-%
+exec-%: ## Exec a command in the running api or ui container: make exec-api CMD="node -v"
 	@if [ -z "$$CMD" ]; then \
-		echo "Usage: make exec-api CMD=\"<command>\""; \
+		echo "Usage: make exec-<ui/api> CMD=\"<command>\""; \
 		exit 2; \
 	fi
-	@if [ "$$(docker compose -f docker-compose.yml -f docker-compose.dev.yml ps -q api 2>/dev/null | wc -l)" -eq 0 ]; then \
-		echo "api container is not running. Start it first (e.g. make up / make dev / make up-api-test)."; \
+	@if [ "$$(docker compose -f docker-compose.yml -f docker-compose.dev.yml ps -q $* 2>/dev/null | wc -l)" -eq 0 ]; then \
+		echo "$* container is not running. Start it first (e.g. make up / make dev / make up-api-test)."; \
 		exit 1; \
 	fi
-	$(DOCKER_COMPOSE) -f docker-compose.yml -f docker-compose.dev.yml exec api sh -lc "$$CMD"
+	$(DOCKER_COMPOSE) -f docker-compose.yml -f docker-compose.dev.yml exec $* sh -lc "$$CMD"
 
-.PHONY: exec-api-sh
-exec-api-sh: ## Open a shell in the running api container
-	@if [ "$$(docker compose -f docker-compose.yml -f docker-compose.dev.yml ps -q api 2>/dev/null | wc -l)" -eq 0 ]; then \
-		echo "api container is not running. Start it first (e.g. make up / make dev / make up-api-test)."; \
+.PHONY: exec-%-sh
+exec-%-sh: ## Open a shell in the running api container
+	@if [ "$$(docker compose -f docker-compose.yml -f docker-compose.dev.yml ps -q $* 2>/dev/null | wc -l)" -eq 0 ]; then \
+		echo "$* container is not running. Start it first (e.g. make up / make dev ...)."; \
 		exit 1; \
 	fi
-	$(DOCKER_COMPOSE) -f docker-compose.yml -f docker-compose.dev.yml exec api sh
+	$(DOCKER_COMPOSE) -f docker-compose.yml -f docker-compose.dev.yml exec $* sh
 
 # -----------------------------------------------------------------------------
 # Database helpers

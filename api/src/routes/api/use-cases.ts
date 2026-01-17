@@ -15,6 +15,8 @@ import { queueManager } from '../../services/queue-manager';
 import { settingsService } from '../../services/settings';
 import { requireEditor } from '../../middleware/rbac';
 import { resolveReadableWorkspaceId } from '../../utils/workspace-scope';
+import { requireWorkspaceEditorRole } from '../../middleware/workspace-rbac';
+import { isObjectLockedError, requireLockOwnershipForMutation } from '../../services/lock-service';
 
 async function notifyUseCaseEvent(useCaseId: string): Promise<void> {
   const notifyPayload = JSON.stringify({ use_case_id: useCaseId });
@@ -351,7 +353,7 @@ useCasesRouter.get('/', async (c) => {
   return c.json({ items: hydrated });
 });
 
-useCasesRouter.post('/', requireEditor, zValidator('json', useCaseInput), async (c) => {
+useCasesRouter.post('/', requireEditor, requireWorkspaceEditorRole(), zValidator('json', useCaseInput), async (c) => {
   const { workspaceId } = c.get('user') as { workspaceId: string };
   const payload = c.req.valid('json');
   const [folder] = await db
@@ -418,8 +420,8 @@ useCasesRouter.get('/:id', async (c) => {
   return c.json(hydrated);
 });
 
-useCasesRouter.put('/:id', requireEditor, zValidator('json', useCaseInput.partial()), async (c) => {
-  const { workspaceId } = c.get('user') as { workspaceId: string };
+useCasesRouter.put('/:id', requireEditor, requireWorkspaceEditorRole(), zValidator('json', useCaseInput.partial()), async (c) => {
+  const { workspaceId, userId } = c.get('user') as { workspaceId: string; userId: string };
   const id = c.req.param('id');
   const payload = c.req.valid('json');
   const [record] = await db
@@ -428,6 +430,18 @@ useCasesRouter.put('/:id', requireEditor, zValidator('json', useCaseInput.partia
     .where(and(eq(useCases.id, id), eq(useCases.workspaceId, workspaceId)));
   if (!record) {
     return c.json({ message: 'Not found' }, 404);
+  }
+
+  try {
+    await requireLockOwnershipForMutation({
+      userId,
+      workspaceId,
+      objectType: 'usecase',
+      objectId: id,
+    });
+  } catch (e: unknown) {
+    if (isObjectLockedError(e)) return c.json({ message: 'Object is locked', code: 'OBJECT_LOCKED', lock: e.lock }, 409);
+    throw e;
   }
   
   // Extraire data existant pour le merge
@@ -490,9 +504,20 @@ useCasesRouter.put('/:id', requireEditor, zValidator('json', useCaseInput.partia
   return c.json(hydrated);
 });
 
-useCasesRouter.delete('/:id', requireEditor, async (c) => {
-  const { workspaceId } = c.get('user') as { workspaceId: string };
+useCasesRouter.delete('/:id', requireEditor, requireWorkspaceEditorRole(), async (c) => {
+  const { workspaceId, userId } = c.get('user') as { workspaceId: string; userId: string };
   const id = c.req.param('id');
+  try {
+    await requireLockOwnershipForMutation({
+      userId,
+      workspaceId,
+      objectType: 'usecase',
+      objectId: id,
+    });
+  } catch (e: unknown) {
+    if (isObjectLockedError(e)) return c.json({ message: 'Object is locked', code: 'OBJECT_LOCKED', lock: e.lock }, 409);
+    throw e;
+  }
   await db.delete(useCases).where(and(eq(useCases.id, id), eq(useCases.workspaceId, workspaceId)));
   return c.body(null, 204);
 });
@@ -505,7 +530,7 @@ const generateInput = z.object({
   model: z.string().optional()
 });
 
-useCasesRouter.post('/generate', requireEditor, zValidator('json', generateInput), async (c) => {
+useCasesRouter.post('/generate', requireEditor, requireWorkspaceEditorRole(), zValidator('json', generateInput), async (c) => {
   try {
     const { workspaceId } = c.get('user') as { workspaceId: string };
     const { input, folder_id, use_case_count, organization_id, model } = c.req.valid('json');
@@ -614,7 +639,7 @@ const detailInput = z.object({
   model: z.string().optional()
 });
 
-useCasesRouter.post('/:id/detail', requireEditor, zValidator('json', detailInput), async (c) => {
+useCasesRouter.post('/:id/detail', requireEditor, requireWorkspaceEditorRole(), zValidator('json', detailInput), async (c) => {
   try {
     const { workspaceId } = c.get('user') as { workspaceId: string };
     const id = c.req.param('id');
