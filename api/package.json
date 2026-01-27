@@ -68,7 +68,7 @@
     "@vitest/ui": "^1.6.1",
     "drizzle-kit": "^0.28.1",
     "eslint": "^8.57.0",
-    "hono": "^4.10.4",
+    "hono": "^4.11.7",
     "prettier": "^3.2.5",
     "tsx": "^4.7.2",
     "typescript": "^5.4.5",
