@@ -1,0 +1,153 @@
+# Feature: Chatbot Lot B2 — Chat UX actions and composer
+
+## Objective
+Implement Chatbot Lot B2 items from `TODO.md` (lines 66–88): user feedback (👍/👎), message-level actions (edit/retry/copy), assistant response copy, and improved chat input (single-line + menu, multi-line growth, future rich text).
+
+## Existing Analysis
+- UI chat entry point is `ui/src/lib/components/ChatPanel.svelte`; user messages are plain bubbles with no actions; assistant messages are rendered by `StreamMessage.svelte`.
+- Chat input is a `textarea` with Enter-to-send and Shift+Enter line breaks; no single-line mode or action menu.
+- Streaming and assistant content handling are centralized in `StreamMessage.svelte` (reasoning, tools, content).
+- API exposes `/api/v1/chat/messages` and session endpoints only; no message edit/retry/feedback endpoints yet.
+- DB schema includes `chat_messages` without feedback or edit history fields.
+
+## Scope / Guardrails
+- Scope limited to Chatbot Lot B2 items only.
+- Keep changes minimal; no unrelated refactors.
+- All code/comments/docs in English; user communication in French.
+- Single data model evolution only. If an extra DB patch is required, reset data using `make db-restore BACKUP_FILE=prod-2026-01-25T17-18-10.dump`.
+- Each committable lot must pass `make typecheck` and `make lint`.
+- Final tests (after user UAT): `make test-api`, `make test-ui`, `make clean test-e2e`.
+
+## Plan / Todo (linear, test-driven)
+- [x] **Data model (single change)**:
+    - [x] Decide storage: new table vs columns in `chat_messages`.
+    - [x] Update `api/src/db/schema.ts` + add one migration in `api/drizzle/`.
+    - [x] Update `spec/DATA_MODEL.md` immediately after migration.
+    - [ ] Validate DB reset strategy ready (only if extra patch required).
+- [x] **Lot 1 Feedback**:
+    - [x] Add API endpoint to set feedback on assistant message (👍/👎, toggle).
+    - [x] Ensure feedback is returned by `/chat/sessions/:id/messages`.
+    - [x] UI: add feedback buttons under assistant message (hover or always visible).
+    - [x] UI: persist feedback state on reload (from API).
+    - [x] `make typecheck` + `make lint`
+    - [x] UAT lot 1
+        - [x] Test: afficher les boutons 👍/👎 sur réponses assistant.
+        - [x] Test: soumettre 👍 puis recharger — état persiste.
+        - [x] Test: soumettre 👎 puis recharger — état persiste.
+        - [x] Test: changer 👍→👎 — état mis à jour.
+- [x] **Lot 2 Message actions**:
+    - [x] Add API endpoint(s) for edit/retry on user messages with history safety.
+    - [x] Ensure retry removes subsequent assistant/user messages and re-queues.
+    - [x] UI: add hover action icons under user messages (edit/retry/copy).
+    - [x] UI: add hover action icon under assistant messages (copy).
+    - [x] `make typecheck` + `make lint`
+    - [x] UAT lot 2
+        - [x] Test: hover sur message utilisateur → icônes visibles.
+        - [x] Test: modifier un message utilisateur (édition) → message mis à jour.
+        - [x] Test: retry d’un message utilisateur → suite supprimée et nouveau stream.
+        - [x] Test: copie d’un message utilisateur → clipboard OK.
+        - [x] Test: copie d’une réponse assistant → clipboard OK.
+- [x] **Lot 3 Composer**:
+    - [x] Implement single-line mode UI (centered text vertically).
+    - [x] Add left “+” menu placeholder (no actions wired yet).
+    - [x] Implement autosize for multi-line (cap at 30% of chat box height).
+    - [x] Fix autosize + scrollbar behavior (UAT feedback).
+    - [x] `make typecheck` + `make lint`
+    - [x] UAT lot 3
+        - [x] Test: mode monoligne (entrée centrée verticalement).
+        - [x] Test: bouton + visible (menu placeholder).
+        - [x] Test: multi‑ligne auto‑resize ≤ 30% hauteur box.
+- [x] **Lot 4A Rich text input + copy/paste**:
+    - [x] Switch composer to `EditableInput` (rich text paste support).
+    - [x] Use `EditableInput` for user message edit (Lot 2) to support rich text.
+    - [x] Ensure copy action preserves rich text when possible (fallback to plain text).
+    - [x] `make typecheck` + `make lint`
+    - [x] UAT lot 4A
+        - [x] Test: collage rich text dans le composer (styles conservés).
+        - [x] Test: édition d’un message utilisateur en rich text.
+        - [x] Test: copier/coller d’un message conserve le rich text (ou fallback propre).
+- [ ] **Lot 4B Chat session documents (upload + résumé + doc tool)**:
+    - [x] Decide API strategy: reuse `/documents` with `context_type=chat_session` or add `/chat/sessions/:id/documents`.
+    - [x] Enforce session access checks on upload/list/delete (user owns session or workspace access).
+    - [x] Add document upload to chat session (paperclip in the “+” menu).
+    - [x] Generate automatic summary (short/long) for attached docs (reuse `document_summary` job).
+    - [x] Expose session docs to the `documents` tool (allowed contexts include session).
+    - [x] Evolution: allow `documents.get_content` for short docs even if summary not ready; keep `get_summary` blocked; keep both blocked for long docs (threshold unchanged).
+    - [x] `make typecheck` + `make lint`
+    - [!] UAT lot 4B
+        - [x] Test: upload document via trombone dans le chat.
+        - [x] Test: résumé auto créé (court/long selon taille).
+        - [x] Test: doc tool utilise les docs attachés à la session.
+        - [x] Test: accès interdit si session hors workspace
+        - [x] Test: suppression doc chat_session en viewer.
+- [ ] **Lot 4Bbis Prompt + session UX cleanup**:
+    - [x] Centralize chat system prompt in `default_prompts` (single base + context block injection).
+    - [x] Add explicit document availability block (session + focus-derived contexts).
+    - [x] Add mini prompt for conversation automation.
+    - [x] Replace hardcoded session titles tied to context with titles by AI (model: gpt-4.1-nano).
+    - [x] Add a dedicated default prompt for AI session titles.
+    - [x] `make typecheck` + `make lint`
+    - [x] UAT lot 4Bbis
+        - [x] Test: session title is generated by AI (no raw context ids).
+        - [x] Test: prompt uses session docs + focus context by default.
+        - [x] Test: historical context can be referenced when needed.
+        - [x] Test: update tool still works (with editor role)
+        - [x] Test: update tools is blocked (with viewer role)
+- [ ] **Lot 4C Composer menu content (tools/context)**:
+    - [x] List tools and contexts in the “+” menu (checkable) (in addition of the trombone for doc upload)
+    - [x] Add multi-context mode: context additions when switching views (last added has priority).
+    - [x] Allow toggling tools/contexts from the menu.
+    - [x] Backend: outils autorisés via tous les contextes actifs.
+    - [x] Persist contexts per message (`chat_messages.contexts` JSONB).
+    - [x] `make typecheck` + `make lint`
+    - [x] UAT lot 4C
+        - [x] Test: menu “+” affiche tools + contextes.
+        - [x] Test: toggle tool/context ON/OFF persiste pour la session.
+        - [x] Test: toggle contexte met à jour l’UI sans fermer le menu.
+        - [x] Test: libellés contextes affichent le name/title (pas l’UUID).
+        - [x] Test: “Ajouter un fichier” a le même style que les items.
+        - [x] Test: multi‑contexte: changement de vue ajoute le contexte, priorité au dernier.
+- [ ] **Docs (spec updates)**:
+    - [x] Update `spec/DATA_MODEL.md` right after migration.
+    - [x] Update `spec/SPEC_CHATBOT.md` after Lot 2 (Lot B2 coverage).
+    - [x] Update `spec/SPEC.md` after Lot 4 if user-visible behavior changed.
+    - [x] Merge `spec/SPEC_CHATBOT_TOOLS_EVOL.md` into `spec/SPEC_CHATBOT.md` and `spec/TOOLS.md`.
+    - [x] Add composer menu behavior (tools/context + upload) to `spec/SPEC_CHATBOT.md`.
+- [ ] Tests to update/add (by type + file):
+    - [x] **API tests** (for each, test, validate using make test api-endpoints)
+        - [x] Add new tests: `api/tests/api/chat-feedback.test.ts` (feedback create/update/toggle).
+        - [x] Add new tests: `api/tests/api/chat-message-actions.test.ts` (edit/retry flows, read-only guard).
+        - [x] Update existing: `api/tests/api/chat.test.ts` (messages include feedback + contexts).
+        - [x] Add/extend: `api/tests/api/documents.test.ts` (session docs upload + summary + doc tool access + delete as viewer).
+        - [x] Update existing: `api/tests/unit/documents-tool-service.test.ts` (get_content before ready for short docs; get_summary blocked).
+        - [x] make test-api
+    - [ ] **UI tests (TS-only, pas de composants Svelte)**:
+        - [x] Add/extend: `ui/tests/stores/streamHub.test.ts` (SSE events, de-dupe, status transitions).
+        - [x] make test-ui
+    - [ ] **E2E tests**:
+        - [x] Update: `e2e/tests/03-chat.spec.ts` (feedback, edit, retry, copy).
+        - [x] Update: `e2e/tests/03-chat.spec.ts` (menu tools/context toggles, provisional context behavior).
+        - [x] Update: `e2e/tests/03-chat.spec.ts` (contexts merge/normalize + toggles persistence).
+        - [x] Update: `e2e/tests/06-streams.spec.ts` (ensure stream remains stable after retry).
+        - [x] Update: `e2e/tests/03-chat.spec.ts` (document upload + summary + doc tool usage + delete as viewer).
+        - [x] Update: `e2e/tests/03-chat.spec.ts` (session title update via SSE).
+        - [x] Fix: `e2e/tests/00-ai-generation.spec.ts` (composer selector + typing).
+        - [x] Fix: `e2e/tests/03-chat-mobile-docked-nav.spec.ts` (composer selector).
+        - [ ] make test-e2e
+- [ ] Run final test suite.
+    - [ ] `make test-api` + `make test-ui` + `make clean test-e2e`
+- [ ] Verify GitHub Actions CI for the branch.
+
+## Commits & Progress
+- [x] **Commit 1** (f470d54): Single migration + data model spec
+- [x] **Commit 2** (c02a3b2): Feedback API endpoints
+- [x] **Commit 3** (88d2bb7): Feedback UI (UAT-1)
+- [x] **Commit 4** (6a28f92): Message actions API (edit/retry)
+- [x] **Commit 5** (023875c): UI actions (edit/retry/copy) + assistant copy (UAT-2)
+- [x] **Commit 6** (32d9ee4): Composer improvements (UAT-3)
+- [ ] **Commit 7**: Test additions + doc updates (specs)
+
+## Status
+- **Progress**: Lot 3 implementation done (UAT pending)
+- **Current**: UAT lot 3 ready for user testing
+- **Next**: Lot 4A/4B planning + implementation, then specs/tests updates
