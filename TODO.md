@@ -110,9 +110,55 @@
   - [x] Ajoutr une section d'indicateurs de performance (sectoriel et spécifiques à l'entreprise)
 
 **⏳ À faire :**
-- [ ] Pivoter vers langchain (multi model provider, easier agentic / tools orchestration)
-- [ ] Versionner les prompts du chat et les rendre accessible à configuration dans l'UI
-- [ ] Choisir le modele GPT par prompt
+- [ ] Streamline des directives mdc
+  - [ ] analyse des meilleurs pratique (conductor model, model testing Bmad)
+  - [ ] inclusion make lint typecheck avant passage de main à l'utilisateur
+  - [ ] création d'un template de branche, incluant les UAT partiels à chaque lot
+  - [ ] tout-make: clarifier les obligation d'usage de make
+  - [ ] adapter les directive d'architecture design pattern: capitaliser les design patterns dans les spec (directives), et s'assurer de la documentation et de la gestion du cycle de vie de gestion des composants clés (API et UI), avec gestion de la dette technique interne (plan de refacto)
+- [ ] Storybook (spec)
+  - [ ] analyser les test existant UI, API et e2e et faire un gap analysis aux meilleures pratiques
+  - [ ] évaluer l'opportunité d'utiliser storybook pour le testing de composant UI et assurer l'accélélération du testing
+  - [ ] proposer un plan d'implémentation en une branche
+- [ ] Agent assistant UI: pour un "template" (workflow/objets/agents), gérer un agent favorisant 
+  - l'autodiscovery d'un utilisateur sur ce template (design phase)
+    - [ ] aide complete initiale : parcourir les écrans, donner des tips
+    - [ ] aide locale : en mode "discovery", l'agent intervient lorsqu'une vue n'a pas encore été activée
+    - [ ] aide étendue : l'agent supervise les actions de l'utilisateur, et détecte des amlériorations possible dans sont interaction avec l'UI et les agents
+  - l'auto documentation
+    - génération de doc from scratch
+    - génération d'incrément de doc
+    - screeshots
+    - automatisation ci
+  - l'auto test
+    - [ ] pendant la phase de dév, à partir des tests UAT proposé dans le contexte d'un branche.md, faire les screenshots et documenter
+    - [ ] être activable via une target make pour livrer constats et screenshot (pour utilisation par cursor)
+  - [ ] principes
+    - [ ] doit reposer sur des mécanismes de tag de div pour permettre une interaction entre l'agent et des actions UI de mise en exergue
+    - [ ] doit permettre d'avoir une conscience des codes sources, a minimal de l'UI, pour aider au débug ou à une compréhension avancée selon le public (dév, support, end-user)
+    - [ ] doit être concu pour une maintenance récurrence simple
+    - [ ] désactivable
+  - [ ] Livrables
+    - [ ] une spec md
+    - [ ] un modele de données
+    - [ ] un modèle d'opération (ci etc quand je livre les artefacts et les commit, ce peut être un make update-doc etc)
+    - [ ] un plan d'implémentation (potntiellement multibranche/mulit-sous-lots, chaque branche visant une mise en production)
+- [ ] Agent auto-doc: pour une version, gérer un agent favorisant permettant de créer la documentation utilisateur et les documents de support, incluant les screenshots via playwright
+  - [ ] Créer une cible / environnemnt spécifique (peut être basé sur le mode dev, mais avec playwright activé, pas en mode test e2e mais sur la même flavor)
+  - [ ] Un agent passif gère les déroulés dans l'écran
+- [ ] Renforcement de la structure agentique (phase design)
+  Etudier les finalités/opportunités suivantes afin de définir le meilleur modele cible
+  - [ ] Opportunité du RL / modele adaptatif
+  - [ ] Favoriser le templating d'agent (gestion de librairies d'agents, export/import, versionnement)
+  - [ ] Pivoter vers langchain (multi model provider, easier agentic / tools orchestration) ou un autre modèle
+  - [ ] Permettre à l'utilisateur de configurer le modèle de l'agent en cours d'utilisation (soit change de llm ou de puissance de réflexion)
+  - [ ] Versionner les prompts et agents du chat et les rendre accessible à configuration dans l'UI, avec une gestion intelligente de objets, tools et du workflow configurable via l'UI
+  A livrer:
+  - [ ] Spécification de la nouvelle structure agentique cible
+  - [ ] Composant API et UI cible
+  - [ ] Modèle de données cible
+  - [ ] Etude d'impact incluant la continuité dans la gestion du streaming, les prompts d'évaluation de raisonnement, et l'exhaustivité des agents existant
+  - [ ] Plan de transition éventuellement allotti en plusieurs branche et sous lots, chaque branche devant aboutir à une MEP
 - [ ] Citations objets et liens iconifiés dans le chat
 - [ ] Générations: ajouter une génération pour adapter la matrice en fonction de l'entreprise, lors de la génération d'un dossier. Une matrice sera instanciée pour l'entreprise. Lorsque la génération a lieu, la matrice est stockée en template par défaut pour l'entreprise. Si un nouveau dossier est généré pour l'entreprise, par défaut il reprendra cette matrice sans nouvelle génération. Une option à la génération du dossier sera proposée pour générer une matrice spécifique au dossier (ex quand on regarde un processus spécifique comme le marketing pour l'entreprise). Les matrices seront alors attachées à l'organisation et sélectionnables lors de la génération du dossier.
 - [ ] Remplacer Tavily par DataForSeo + Jina
@@ -136,7 +182,31 @@
     - [ ] Each comment can be "closed" by the last attributed user
     - [ ] Comments are visible on the header on the card of the data part
     - [ ] Options d'export : avec ou sans commentaire
-- [ ] chat / json
+- [ ] Introduire la notion de workflow (lister les opportunités/évaluer/prioriser) / objet (usecase etc) / agentic (prompts aujourd'hui) templates (Design session)
+  Dans l'esprit, l'ensemble des activités top ai ideas serait un workflow basé sur des objets (use case, folder, organisation, synthèse exec) associé à de l'agentique (agent d'idéation pour créer un ensemble d'opportunités, agent d'approfondissement d'idée/usecase et évaluation, objet d'évaluation d'un autre objet (matrice), objet de priorisation (synthèse exec)).
+  Les objets d'évaluation sont un peu spécifiques, et il y a aussi des objets de restitution qui manquent. On pourrait les appeler des outils, mais ce ne sont pas des outils pour l'IA, donc il faut déterminer un concept. Il pourrait dans la même game y avoir les évaluation de plan (déf de workpackages / jalons / charge x profils ).
+  Il y a aussi les objets de restitution spécifique, comme le dashboard valeur/complexité: roadmap (timeline), diagramme d'organisation d'équipe, diagrammes d'architecture / de process / de business vision (sens archimate)
+  La session vise à modéliser au mieux et de facon la plus générique la notion de template (=workflow+objets+agentc) avec les abstractions nécessaires et la réutilisation suffisante pour permettre de couvrir les processus suivants:
+    - [ ] Gestion d'opportunité multi-client pour une société de conseil
+    - [ ] Gestion de proposition pour une société de conseil (incluant la scénarisation de dispositifs / plan charges / profil / exclusion / assumptions / prix / offre finale / présentation d'offre)
+    - [ ] Gestion de référentiel de processus et de processus eux même (à approfondir)
+    - [ ] Gestion de roadmap d'architecture d'entreprise (applications / infrastructures / plan d'évolution / scénarios / critères de priorisation / vision planifiée / gestion des risques)
+    - [ ] High level design dossier (movitation for change / diagramme system as-is / composants du system as-is / évaluation SWOT de ces composants / vision business au sens archimate / architecture drivers (constraints, standard, principles) / buisness requirements / non-functional requirements / business objects / high level design scenario = descriptions & schema avec composants / scenario evaluation selon critères / vue de transition / présentation de l'initiative=scenario privilégié (description intiative, Digital scope for initiative, initial goals, prerequisites, buisness outcomes, estimation budget, initiative timelines/milestones, risks, archi dimension) )
+    - [ ] Business case management / Porfolio
+    - [ ] Gestion de Profils / Compétences / CV / Porfolio d'expériences 
+    - [ ] Définition d'un business plan (à approfondir)
+    - [ ] Evaluation d'intelligence économique (des docs seront fournis)
+    - [ ] Veille stratégique (à approfondir)
+    - [ ] autres idées (à approfondir)
+    Les travaux devront aussi définir les intégration potentielles (Collab Gdrive, ERP, Workday, Signature électronique ...) et les features clés (e.g révision / validation avec role d'objet = workflow de validation formel). Envisager cela à haut niveau permettra
+    En sortie on attendra:
+    - [ ] Une spécification détaillée du modèle coeur
+    - [ ] Une spécification des composant cibles, api et ui
+    - [ ] Une proposition d'évolution (drastique potentiellement) du data model
+    - [ ] Une liste d'intégration must-have et should have par business case
+    - [ ] Un plan de transition pour l'application as-is avec les lots, sous-lots et étaps (soit en une branche, soit multibranche sachant qu'à chaque fin de branche il y a une mise en prod)
+    - [ ] Evaluation des charges des lots
+    - [ ] Evaluation d'opportunité de chaque feature vs potentiels clients du produit
   - [ ] ajouter le rendu de résultat des tools et l'historiser
   - [ ] gérer le streaming json (sortie de réponse, entree et sortie de tool même si ce dernier est en bloc) avec la complexité cf spec/MARKDOWN_STREAMING.md
 - [ ] **Chatbot Lot C — Tool-calls parallèles et appels structurés** (cf. spec/SPEC_CHATBOT.md - source de vérité)
