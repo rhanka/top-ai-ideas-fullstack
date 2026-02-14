@@ -345,10 +345,11 @@
 - [ ] Interrompre vs steering (à mettre qq part)
 - [ ] Specs mdc
   - [ ] Consolidate sub agentique / mutlibranch mode - chaque branche doit être dans un env isolée. l'utilisateur teste toujours sur 5173 (favoriser une collaboration multibranches orthogonale: lorsque l'utilisatur test il est sur le . alors que les branches sont dév dans tmp/branch - l'utilisateur peut donc tranquillement tester ls différentes branches en permanence sans perdre ses données)
-  - [ ] cherry peek des spec kit MS
+  - [ ] cherry peek des spec kit Github
 - [ ] CI evols
   - [ ] Separer build-api des test unitaires et intégration pour permettre test-e2e de commencer plus tôt, et mettre le publish api en dépendance des tests unitaires et intégration
-  - [ ] Envisager le matrix pour les text unitaires et intégration
+  - [ ] Passer la matrix à 3 pour les tests e2e
+  - [ ] Envisager le matrix pour les test unitaires et intégration (3 en //)
 - [ ] Minor evols
   - [ ] Toaster: passer en bas (adjoint à l'icone de chat)
   - [ ] EditableInput: passer d'une attente de 5 seconde à un retour immédiat
