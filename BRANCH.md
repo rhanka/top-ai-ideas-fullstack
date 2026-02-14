@@ -370,3 +370,4 @@ Execute Wave 2 sequentially on a single integration branch (`feat/i18-print`) wi
       - [x] Keep non-implemented features as explicit deferred items only.
   - [x] User smoke test
   - [x] Final gate: CI green for `feat/i18-print` and merge-ready.
+  - [x] Finalize doc
