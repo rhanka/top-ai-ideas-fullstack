@@ -1,9 +1,15 @@
-import { env } from '../config/env';
-import OpenAI from "openai";
+import OpenAI from 'openai';
+import { providerRegistry } from './provider-registry';
+import {
+  OpenAIProviderRuntime,
+  type OpenAIGenerateRequest,
+  type OpenAIStreamGenerateRequest
+} from './providers/openai-provider';
 import { settingsService } from './settings';
 
-// Initialiser le client OpenAI
-const client = new OpenAI({ apiKey: env.OPENAI_API_KEY! });
+const getOpenAIProvider = (): OpenAIProviderRuntime => {
+  return providerRegistry.requireProvider('openai') as OpenAIProviderRuntime;
+};
 
 export interface CallOpenAIOptions {
   messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[];
@@ -101,7 +107,12 @@ export const callOpenAI = async (options: CallOpenAIOptions): Promise<OpenAI.Cha
   };
 
   // Pass AbortSignal through request options to enable cooperative cancellation
-  return await client.chat.completions.create(requestOptions, { signal });
+  const provider = getOpenAIProvider();
+  return await provider.generate({
+    mode: 'chat-completions',
+    requestOptions,
+    signal
+  } satisfies OpenAIGenerateRequest) as OpenAI.Chat.Completions.ChatCompletion;
 };
 
 /**
@@ -148,7 +159,12 @@ export async function* callOpenAIStream(
     // Envoyer un événement status 'started'
     yield { type: 'status', data: { state: 'started' } };
 
-    const stream = await client.chat.completions.create(requestOptions, { signal });
+    const provider = getOpenAIProvider();
+    const stream = await provider.streamGenerate({
+      mode: 'chat-completions',
+      requestOptions,
+      signal
+    } satisfies OpenAIStreamGenerateRequest) as AsyncIterable<OpenAI.Chat.Completions.ChatCompletionChunk>;
 
     for await (const chunk of stream) {
       if (signal?.aborted) {
@@ -252,8 +268,14 @@ export async function* callOpenAIStream(
       }
     }
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    yield { type: 'error', data: { message: errorMessage } };
+    const normalized = getOpenAIProvider().normalizeError(error);
+    yield {
+      type: 'error',
+      data: {
+        message: normalized.message,
+        ...(normalized.code ? { code: normalized.code } : {})
+      }
+    };
     throw error;
   }
 }
@@ -375,7 +397,12 @@ export async function* callOpenAIResponseStream(
   try {
     yield { type: 'status', data: { state: 'started' } };
 
-    const stream = await client.responses.create(requestOptions, { signal });
+    const provider = getOpenAIProvider();
+    const stream = await provider.streamGenerate({
+      mode: 'responses',
+      requestOptions,
+      signal
+    } satisfies OpenAIStreamGenerateRequest) as AsyncIterable<unknown>;
 
     // Some streams can emit only `output_text.done` without `output_text.delta`.
     // Track whether we've seen any output_text.delta so we can avoid duplicating the full text on .done.
@@ -548,8 +575,14 @@ export async function* callOpenAIResponseStream(
       }
     }
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    yield { type: 'error', data: { message: errorMessage } };
+    const normalized = getOpenAIProvider().normalizeError(error);
+    yield {
+      type: 'error',
+      data: {
+        message: normalized.message,
+        ...(normalized.code ? { code: normalized.code } : {})
+      }
+    };
     throw error;
   }
 }

@@ -37,6 +37,7 @@ export class SettingsService {
       const defaults: Record<string, string> = {
         'ai_concurrency': '10',
         'publishing_concurrency': '5',
+        'default_provider_id': 'openai',
         'default_model': 'gpt-4.1-nano',
         'queue_processing_interval': '1000'
       };
@@ -106,12 +107,14 @@ export class SettingsService {
   async getAISettings(): Promise<{
     concurrency: number;
     publishingConcurrency: number;
+    defaultProviderId: string;
     defaultModel: string;
     processingInterval: number;
   }> {
-    const [concurrency, publishingConcurrency, defaultModel, processingInterval] = await Promise.all([
+    const [concurrency, publishingConcurrency, defaultProviderId, defaultModel, processingInterval] = await Promise.all([
       this.getNumber('ai_concurrency', 10),
       this.getNumber('publishing_concurrency', 5),
+      this.get('default_provider_id').then(value => value || 'openai'),
       this.get('default_model').then(value => value || 'gpt-4.1-nano'),
       this.getNumber('queue_processing_interval', 1000)
     ]);
@@ -119,6 +122,7 @@ export class SettingsService {
     return {
       concurrency,
       publishingConcurrency,
+      defaultProviderId,
       defaultModel,
       processingInterval
     };
@@ -130,6 +134,7 @@ export class SettingsService {
   async updateAISettings(settings: {
     concurrency?: number;
     publishingConcurrency?: number;
+    defaultProviderId?: string;
     defaultModel?: string;
     processingInterval?: number;
   }): Promise<void> {
@@ -146,6 +151,12 @@ export class SettingsService {
           settings.publishingConcurrency.toString(),
           'Nombre de jobs publishing simultanés'
         )
+      );
+    }
+
+    if (settings.defaultProviderId !== undefined) {
+      updates.push(
+        this.set('default_provider_id', settings.defaultProviderId, 'Default AI provider')
       );
     }
     
