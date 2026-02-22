@@ -41,6 +41,17 @@ Deliver the provider abstraction layer and runtime routing with OpenAI and Gemin
 - MPA-Q2 resolved (2026-02-22): explicit linking only.
 - MPA-Q3 resolved (2026-02-22): provider allow/deny policy is out of W1 scope.
 - Gate execution note (2026-02-22): API gates require `REGISTRY=local` in this workspace to avoid invalid Docker tag with empty `REGISTRY`.
+- Lot 1 gate run log (2026-02-22): `make test-api ENV=test-feat-model-runtime-openai-gemini` failed first attempt (`up-api-test`: api container unhealthy during initial startup wait); second attempt reached `test-api-ai` and failed (`OpenAI API key is not configured`); third attempt (with injected non-empty test keys) failed early again while API container was still unhealthy during startup wait.
+- Lot 1 gate run log (2026-02-22): `OPENAI_API_KEY=test-key TAVILY_API_KEY=test-key make test-api ENV=test-feat-model-runtime-openai-gemini` reached `test-api-endpoints` and failed with 2 flaky assertions (`tests/api/chat.test.ts` global job count comparison, `tests/api/chat-tools.test.ts` immediate thread-wide closed-state check). Patched assertions to scoped/causal checks; scoped reruns passed (`make test-api-endpoints SCOPE=tests/api/chat.test.ts ...`, `make test-api-endpoints SCOPE=tests/api/chat-tools.test.ts ...`).
+- Lot 1 gate run log (2026-02-22): post-fix full rerun `OPENAI_API_KEY=test-key TAVILY_API_KEY=test-key make test-api ENV=test-feat-model-runtime-openai-gemini` failed again in `up-api-test` (`container ... api-1 is unhealthy`) before smoke/unit/endpoints began.
+- Lot 1 gate run log (2026-02-22): subsequent full rerun reached and passed smoke/unit/endpoints/queue/security, then failed in AI integration suites because live OpenAI calls reject `OPENAI_API_KEY=test-key` (`401 invalid_api_key`), including `tests/ai/chat-tools.test.ts`, `tests/ai/chat-sync.test.ts`, `tests/ai/executive-summary-sync.test.ts`, `tests/ai/usecase-generation-async.test.ts`, `tests/ai/executive-summary-auto.test.ts`.
+- Lot 1 gate run log (2026-02-22): `make typecheck-ui ENV=test-feat-model-runtime-openai-gemini` passed (`svelte-check found 0 errors and 0 warnings`).
+- Lot 1 gate run log (2026-02-22): `make lint-ui ENV=test-feat-model-runtime-openai-gemini` passed (`eslint .` exit 0).
+- Lot 1 gate run log (2026-02-22): `make test-ui ENV=test-feat-model-runtime-openai-gemini` passed (`19 passed test files`, `171 passed tests`).
+- Lot 1 gate run log (2026-02-22): rerun `make test-api ENV=test-feat-model-runtime-openai-gemini` failed in `up-api-test` before tests (`container test-feat-model-runtime-openai-gemini-api-1 is unhealthy`).
+- Lot 1 gate run log (2026-02-22): immediate retry `make test-api ENV=test-feat-model-runtime-openai-gemini` failed again in `up-api-test` (`api-1 is unhealthy`).
+- Lot 1 gate run log (2026-02-22): rerun with non-empty diagnostic keys `OPENAI_API_KEY=test-key TAVILY_API_KEY=test-key make test-api ENV=test-feat-model-runtime-openai-gemini` still failed in `up-api-test` (`api-1 is unhealthy`) before any suite ran.
+- Lot 1 gate diagnostics (2026-02-22): right after unhealthy failures, `make exec-api CMD="ps -ef | head" ENV=test-feat-model-runtime-openai-gemini` showed entrypoint still in `npm install`; a later sample showed `npm run dev`, indicating startup-timeout flakiness before healthcheck readiness.
 
 ## Orchestration Mode (AI-selected)
 - [x] **Mono-branch + cherry-pick** (default for orthogonal tasks; single final test cycle)
@@ -72,10 +83,10 @@ Deliver the provider abstraction layer and runtime routing with OpenAI and Gemin
   - [ ] Lot 1 gate:
     - [x] `make typecheck-api ENV=test-feat-model-runtime-openai-gemini` (executed with `REGISTRY=local`, pass)
     - [x] `make lint-api ENV=test-feat-model-runtime-openai-gemini` (executed with `REGISTRY=local`, pass)
-    - [ ] `make test-api ENV=test-feat-model-runtime-openai-gemini`
-    - [ ] `make typecheck-ui ENV=test-feat-model-runtime-openai-gemini`
-    - [ ] `make lint-ui ENV=test-feat-model-runtime-openai-gemini`
-    - [ ] `make test-ui ENV=test-feat-model-runtime-openai-gemini`
+    - [ ] `make test-api ENV=test-feat-model-runtime-openai-gemini` (blocked in latest reruns: `up-api-test` unhealthy)
+    - [x] `make typecheck-ui ENV=test-feat-model-runtime-openai-gemini` (pass: `svelte-check found 0 errors and 0 warnings`)
+    - [x] `make lint-ui ENV=test-feat-model-runtime-openai-gemini` (pass: `eslint .` exit 0)
+    - [x] `make test-ui ENV=test-feat-model-runtime-openai-gemini` (pass: `19 files`, `171 tests`)
 
 - [ ] **Lot 2 — Gemini Adapter + Routing Policy**
   - [ ] Implement Gemini adapter with streaming + tool compatibility checks.

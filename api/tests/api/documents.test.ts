@@ -81,7 +81,7 @@ describe('Documents API', () => {
       });
       return id;
     });
-  });
+  }, 30000);
 
   afterEach(async () => {
     if (createdDocId) {
@@ -93,7 +93,7 @@ describe('Documents API', () => {
     if (addJobSpy) addJobSpy.mockRestore();
     await cleanupAuthData(); // deletes users/sessions for both users
     await cleanupAuthData();
-  });
+  }, 30000);
 
   it('POST /documents uploads file, creates DB row, and enqueues document_summary job', async () => {
     const form = new FormData();
@@ -386,5 +386,4 @@ describe('Documents API', () => {
     expect(list.status).toBe(404);
   });
 });
-
 
