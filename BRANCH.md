@@ -52,6 +52,11 @@ Deliver the provider abstraction layer and runtime routing with OpenAI and Gemin
 - Lot 1 gate run log (2026-02-22): immediate retry `make test-api ENV=test-feat-model-runtime-openai-gemini` failed again in `up-api-test` (`api-1 is unhealthy`).
 - Lot 1 gate run log (2026-02-22): rerun with non-empty diagnostic keys `OPENAI_API_KEY=test-key TAVILY_API_KEY=test-key make test-api ENV=test-feat-model-runtime-openai-gemini` still failed in `up-api-test` (`api-1 is unhealthy`) before any suite ran.
 - Lot 1 gate diagnostics (2026-02-22): right after unhealthy failures, `make exec-api CMD="ps -ef | head" ENV=test-feat-model-runtime-openai-gemini` showed entrypoint still in `npm install`; a later sample showed `npm run dev`, indicating startup-timeout flakiness before healthcheck readiness.
+- Lot 2 gate run log (2026-02-22): `REGISTRY=local make typecheck-api ENV=test-feat-model-runtime-openai-gemini` initially reached `tsc --noEmit` and surfaced TS errors in `src/services/openai.ts` (tool union narrowing + `ChatCompletion` cast shape); fixed in branch code.
+- Lot 2 gate run log (2026-02-22): subsequent retries of `REGISTRY=local make typecheck-api ENV=test-feat-model-runtime-openai-gemini` were blocked in `up-api` before compiler execution (`container ... api-1 is unhealthy`, one run: `api-1 exited (137)`).
+- Lot 2 gate run log (2026-02-22): first `make typecheck-ui ENV=test-feat-model-runtime-openai-gemini` failed with Svelte parse errors (`'return' outside of function`) in `ui/src/lib/components/ChatPanel.svelte` and `ui/src/routes/settings/+page.svelte`; fixed in branch code and rerun passed (`svelte-check found 0 errors and 0 warnings`).
+- Lot 2 focused gate run log (2026-02-22): `REGISTRY=local OPENAI_API_KEY=test-key TAVILY_API_KEY=test-key make test-api-endpoints SCOPE=tests/api/chat.test.ts ENV=test-feat-model-runtime-openai-gemini` passed (`1 file`, `33 tests`).
+- Lot 2 focused gate run log (2026-02-22): `REGISTRY=local OPENAI_API_KEY=test-key TAVILY_API_KEY=test-key make test-api-endpoints SCOPE=tests/api/chat-tools.test.ts ENV=test-feat-model-runtime-openai-gemini` passed (`1 file`, `6 tests`).
 
 ## Orchestration Mode (AI-selected)
 - [x] **Mono-branch + cherry-pick** (default for orthogonal tasks; single final test cycle)
@@ -89,16 +94,18 @@ Deliver the provider abstraction layer and runtime routing with OpenAI and Gemin
     - [x] `make test-ui ENV=test-feat-model-runtime-openai-gemini` (pass: `19 files`, `171 tests`)
 
 - [ ] **Lot 2 — Gemini Adapter + Routing Policy**
-  - [ ] Implement Gemini adapter with streaming + tool compatibility checks.
-  - [ ] Implement credential precedence (request override, user BYOK, workspace key).
-  - [ ] Expose provider/model selection in impacted UI flows (chat + structured options).
+  - [x] Implement Gemini adapter with streaming + tool compatibility checks.
+  - [x] Implement credential precedence (request override, user BYOK, workspace key).
+  - [x] Expose provider/model selection in impacted UI flows (chat + structured options).
   - [ ] Lot 2 gate:
-    - [ ] `make typecheck-api ENV=test-feat-model-runtime-openai-gemini`
+    - [ ] `make typecheck-api ENV=test-feat-model-runtime-openai-gemini` (latest retries blocked by api health: `unhealthy` / exit `137`)
     - [ ] `make lint-api ENV=test-feat-model-runtime-openai-gemini`
     - [ ] `make test-api ENV=test-feat-model-runtime-openai-gemini`
-    - [ ] `make typecheck-ui ENV=test-feat-model-runtime-openai-gemini`
+    - [x] `make typecheck-ui ENV=test-feat-model-runtime-openai-gemini` (pass after Svelte reactive-block fix)
     - [ ] `make lint-ui ENV=test-feat-model-runtime-openai-gemini`
     - [ ] `make test-ui ENV=test-feat-model-runtime-openai-gemini`
+    - [x] `make test-api-endpoints SCOPE=tests/api/chat.test.ts ENV=test-feat-model-runtime-openai-gemini` (pass, OpenAI key mocked)
+    - [x] `make test-api-endpoints SCOPE=tests/api/chat-tools.test.ts ENV=test-feat-model-runtime-openai-gemini` (pass, OpenAI key mocked)
 
 - [ ] **Lot N-2 — UAT**
   - [ ] Run targeted UAT scenarios for impacted capabilities.

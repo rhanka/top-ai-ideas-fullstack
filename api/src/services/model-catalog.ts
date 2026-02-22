@@ -76,6 +76,19 @@ const findProviderDefaultModel = (
   );
 };
 
+export const inferProviderFromModelId = (
+  models: CatalogModel[],
+  modelId: string | null | undefined
+): ProviderId | null => {
+  const normalized = (modelId ?? '').trim();
+  if (!normalized) return null;
+
+  const matches = models.filter((model) => model.model_id === normalized);
+  if (matches.length !== 1) return null;
+
+  return matches[0].provider_id;
+};
+
 export const resolveDefaultSelection = (
   input: {
     providerId?: string | null;
@@ -83,10 +96,12 @@ export const resolveDefaultSelection = (
   },
   models: CatalogModel[]
 ): ModelSelectionPair => {
+  const inferredProviderId = inferProviderFromModelId(models, input.modelId);
+
   const providerId =
     input.providerId && isProviderId(input.providerId)
       ? input.providerId
-      : FALLBACK_DEFAULT.provider_id;
+      : inferredProviderId || FALLBACK_DEFAULT.provider_id;
 
   const targetModelId = input.modelId || '';
   const exact = findModel(models, providerId, targetModelId);

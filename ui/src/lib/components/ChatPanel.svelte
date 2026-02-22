@@ -150,6 +150,27 @@
     icon: IconComponent;
   };
 
+  type ModelProviderId = 'openai' | 'gemini';
+  type ModelCatalogProvider = {
+    provider_id: ModelProviderId;
+    label: string;
+    status: 'ready' | 'planned';
+  };
+  type ModelCatalogModel = {
+    provider_id: ModelProviderId;
+    model_id: string;
+    label: string;
+    default_contexts: string[];
+  };
+  type ModelCatalogPayload = {
+    providers: ModelCatalogProvider[];
+    models: ModelCatalogModel[];
+    defaults: {
+      provider_id: ModelProviderId;
+      model_id: string;
+    };
+  };
+
   const getContextIcon = (type: ChatContextEntry['contextType']) => {
     if (type === 'organization') return Building2;
     if (type === 'folder') return Folder;
@@ -513,6 +534,11 @@
   let stoppingMessageId: string | null = null;
   let errorMsg: string | null = null;
   let lastShownErrorMsg: string | null = null;
+  let modelCatalogProviders: ModelCatalogProvider[] = [];
+  let modelCatalogModels: ModelCatalogModel[] = [];
+  let modelsForSelectedProvider: ModelCatalogModel[] = [];
+  let selectedProviderId: ModelProviderId = 'openai';
+  let selectedModelId = 'gpt-4.1-nano';
   let input = draft;
   let commentInput = '';
   let commentMessages: CommentItem[] = [];
@@ -2335,6 +2361,41 @@
     }
   };
 
+  const loadModelCatalog = async () => {
+    try {
+      const payload = await apiGet<ModelCatalogPayload>('/models/catalog');
+      modelCatalogProviders = Array.isArray(payload.providers)
+        ? payload.providers
+        : [];
+      modelCatalogModels = Array.isArray(payload.models) ? payload.models : [];
+      selectedProviderId =
+        payload.defaults?.provider_id ?? modelCatalogProviders[0]?.provider_id ?? 'openai';
+      selectedModelId =
+        payload.defaults?.model_id ??
+        modelCatalogModels.find((entry) => entry.provider_id === selectedProviderId)
+          ?.model_id ??
+        modelCatalogModels[0]?.model_id ??
+        selectedModelId;
+    } catch (error) {
+      console.error('Failed to load model catalog for chat:', error);
+    }
+  };
+
+  $: modelsForSelectedProvider = modelCatalogModels.filter(
+    (entry) => entry.provider_id === selectedProviderId,
+  );
+
+  $: {
+    if (modelsForSelectedProvider.length > 0) {
+      const modelStillValid = modelsForSelectedProvider.some(
+        (entry) => entry.model_id === selectedModelId,
+      );
+      if (!modelStillValid) {
+        selectedModelId = modelsForSelectedProvider[0].model_id;
+      }
+    }
+  }
+
   const sendMessage = async () => {
     const text = input.trim();
     if (!text || sending) return;
@@ -2352,6 +2413,8 @@
       const payload: {
         sessionId?: string;
         content: string;
+        providerId?: ModelProviderId;
+        model?: string;
         primaryContextType?: string;
         primaryContextId?: string;
         contexts?: Array<{ contextType: string; contextId: string }>;
@@ -2365,6 +2428,9 @@
       } = {
         content: text,
       };
+
+      if (selectedProviderId) payload.providerId = selectedProviderId;
+      if (selectedModelId) payload.model = selectedModelId;
 
       if (sessionId) {
         payload.sessionId = sessionId;
@@ -2509,6 +2575,7 @@
   onMount(async () => {
     updateComposerHeight();
     if (mode === 'ai') {
+      await loadModelCatalog();
       await loadSessions();
       if (sessionId && messages.length === 0) {
         await loadMessages(sessionId, { scrollToBottom: true });
@@ -3390,6 +3457,34 @@
         on:keydown={handleKeyDown}
       >
         {#if mode === 'ai'}
+          {#if modelCatalogProviders.length > 0}
+            <div class="mb-2 flex flex-wrap items-center gap-2">
+              <select
+                class="rounded border border-slate-300 bg-white px-2 py-1 text-[11px] text-slate-700"
+                bind:value={selectedProviderId}
+              >
+                {#each modelCatalogProviders as provider}
+                  <option value={provider.provider_id}>
+                    {provider.label}
+                  </option>
+                {/each}
+              </select>
+              <select
+                class="min-w-[170px] rounded border border-slate-300 bg-white px-2 py-1 text-[11px] text-slate-700"
+                bind:value={selectedModelId}
+              >
+                {#if modelsForSelectedProvider.length === 0}
+                  <option value={selectedModelId}>{selectedModelId}</option>
+                {:else}
+                  {#each modelsForSelectedProvider as modelOption}
+                    <option value={modelOption.model_id}>
+                      {modelOption.label}
+                    </option>
+                  {/each}
+                {/if}
+              </select>
+            </div>
+          {/if}
           {#if sessionDocsError}
             <div
               class="mb-2 rounded bg-red-50 border border-red-200 px-2 py-1 text-[11px] text-red-700"

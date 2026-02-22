@@ -11,6 +11,7 @@ import type {
 export type OpenAIGenerateRequest = {
   mode: 'chat-completions';
   requestOptions: OpenAI.Chat.Completions.ChatCompletionCreateParams;
+  credential?: string;
   signal?: AbortSignal;
 };
 
@@ -18,11 +19,13 @@ export type OpenAIStreamGenerateRequest =
   | {
       mode: 'chat-completions';
       requestOptions: OpenAI.Chat.Completions.ChatCompletionCreateParamsStreaming;
+      credential?: string;
       signal?: AbortSignal;
     }
   | {
       mode: 'responses';
       requestOptions: OpenAI.Responses.ResponseCreateParamsStreaming;
+      credential?: string;
       signal?: AbortSignal;
     };
 
@@ -129,7 +132,7 @@ export class OpenAIProviderRuntime implements ProviderRuntime {
       throw new Error('OpenAIProviderRuntime.generate: unsupported mode');
     }
 
-    const client = this.getClient();
+    const client = this.getClient(payload.credential);
     return await client.chat.completions.create(payload.requestOptions, {
       signal: payload.signal,
     });
@@ -137,7 +140,7 @@ export class OpenAIProviderRuntime implements ProviderRuntime {
 
   async streamGenerate(request: unknown): Promise<AsyncIterable<unknown>> {
     const payload = request as OpenAIStreamGenerateRequest;
-    const client = this.getClient();
+    const client = this.getClient(payload.credential);
 
     if (payload.mode === 'chat-completions') {
       return await client.chat.completions.create(payload.requestOptions, {

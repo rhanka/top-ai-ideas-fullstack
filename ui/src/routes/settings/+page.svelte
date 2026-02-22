@@ -24,6 +24,28 @@
     variables: string[];
   }
 
+  interface CatalogProvider {
+    provider_id: 'openai' | 'gemini';
+    label: string;
+    status: 'ready' | 'planned';
+  }
+
+  interface CatalogModel {
+    provider_id: 'openai' | 'gemini';
+    model_id: string;
+    label: string;
+    default_contexts: string[];
+  }
+
+  interface ModelCatalogPayload {
+    providers: CatalogProvider[];
+    models: CatalogModel[];
+    defaults: {
+      provider_id: 'openai' | 'gemini';
+      model_id: string;
+    };
+  }
+
   let isResetting = false;
   let prompts: Prompt[] = [];
   let selectedPrompt: Prompt | null = null;
@@ -40,10 +62,18 @@
   let aiSettings = {
     concurrency: 10,
     publishingConcurrency: 5,
+    defaultProviderId: 'openai' as 'openai' | 'gemini',
     defaultModel: 'gpt-5',
     processingInterval: 1000
   };
+  let modelCatalog: ModelCatalogPayload = {
+    providers: [],
+    models: [],
+    defaults: { provider_id: 'openai', model_id: 'gpt-4.1-nano' }
+  };
+  let modelsForSelectedProvider: CatalogModel[] = [];
   let isLoadingAISettings = false;
+  let isLoadingModelCatalog = false;
   let isSavingAISettings = false;
   
   // Gestion de la queue
@@ -60,9 +90,10 @@
     await loadMe();
     await loadChromeExtensionDownloadMetadata();
     if (isAdmin()) {
-    await loadPrompts();
-    await loadAISettings();
-    await loadQueueStats();
+      await loadPrompts();
+      await loadModelCatalog();
+      await loadAISettings();
+      await loadQueueStats();
     }
   });
 
@@ -206,6 +237,36 @@
       isLoadingAISettings = false;
     }
   };
+
+  const loadModelCatalog = async () => {
+    isLoadingModelCatalog = true;
+    try {
+      modelCatalog = await apiGet<ModelCatalogPayload>('/models/catalog');
+    } catch (error) {
+      console.error('Failed to load model catalog:', error);
+      addToast({
+        type: 'error',
+        message: get(_)('settings.ai.errors.load')
+      });
+    } finally {
+      isLoadingModelCatalog = false;
+    }
+  };
+
+  $: modelsForSelectedProvider = modelCatalog.models.filter(
+    (entry) => entry.provider_id === aiSettings.defaultProviderId
+  );
+
+  $: {
+    if (modelsForSelectedProvider.length > 0) {
+      const hasCurrent = modelsForSelectedProvider.some(
+        (entry) => entry.model_id === aiSettings.defaultModel
+      );
+      if (!hasCurrent) {
+        aiSettings.defaultModel = modelsForSelectedProvider[0].model_id;
+      }
+    }
+  }
 
   const saveAISettings = async () => {
     isSavingAISettings = true;
@@ -489,13 +550,35 @@
 	      {$_('settings.ai.description')}
 	    </p>
     
-    {#if isLoadingAISettings}
+    {#if isLoadingAISettings || isLoadingModelCatalog}
       <div class="flex items-center gap-3">
         <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
         <p class="text-sm text-blue-700">{$_('settings.aiLoading')}</p>
       </div>
     {:else}
       <div class="grid gap-6 md:grid-cols-2">
+        <!-- Provider par défaut -->
+        <div>
+          <label for="ai-default-provider" class="block text-sm font-medium text-slate-700 mb-2">{$_('settings.aiDefaultProvider')}</label>
+          <select
+            id="ai-default-provider"
+            bind:value={aiSettings.defaultProviderId}
+            class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            {#if modelCatalog.providers.length === 0}
+              <option value="openai">OpenAI</option>
+              <option value="gemini">Google Gemini</option>
+            {:else}
+              {#each modelCatalog.providers as provider}
+                <option value={provider.provider_id}>
+                  {provider.label}{provider.status !== 'ready' ? ` (${provider.status})` : ''}
+                </option>
+              {/each}
+            {/if}
+          </select>
+          <p class="text-xs text-slate-500 mt-1">{$_('settings.aiDefaultProviderHint')}</p>
+        </div>
+
         <!-- Modèle par défaut -->
         <div>
           <label for="ai-default-model" class="block text-sm font-medium text-slate-700 mb-2">{$_('settings.aiDefaultModel')}</label>
@@ -504,10 +587,13 @@
                     bind:value={aiSettings.defaultModel}
                     class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
-                    <option value="gpt-5">GPT-5</option>
-                    <option value="gpt-5.2">GPT-5.2</option>
-                    <option value="gpt-5-mini">GPT-5 Mini</option>
-                    <option value="gpt-4.1-nano">GPT-4.1 Nano</option>
+                    {#if modelsForSelectedProvider.length === 0}
+                      <option value={aiSettings.defaultModel}>{aiSettings.defaultModel}</option>
+                    {:else}
+                      {#each modelsForSelectedProvider as modelOption}
+                        <option value={modelOption.model_id}>{modelOption.label}</option>
+                      {/each}
+                    {/if}
                   </select>
           <p class="text-xs text-slate-500 mt-1">{$_('settings.aiDefaultModelHint')}</p>
         </div>
