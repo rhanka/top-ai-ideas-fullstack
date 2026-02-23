@@ -69,6 +69,11 @@ Deliver the provider abstraction layer and runtime routing with OpenAI and Gemin
 - Lot 2 gate run log (2026-02-23): `REGISTRY=local OPENAI_API_KEY=test-key TAVILY_API_KEY=test-key make test-api ENV=test-feat-model-runtime-openai-gemini` first failed in `up-api-test` (`api-1 is unhealthy`); second run reached AI suites and failed `tests/ai/usecase-generation-async.test.ts` on timeout (`Test timed out in 120000ms`) after matrix-axis validation errors; third run passed all suites through AI but failed in final `up-api` (`container ... api-1 is unhealthy`).
 - Lot 2 focused gate run log (2026-02-23): `REGISTRY=local OPENAI_API_KEY=test-key TAVILY_API_KEY=test-key make test-api-ai SCOPE=tests/ai/usecase-generation-async.test.ts ENV=test-feat-model-runtime-openai-gemini` passed (`1 file`, `1 test`, 48.90s).
 - Lot 2 focused gate run log (2026-02-23): `REGISTRY=local make test-api-limit ENV=test-feat-model-runtime-openai-gemini` passed (`1 file`, `4 tests`).
+- BR-01 scoped gate run log (2026-02-23): isolated env warm-up `REGISTRY=local OPENAI_API_KEY=test-key TAVILY_API_KEY=test-key make up-api-test ENV=test-br01-feat-model-runtime-openai-gemini` failed twice (`api-1 is unhealthy`), then `make wait-ready-api ENV=test-br01-feat-model-runtime-openai-gemini` passed and scoped API runs were executed.
+- BR-01 scoped gate run log (2026-02-23): API scoped checks all passed on isolated env `test-br01-feat-model-runtime-openai-gemini` via `make test-api-endpoints SCOPE=...` for `tests/api/ai-settings.test.ts` (`7 tests`), `tests/api/chat-tools.test.ts` (`6 tests`), `tests/api/chat.test.ts` (`33 tests`), `tests/api/documents.test.ts` (`11 tests`), `tests/api/models.test.ts` (`1 test`).
+- BR-01 scoped gate run log (2026-02-23): first E2E spot-check command `REGISTRY=local OPENAI_API_KEY=test-key TAVILY_API_KEY=test-key make test-e2e E2E_SPEC=e2e/tests/03-chat.spec.ts WORKERS=2 RETRIES=0 MAX_FAILURES=1 ENV=e2e-br01-feat-model-runtime-openai-gemini` failed at `db-seed-test` (`Cannot find module /app/dist/tests/utils/seed-test-data.js`); rebuilt prod API image with `REGISTRY=local make build-api-image ENV=e2e-br01-feat-model-runtime-openai-gemini`.
+- BR-01 scoped gate run log (2026-02-23): E2E reruns on isolated env `e2e-br01-feat-model-runtime-openai-gemini` failed on early UI heading assertions: `e2e/tests/03-chat.spec.ts` (`h1` missing `Dossiers`, `1 failed`, `11 not run`) and `e2e/tests/06-settings.spec.ts` (`h1` missing `Paramètres`, `1 failed`, `1 interrupted`, `14 not run`).
+- BR-01 scoped gate cleanup (2026-02-23): executed `make down ENV=test-br01-feat-model-runtime-openai-gemini` and `make down ENV=e2e-br01-feat-model-runtime-openai-gemini`.
 
 ## Orchestration Mode (AI-selected)
 - [x] **Mono-branch + cherry-pick** (default for orthogonal tasks; single final test cycle)
@@ -118,6 +123,13 @@ Deliver the provider abstraction layer and runtime routing with OpenAI and Gemin
     - [ ] `make test-ui ENV=test-feat-model-runtime-openai-gemini` (not rerun in this pass; local fallback blocked: `vitest: not found`)
     - [x] `make test-api-endpoints SCOPE=tests/api/chat.test.ts ENV=test-feat-model-runtime-openai-gemini` (pass, OpenAI key mocked)
     - [x] `make test-api-endpoints SCOPE=tests/api/chat-tools.test.ts ENV=test-feat-model-runtime-openai-gemini` (pass, OpenAI key mocked)
+    - [x] `REGISTRY=local OPENAI_API_KEY=test-key TAVILY_API_KEY=test-key make test-api-endpoints SCOPE=tests/api/ai-settings.test.ts ENV=test-br01-feat-model-runtime-openai-gemini` (pass: `1 file`, `7 tests`)
+    - [x] `REGISTRY=local OPENAI_API_KEY=test-key TAVILY_API_KEY=test-key make test-api-endpoints SCOPE=tests/api/chat-tools.test.ts ENV=test-br01-feat-model-runtime-openai-gemini` (pass: `1 file`, `6 tests`)
+    - [x] `REGISTRY=local OPENAI_API_KEY=test-key TAVILY_API_KEY=test-key make test-api-endpoints SCOPE=tests/api/chat.test.ts ENV=test-br01-feat-model-runtime-openai-gemini` (pass: `1 file`, `33 tests`)
+    - [x] `REGISTRY=local OPENAI_API_KEY=test-key TAVILY_API_KEY=test-key make test-api-endpoints SCOPE=tests/api/documents.test.ts ENV=test-br01-feat-model-runtime-openai-gemini` (pass: `1 file`, `11 tests`)
+    - [x] `REGISTRY=local OPENAI_API_KEY=test-key TAVILY_API_KEY=test-key make test-api-endpoints SCOPE=tests/api/models.test.ts ENV=test-br01-feat-model-runtime-openai-gemini` (pass: `1 file`, `1 test`)
+    - [ ] `REGISTRY=local OPENAI_API_KEY=test-key TAVILY_API_KEY=test-key make test-e2e E2E_SPEC=e2e/tests/03-chat.spec.ts WORKERS=2 RETRIES=0 MAX_FAILURES=1 ENV=e2e-br01-feat-model-runtime-openai-gemini` (fail: `locator('h1')` missing text `Dossiers`)
+    - [ ] `REGISTRY=local OPENAI_API_KEY=test-key TAVILY_API_KEY=test-key make test-e2e E2E_SPEC=e2e/tests/06-settings.spec.ts WORKERS=2 RETRIES=0 MAX_FAILURES=1 ENV=e2e-br01-feat-model-runtime-openai-gemini` (fail: `locator('h1')` missing text `Paramètres`)
 
 - [ ] **Lot N-2 — UAT**
   - [ ] Run targeted UAT scenarios for impacted capabilities.
