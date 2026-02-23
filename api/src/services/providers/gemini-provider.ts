@@ -243,7 +243,7 @@ export class GeminiProviderRuntime implements ProviderRuntime {
   }
 
   private async *emptyStream(): AsyncGenerator<unknown> {
-    return;
+    yield* [];
   }
 
   private async *readSse(

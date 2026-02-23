@@ -57,6 +57,12 @@ Deliver the provider abstraction layer and runtime routing with OpenAI and Gemin
 - Lot 2 gate run log (2026-02-22): first `make typecheck-ui ENV=test-feat-model-runtime-openai-gemini` failed with Svelte parse errors (`'return' outside of function`) in `ui/src/lib/components/ChatPanel.svelte` and `ui/src/routes/settings/+page.svelte`; fixed in branch code and rerun passed (`svelte-check found 0 errors and 0 warnings`).
 - Lot 2 focused gate run log (2026-02-22): `REGISTRY=local OPENAI_API_KEY=test-key TAVILY_API_KEY=test-key make test-api-endpoints SCOPE=tests/api/chat.test.ts ENV=test-feat-model-runtime-openai-gemini` passed (`1 file`, `33 tests`).
 - Lot 2 focused gate run log (2026-02-22): `REGISTRY=local OPENAI_API_KEY=test-key TAVILY_API_KEY=test-key make test-api-endpoints SCOPE=tests/api/chat-tools.test.ts ENV=test-feat-model-runtime-openai-gemini` passed (`1 file`, `6 tests`).
+- Lot 2 gate run log (2026-02-23): local fallback `npm run lint` in `api/` surfaced one deterministic issue in `src/services/providers/gemini-provider.ts` (`245:29  error  This generator function does not have 'yield'  require-yield`); patched `emptyStream` to `yield* []`; rerun `npm run lint` passed.
+- Lot 2 focused gate run log (2026-02-23): `OPENAI_API_KEY=test-key TAVILY_API_KEY=test-key npx vitest run tests/api/chat.test.ts` failed before test execution (`Failed to load url jszip ... src/routes/api/import-export.ts`) and runtime DB host resolution (`getaddrinfo ENOTFOUND postgres`).
+- Lot 2 focused gate run log (2026-02-23): `OPENAI_API_KEY=test-key TAVILY_API_KEY=test-key npx vitest run tests/api/chat-tools.test.ts` failed with the same blockers (`Failed to load url jszip ... src/routes/api/import-export.ts`, `getaddrinfo ENOTFOUND postgres`).
+- Lot 2 gate run log (2026-02-23): `REGISTRY=local make typecheck-api ENV=test-feat-model-runtime-openai-gemini` and `REGISTRY=local make lint-api ENV=test-feat-model-runtime-openai-gemini` both failed in `up-api` with Docker name conflict (`/test-feat-model-runtime-openai-gemini-maildev-1 ... is already in use`).
+- Lot 2 gate run log (2026-02-23): `REGISTRY=local OPENAI_API_KEY=test-key TAVILY_API_KEY=test-key make test-api ENV=test-feat-model-runtime-openai-gemini` progressed through compose startup (`postgres`/`maildev` healthy) but was interrupted before suite completion; no pass/fail verdict recorded.
+- Lot 2 UI local fallback run log (2026-02-23): `npm run check`, `npm run lint`, and `npm run test` in `ui/` all failed immediately because local bins are unavailable (`svelte-check: not found`, `eslint: not found`, `vitest: not found`).
 
 ## Orchestration Mode (AI-selected)
 - [x] **Mono-branch + cherry-pick** (default for orthogonal tasks; single final test cycle)
@@ -88,7 +94,7 @@ Deliver the provider abstraction layer and runtime routing with OpenAI and Gemin
   - [ ] Lot 1 gate:
     - [x] `make typecheck-api ENV=test-feat-model-runtime-openai-gemini` (executed with `REGISTRY=local`, pass)
     - [x] `make lint-api ENV=test-feat-model-runtime-openai-gemini` (executed with `REGISTRY=local`, pass)
-    - [ ] `make test-api ENV=test-feat-model-runtime-openai-gemini` (blocked in latest reruns: `up-api-test` unhealthy)
+    - [ ] `make test-api ENV=test-feat-model-runtime-openai-gemini` (latest rerun attempted on 2026-02-23 but interrupted after startup; previous complete reruns remained blocked by `up-api-test` unhealthy / OpenAI key constraints)
     - [x] `make typecheck-ui ENV=test-feat-model-runtime-openai-gemini` (pass: `svelte-check found 0 errors and 0 warnings`)
     - [x] `make lint-ui ENV=test-feat-model-runtime-openai-gemini` (pass: `eslint .` exit 0)
     - [x] `make test-ui ENV=test-feat-model-runtime-openai-gemini` (pass: `19 files`, `171 tests`)
@@ -98,12 +104,12 @@ Deliver the provider abstraction layer and runtime routing with OpenAI and Gemin
   - [x] Implement credential precedence (request override, user BYOK, workspace key).
   - [x] Expose provider/model selection in impacted UI flows (chat + structured options).
   - [ ] Lot 2 gate:
-    - [ ] `make typecheck-api ENV=test-feat-model-runtime-openai-gemini` (latest retries blocked by api health: `unhealthy` / exit `137`)
-    - [ ] `make lint-api ENV=test-feat-model-runtime-openai-gemini`
-    - [ ] `make test-api ENV=test-feat-model-runtime-openai-gemini`
+    - [ ] `make typecheck-api ENV=test-feat-model-runtime-openai-gemini` (latest rerun blocked in `up-api`: `/test-feat-model-runtime-openai-gemini-maildev-1` name conflict)
+    - [ ] `make lint-api ENV=test-feat-model-runtime-openai-gemini` (latest rerun blocked in `up-api`: `/test-feat-model-runtime-openai-gemini-maildev-1` name conflict; local fallback `npm run lint` passed after `gemini-provider` fix)
+    - [ ] `make test-api ENV=test-feat-model-runtime-openai-gemini` (latest rerun interrupted before completion after startup; prior complete reruns blocked by startup health / OpenAI credential constraints)
     - [x] `make typecheck-ui ENV=test-feat-model-runtime-openai-gemini` (pass after Svelte reactive-block fix)
-    - [ ] `make lint-ui ENV=test-feat-model-runtime-openai-gemini`
-    - [ ] `make test-ui ENV=test-feat-model-runtime-openai-gemini`
+    - [ ] `make lint-ui ENV=test-feat-model-runtime-openai-gemini` (not rerun in this pass; local fallback blocked: `eslint: not found`)
+    - [ ] `make test-ui ENV=test-feat-model-runtime-openai-gemini` (not rerun in this pass; local fallback blocked: `vitest: not found`)
     - [x] `make test-api-endpoints SCOPE=tests/api/chat.test.ts ENV=test-feat-model-runtime-openai-gemini` (pass, OpenAI key mocked)
     - [x] `make test-api-endpoints SCOPE=tests/api/chat-tools.test.ts ENV=test-feat-model-runtime-openai-gemini` (pass, OpenAI key mocked)
 
