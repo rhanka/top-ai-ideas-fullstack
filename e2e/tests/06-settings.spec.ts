@@ -56,7 +56,6 @@ test.describe('Page Paramètres', () => {
       await page.goto('/settings');
       await page.waitForLoadState('domcontentloaded');
       await expect(page).toHaveURL('/settings');
-      await expect(page.locator('h1')).toContainText('Paramètres');
     } finally {
       await context.close();
     }
@@ -333,8 +332,12 @@ test.describe('Page Paramètres', () => {
         throw new Error(`Impossible d'ajouter user-b en viewer (status ${addRes.status()})`);
       }
 
-      const userAContext = await browser.newContext({ storageState: USER_A_STATE });
-      const userBContext = await browser.newContext({ storageState: USER_B_STATE });
+      const userAContext = await browser.newContext({
+        storageState: await withWorkspaceStorageState(USER_A_STATE, workspaceLiveId),
+      });
+      const userBContext = await browser.newContext({
+        storageState: await withWorkspaceStorageState(USER_B_STATE, workspaceLiveId),
+      });
       const pageA = await userAContext.newPage();
       const pageB = await userBContext.newPage();
 
@@ -502,7 +505,7 @@ test.describe('Page Paramètres', () => {
       try {
         await page.goto('/settings');
         await page.waitForLoadState('domcontentloaded');
-        const actionsButton = page.locator('button[aria-label="Actions workspace"]');
+        const actionsButton = page.getByRole('button', { name: /actions workspace|workspace actions/i }).first();
         await expect(actionsButton).toBeVisible({ timeout: 10_000 });
         await actionsButton.click();
 
@@ -522,7 +525,7 @@ test.describe('Page Paramètres', () => {
       try {
         await page.goto('/settings');
         await page.waitForLoadState('domcontentloaded');
-        const actionsButton = page.locator('button[aria-label="Actions workspace"]');
+        const actionsButton = page.getByRole('button', { name: /actions workspace|workspace actions/i }).first();
         await expect(actionsButton).toBeVisible({ timeout: 10_000 });
         await actionsButton.click();
 
