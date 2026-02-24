@@ -154,6 +154,10 @@ W2:
 
 - BR-01 follow-up delivered: user-scoped default model management and `/folder/new` model selector alignment.
 - Delivered storage design: keep one KV table (`settings`) and add scoped user settings via nullable `user_id` FK.
+- Delivered structured-output compatibility for Gemini without lowering OpenAI strictness:
+  - OpenAI path keeps strict JSON schema contract unchanged.
+  - Gemini path compiles response schema to provider-compatible subset (e.g. strips unsupported `additionalProperties` keyword before request serialization).
+  - Structured generation (`use_case_list`, `use_case_detail`) adds one-shot JSON repair retry using centralized default prompt `structured_json_repair`.
 - Delivered API/UI surface:
   - `GET /api/v1/me/ai-settings` and `PUT /api/v1/me/ai-settings` for personal default model management.
   - `GET /api/v1/models/catalog` defaults now resolved with authenticated user scope.

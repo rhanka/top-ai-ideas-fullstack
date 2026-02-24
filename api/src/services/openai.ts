@@ -220,6 +220,52 @@ const toGeminiToolDeclarations = (
     .filter((tool) => typeof tool.name === 'string' && tool.name.length > 0);
 };
 
+const GEMINI_UNSUPPORTED_RESPONSE_SCHEMA_KEYS = new Set<string>([
+  'additionalProperties',
+  'unevaluatedProperties',
+  'patternProperties',
+  'propertyNames',
+  'contains',
+  'dependencies',
+  'dependentRequired',
+  'dependentSchemas',
+  '$schema',
+  '$id',
+  '$anchor',
+  '$comment',
+]);
+
+const sanitizeGeminiResponseSchemaNode = (
+  value: unknown,
+  insideMap = false
+): unknown => {
+  if (Array.isArray(value)) {
+    return value.map((entry) => sanitizeGeminiResponseSchemaNode(entry, false));
+  }
+  if (!value || typeof value !== 'object') {
+    return value;
+  }
+
+  const record = value as Record<string, unknown>;
+  const out: Record<string, unknown> = {};
+
+  for (const [key, child] of Object.entries(record)) {
+    if (!insideMap && GEMINI_UNSUPPORTED_RESPONSE_SCHEMA_KEYS.has(key)) {
+      continue;
+    }
+    const nextInsideMap =
+      key === 'properties' || key === '$defs' || key === 'definitions';
+    out[key] = sanitizeGeminiResponseSchemaNode(child, nextInsideMap);
+  }
+  return out;
+};
+
+export const sanitizeGeminiResponseSchema = (
+  schema: Record<string, unknown>
+): Record<string, unknown> => {
+  return sanitizeGeminiResponseSchemaNode(schema, false) as Record<string, unknown>;
+};
+
 const buildGeminiRequestBody = (
   options: GeminiRequestBuildOptions
 ): Record<string, unknown> => {
@@ -287,7 +333,9 @@ const buildGeminiRequestBody = (
   }
   if (options.structuredOutput) {
     generationConfig.responseMimeType = 'application/json';
-    generationConfig.responseSchema = options.structuredOutput.schema;
+    generationConfig.responseSchema = sanitizeGeminiResponseSchema(
+      options.structuredOutput.schema
+    );
   }
 
   const functionDeclarations = toGeminiToolDeclarations(

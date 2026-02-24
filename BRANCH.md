@@ -119,6 +119,9 @@ Deliver the provider abstraction layer and runtime routing with OpenAI and Gemin
 - BR-01 Gemini runtime fix note (2026-02-24): hardened Gemini SSE parser to support CRLF separators (`\r\n\r\n`) in addition to LF, preventing multi-event payload concatenation and downstream JSON parse failures.
 - BR-01 Gemini runtime fix validation (2026-02-24): `make test-api-unit SCOPE=tests/unit/gemini-provider-sse.test.ts REGISTRY=local API_PORT=8767 UI_PORT=5167 MAILDEV_UI_PORT=1167 ENV=test-br01-gemini-fix` passed (`2 tests`), `make test-api-endpoints SCOPE=tests/api/models.test.ts REGISTRY=local API_PORT=8767 UI_PORT=5167 MAILDEV_UI_PORT=1167 ENV=test-br01-gemini-fix` passed (`1 test`), `make test-api-unit SCOPE=tests/unit/chat-service-tools.test.ts REGISTRY=local API_PORT=8767 UI_PORT=5167 MAILDEV_UI_PORT=1167 ENV=test-br01-gemini-fix` passed (`6 tests`).
 - BR-01 chat streaming UX update (2026-02-24): added UI-only smooth streaming for Gemini messages in `StreamMessage` (pseudo-stream for large deltas), while keeping API streaming unchanged.
+- BR-01 Gemini structured-output compatibility fix (2026-02-24): kept OpenAI strict `response_schema` unchanged, added Gemini-side schema compiler (removes unsupported keywords like `additionalProperties`) before request serialization, and added a single retry path for malformed structured JSON using `defaultPrompts` entry `structured_json_repair`.
+- BR-01 Gemini structured-output validation run (2026-02-24): `make typecheck-api REGISTRY=local API_PORT=8771 UI_PORT=5171 MAILDEV_UI_PORT=1171 ENV=test-br01-user-defaults` passed, `make lint-api REGISTRY=local API_PORT=8771 UI_PORT=5171 MAILDEV_UI_PORT=1171 ENV=test-br01-user-defaults` passed.
+- BR-01 Gemini structured-output validation run (2026-02-24): `make test-api-unit SCOPE=tests/unit/gemini-response-schema.test.ts REGISTRY=local API_PORT=8771 UI_PORT=5171 MAILDEV_UI_PORT=1171 ENV=test-br01-user-defaults` passed (`2 tests`), `make test-api-unit SCOPE=tests/unit/context-matrix-template.test.ts REGISTRY=local API_PORT=8771 UI_PORT=5171 MAILDEV_UI_PORT=1171 ENV=test-br01-user-defaults` passed (`1 test`), `make test-api-endpoints SCOPE=tests/api/use-cases.test.ts REGISTRY=local API_PORT=8771 UI_PORT=5171 MAILDEV_UI_PORT=1171 ENV=test-br01-user-defaults` passed (`18 tests`).
 
 ## Orchestration Mode (AI-selected)
 - [x] **Mono-branch + cherry-pick** (default for orthogonal tasks; single final test cycle)
@@ -190,6 +193,7 @@ Deliver the provider abstraction layer and runtime routing with OpenAI and Gemin
   - [x] Ensure message edit/retry uses current composer provider/model selection.
   - [x] Add grouped provider/model selector in `/folder/new` defaulted from user settings.
   - [x] Send selected provider/model override from `/folder/new` to generation endpoint; fallback to user defaults when unset.
+  - [x] Keep OpenAI strict structured outputs, add Gemini schema compatibility compilation, and add one-shot structured JSON repair retry via `defaultPrompts.structured_json_repair`.
   - [x] Lot 3 gate:
     - [x] `make typecheck-api REGISTRY=local API_PORT=8771 UI_PORT=5171 MAILDEV_UI_PORT=1171 ENV=test-br01-user-defaults`
     - [x] `make lint-api REGISTRY=local API_PORT=8771 UI_PORT=5171 MAILDEV_UI_PORT=1171 ENV=test-br01-user-defaults`
