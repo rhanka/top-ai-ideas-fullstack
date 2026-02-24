@@ -77,3 +77,9 @@ Resolved on 2026-02-22: owner is conductor (Codex) and `tmp/feat-roadmap-stabili
   Reason: pass `GEMINI_API_KEY` into the API container so BR-01 Gemini runtime can use branch/root `.env` credentials in test/dev envs.
   Impact: compose environment wiring only (`api` service), no app logic change.
   Rollback: remove `GEMINI_API_KEY=${GEMINI_API_KEY}` from `api.environment`.
+
+- **BR01-EX2** (resolved, 2026-02-24)
+  Path: `spec/SPEC_EVOL_MODEL_AUTH_PROVIDERS.md`, `PLAN.md` (`Conditional Paths` override for BR-01 docs consolidation).
+  Reason: close BR-01 Lot N-1 by consolidating provider-runtime branch learnings and integration readiness status.
+  Impact: documentation-only updates to roadmap/spec traceability, no product/runtime behavior change.
+  Rollback: revert the BR-01 closure notes added to the spec and roadmap plan.

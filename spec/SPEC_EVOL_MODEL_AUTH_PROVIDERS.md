@@ -102,7 +102,23 @@ W2:
 - Google SSO is functional with account linking.
 - Provider outage on one adapter does not break all runtime flows.
 
-## 7) Open questions
+## 7) BR-01 Closure Notes (2026-02-24)
+
+- Branch `feat/model-runtime-openai-gemini` includes baseline commit `456de01 chore(br01): wire gemini env into api compose runtime`.
+- W1 provider runtime target is achieved for this branch scope:
+  - provider contract + registry delivered,
+  - OpenAI and Gemini adapters available behind routing policy,
+  - BYOK precedence and provider/model selection flows integrated in API/UI surfaces.
+- Final non-AI validation rerun passed on isolated env `test-br01-final-gemini`:
+  - API: `typecheck-api`, `lint-api`, `test-api-smoke`, `test-api-unit`, `test-api-endpoints`, `test-api-queue`, `test-api-security`, `test-api-limit`.
+  - UI: `typecheck-ui`, `lint-ui`, `test-ui`.
+- AI allowlist remains non-blocking with explicit traceability captured in `BRANCH.md`:
+  - `tests/ai/chat-tools.test.ts` and related suites with `401 invalid_api_key`,
+  - `tests/ai/usecase-generation-async.test.ts` timeout signature (`120000ms`),
+  - startup flakiness signature (`up-api-test`: `api-1 is unhealthy`).
+- Dependency note: BR-01 branch scope is push-ready and continues to unblock BR-05 (`feat/vscode-plugin-v1`) and BR-08 (`feat/model-runtime-claude-mistral`).
+
+## 8) Open questions
 
 - `MPA-Q1`: What is the canonical naming/versioning policy for model IDs exposed in UI?
 - `MPA-Q2`: Should SSO users be auto-linked by email, or require explicit user confirmation?
@@ -110,7 +126,7 @@ W2:
 - `MPA-Q4`: What is the compliance baseline for provider request/response retention?
 - `MPA-Q5`: Do we require provider-level fallback in the same request, or only user-driven retry?
 
-## 8) Risks
+## 9) Risks
 
 - Provider SDK/API instability across releases.
 - SSO edge-cases with account linking and duplicate identities.
