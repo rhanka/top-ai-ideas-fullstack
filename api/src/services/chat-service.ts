@@ -1468,7 +1468,7 @@ Règles :
 
     // Reasoning-effort evaluation (best effort):
     // - OpenAI gpt-5* keeps its existing evaluator behavior.
-    // - Gemini provider uses gemini-3-flash-preview for the same classification intent.
+    // - Gemini provider uses gemini-2.5-flash-lite for the same classification intent.
     const isGpt5 = typeof selectedModel === 'string' && selectedModel.startsWith('gpt-5');
     const shouldEvaluateReasoningEffort =
       isGpt5 || selectedProviderId === 'gemini';
@@ -1476,7 +1476,7 @@ Règles :
       selectedProviderId === 'gemini' ? 'gemini' : 'openai';
     const evaluatorModel =
       selectedProviderId === 'gemini'
-        ? 'gemini-3-flash-preview'
+        ? 'gemini-2.5-flash-lite'
         : 'gpt-4.1-nano';
     let reasoningEffortForThisMessage: 'none' | 'low' | 'medium' | 'high' | 'xhigh' | undefined;
     // Default fallback if evaluator fails: medium.

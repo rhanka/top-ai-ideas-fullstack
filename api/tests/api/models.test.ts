@@ -40,6 +40,7 @@ describe('Models API', () => {
       .map((model: { model_id: string }) => model.model_id);
     expect(geminiModelIds).toContain('gemini-3.1-pro-preview-customtools');
     expect(geminiModelIds).toContain('gemini-3-flash-preview');
+    expect(geminiModelIds).toContain('gemini-2.5-flash-lite');
 
     expect(data.defaults).toBeDefined();
     expect(typeof data.defaults.provider_id).toBe('string');
