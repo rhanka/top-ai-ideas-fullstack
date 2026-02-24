@@ -211,20 +211,19 @@ Deliver the provider abstraction layer and runtime routing with OpenAI and Gemin
 
 - [ ] **Lot N-2 — UAT (user execution pending)**
   - [ ] UAT-00 Pre-flight (nominal root env): `make -C /home/antoinefa/src/top-ai-ideas-fullstack down ENV=dev` then `make -C /home/antoinefa/src/top-ai-ideas-fullstack dev ENV=dev`.
-  - [ ] UAT-01 Provider switch + catalog: in settings and chat, use the single grouped model selector, switch OpenAI <-> Gemini, and verify the simplified four-model catalog (`gpt-4.1-nano`, `gpt-5.2`, `gemini-2.5-flash-lite`, `gemini-3.1-pro-preview-customtools`).
-  - [ ] UAT-02 Reasoning level behavior: under Gemini, trigger a chat request and confirm `reasoning_effort_selected` status is emitted with evaluator `gemini-2.5-flash-lite` (fallback path remains non-blocking if evaluator fails).
-  - [ ] UAT-03 Gemini generation: select Gemini and validate at least one successful chat generation round-trip.
-  - [ ] UAT-04 Gemini tool execution: in chat under Gemini, trigger at least one tool call (e.g. `web_search`) and verify tool events/results are emitted and rendered.
-  - [ ] UAT-05 OpenAI regression switch-back: switch back to OpenAI and validate one successful chat generation round-trip.
-  - [ ] UAT-06 Settings persistence: save provider/model defaults in settings, reload page, verify saved defaults are still applied.
-  - [ ] UAT-07 Chat composer ergonomics: verify controls are on the bottom row (`+`, model menu, stop/send), and attached document chips stay above the text input.
-  - [ ] UAT-08 Message edit + model switch: start a message with model A, edit/rerun it after switching to model B, and verify the retried generation is executed with model B.
-  - [ ] UAT-09 User default inheritance: reset user preference, verify user default resolves to admin defaults (`openai` + `gpt-4.1-nano` unless admin changed).
-  - [ ] UAT-10 New conversation default: start a brand new conversation and verify initial model matches user settings default.
-  - [ ] UAT-11 Conversation stickiness: switch model in conversation A, navigate away, return to conversation A, verify selected model is preserved.
-  - [ ] UAT-12 Folder generation default: open `/folder/new`, verify model selector preloads user default.
-  - [ ] UAT-13 Folder generation override: in `/folder/new`, choose a non-default model, generate, and verify generation succeeds with override while user default remains unchanged.
-  - [ ] UAT-14 Result capture: record date + tester + status (`OK` / `KO`) in this section before merge.
+  - [x] UAT-01 Provider switch + catalog: in settings and chat, use the single grouped model selector, switch OpenAI <-> Gemini, and verify the simplified four-model catalog (`gpt-4.1-nano`, `gpt-5.2`, `gemini-2.5-flash-lite`, `gemini-3.1-pro-preview-customtools`).
+  - [x] UAT-02 Reasoning level behavior: under Gemini, trigger a chat request and confirm `reasoning_effort_selected` status is emitted with evaluator `gemini-2.5-flash-lite` (fallback path remains non-blocking if evaluator fails).
+  - [x] UAT-03 Gemini generation: select Gemini and validate at least one successful chat generation round-trip.
+  - [x] UAT-04 Gemini tool execution: in chat under Gemini, trigger at least one tool call (e.g. `web_search`) and verify tool events/results are emitted and rendered.
+  - [x] UAT-05 OpenAI regression switch-back: switch back to OpenAI and validate one successful chat generation round-trip.
+  - [x] UAT-06 Settings persistence: save provider/model defaults in settings, reload page, verify saved defaults are still applied.
+  - [x] UAT-07 Chat composer ergonomics: verify controls are on the bottom row (`+`, model menu, stop/send), and attached document chips stay above the text input.
+  - [x] UAT-08 Message edit + model switch: start a message with model A, edit/rerun it after switching to model B, and verify the retried generation is executed with model B.
+  - [x] UAT-09 User default inheritance: reset user preference, verify user default resolves to admin defaults (`openai` + `gpt-4.1-nano` unless admin changed).
+  - [x] UAT-10 New conversation default: start a brand new conversation and verify initial model matches user settings default.
+  - [x] UAT-11 Conversation stickiness: switch model in conversation A, navigate away, return to conversation A, verify selected model is preserved.
+  - [x] UAT-12 Folder generation default: open `/folder/new`, verify model selector preloads user default.
+  - [x] UAT-13 Folder generation override: in `/folder/new`, choose a non-default model, generate, and verify generation succeeds with override while user default remains unchanged.
 
 - [ ] **Lot N-1 — Docs consolidation**
   - [ ] Consolidate branch learnings into the relevant `spec/*` files.
