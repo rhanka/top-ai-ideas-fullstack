@@ -112,7 +112,8 @@ W2:
 - UI selection ergonomics aligned for BR-01:
   - settings now use a single grouped model selector (`provider -> model`) instead of split provider/model inputs,
   - chat composer uses the same grouped model selector in a bottom control bar (with `+`, model menu, stop/send),
-  - attached document chips remain rendered above the text composer.
+  - attached document chips remain rendered above the text composer,
+  - chat streaming now applies a UI-only smooth rendering mode for Gemini large deltas (pseudo-stream), without changing API streaming contracts.
 - Final non-AI validation rerun passed on isolated env `test-br01-final-gemini`:
   - API: `typecheck-api`, `lint-api`, `test-api-smoke`, `test-api-unit`, `test-api-endpoints`, `test-api-queue`, `test-api-security`, `test-api-limit`.
   - UI: `typecheck-ui`, `lint-ui`, `test-ui`.

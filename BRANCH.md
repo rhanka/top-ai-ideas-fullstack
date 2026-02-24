@@ -109,11 +109,12 @@ Deliver the provider abstraction layer and runtime routing with OpenAI and Gemin
 - BR-01 E2E rerun trace (2026-02-24): background rerun of `make test-e2e REGISTRY=local E2E_SPEC=e2e/tests/03-chat.spec.ts WORKERS=2 RETRIES=0 MAX_FAILURES=1 API_PORT=8791 UI_PORT=5191 MAILDEV_UI_PORT=1091 ENV=e2e-feat-model-runtime-openai-gemini` failed before Playwright assertions at `db-seed-test` (`Cannot find module /app/dist/tests/utils/seed-test-data.js`).
 - BR-01 E2E rerun trace (2026-02-24): after `make build-api-image REGISTRY=local API_PORT=8791 UI_PORT=5191 MAILDEV_UI_PORT=1091 ENV=e2e-br01-chat`, scoped rerun on `e2e-br01-chat` failed on host port collision (`Bind for 0.0.0.0:1091 failed: port is already allocated`); second scoped rerun on `e2e-br01-chat2` (`API_PORT=8891 UI_PORT=5291 MAILDEV_UI_PORT=1191`) reached Playwright and failed functional assertion in `tests/03-chat.spec.ts` (`button[aria-controls="chat-widget-dialog"]` not found, `1 failed`, `11 not run`).
 - BR-01 bug note (2026-02-24): when editing/resending an existing chat message after changing the composer model, the rerun still uses the original message model. Expected behavior: rerun must use the currently selected provider/model from the composer.
-- BR-01 Gemini runtime fix note (2026-02-24): replaced invalid evaluator/catalog ID `gemini-3.0-flash-preview` with `gemini-3-flash-preview` and refreshed Gemini catalog to current public IDs (`gemini-3.1-pro-preview-customtools`, `gemini-3.1-pro-preview`, `gemini-2.5-flash`, `gemini-2.5-pro`).
+- BR-01 Gemini runtime fix note (2026-02-24): replaced invalid evaluator/catalog ID `gemini-3.0-flash-preview` with `gemini-3-flash-preview`.
 - BR-01 Gemini performance tune (2026-02-24): switched complexity-evaluation model from `gemini-3-flash-preview` to `gemini-2.5-flash-lite` to reduce latency on the evaluator pass while keeping Gemini generation on the selected main model.
 - BR-01 catalog simplification (2026-02-24): reduced user-selectable model catalog to four entries only: `gpt-4.1-nano`, `gpt-5.2`, `gemini-2.5-flash-lite`, `gemini-3.1-pro-preview-customtools`.
 - BR-01 Gemini runtime fix note (2026-02-24): hardened Gemini SSE parser to support CRLF separators (`\r\n\r\n`) in addition to LF, preventing multi-event payload concatenation and downstream JSON parse failures.
 - BR-01 Gemini runtime fix validation (2026-02-24): `make test-api-unit SCOPE=tests/unit/gemini-provider-sse.test.ts REGISTRY=local API_PORT=8767 UI_PORT=5167 MAILDEV_UI_PORT=1167 ENV=test-br01-gemini-fix` passed (`2 tests`), `make test-api-endpoints SCOPE=tests/api/models.test.ts REGISTRY=local API_PORT=8767 UI_PORT=5167 MAILDEV_UI_PORT=1167 ENV=test-br01-gemini-fix` passed (`1 test`), `make test-api-unit SCOPE=tests/unit/chat-service-tools.test.ts REGISTRY=local API_PORT=8767 UI_PORT=5167 MAILDEV_UI_PORT=1167 ENV=test-br01-gemini-fix` passed (`6 tests`).
+- BR-01 chat streaming UX update (2026-02-24): added UI-only smooth streaming for Gemini messages in `StreamMessage` (pseudo-stream for large deltas), while keeping API streaming unchanged.
 
 ## Orchestration Mode (AI-selected)
 - [x] **Mono-branch + cherry-pick** (default for orthogonal tasks; single final test cycle)
@@ -154,6 +155,7 @@ Deliver the provider abstraction layer and runtime routing with OpenAI and Gemin
   - [x] Implement Gemini adapter with streaming + tool compatibility checks.
   - [x] Implement credential precedence (request override, user BYOK, workspace key).
   - [x] Expose provider/model selection in impacted UI flows (chat + structured options).
+  - [x] Add UI-only smooth streaming fallback for Gemini large chunks (pseudo-stream, no API contract change).
   - [x] Lot 2 gate:
     - [x] `make typecheck-api ENV=test-feat-model-runtime-openai-gemini` (pass on 2026-02-23 after warm retry)
     - [x] `make lint-api ENV=test-feat-model-runtime-openai-gemini` (pass on 2026-02-23)

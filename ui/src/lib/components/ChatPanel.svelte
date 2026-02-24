@@ -100,6 +100,7 @@
     role: 'user' | 'assistant' | 'system' | 'tool';
     content?: string | null;
     reasoning?: string | null;
+    model?: string | null;
     sequence?: number;
     createdAt?: string;
     feedbackVote?: number | null;
@@ -2413,6 +2414,10 @@
       ? provider.label
       : `${provider.label} (${provider.status})`;
 
+  const isGeminiModel = (modelId: string | null | undefined): boolean =>
+    typeof modelId === 'string' &&
+    modelId.trim().toLowerCase().startsWith('gemini');
+
   const fallbackSelectedModelOption = () =>
     modelCatalogModels.find(
       (entry) =>
@@ -2550,6 +2555,7 @@
         sessionId: res.sessionId,
         role: 'assistant',
         content: null,
+        model: selectedModelId,
         createdAt: nowIso,
         _localStatus: 'processing',
         _streamId: res.streamId,
@@ -3214,6 +3220,7 @@
                     status={m._localStatus ??
                       (m.content ? 'completed' : 'processing')}
                     finalContent={m.content ?? null}
+                    smoothContentStreaming={isGeminiModel(m.model)}
                     historySource="stream"
                     initialEvents={initEvents}
                     historyPending={showDetailWaiter}
