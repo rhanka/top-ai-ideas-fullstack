@@ -39,7 +39,7 @@ describe('Models API', () => {
       .filter((model: { provider_id: string; model_id: string }) => model.provider_id === 'gemini')
       .map((model: { model_id: string }) => model.model_id);
     expect(geminiModelIds).toContain('gemini-3.1-pro-preview-customtools');
-    expect(geminiModelIds).toContain('gemini-3.0-flash-preview');
+    expect(geminiModelIds).toContain('gemini-3-flash-preview');
 
     expect(data.defaults).toBeDefined();
     expect(typeof data.defaults.provider_id).toBe('string');

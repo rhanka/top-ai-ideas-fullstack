@@ -10,8 +10,8 @@ import type {
 const GEMINI_MODELS: ModelCatalogEntry[] = [
   {
     providerId: 'gemini',
-    modelId: 'gemini-3.0-flash-preview',
-    label: 'Gemini 3.0 Flash Preview',
+    modelId: 'gemini-3-flash-preview',
+    label: 'Gemini 3 Flash Preview',
     reasoningTier: 'standard',
     supportsTools: true,
     supportsStreaming: true,
@@ -28,8 +28,17 @@ const GEMINI_MODELS: ModelCatalogEntry[] = [
   },
   {
     providerId: 'gemini',
-    modelId: 'gemini-2.0-flash',
-    label: 'Gemini 2.0 Flash',
+    modelId: 'gemini-3.1-pro-preview',
+    label: 'Gemini 3.1 Pro Preview',
+    reasoningTier: 'standard',
+    supportsTools: true,
+    supportsStreaming: true,
+    defaultContexts: ['structured', 'summary'],
+  },
+  {
+    providerId: 'gemini',
+    modelId: 'gemini-2.5-flash',
+    label: 'Gemini 2.5 Flash',
     reasoningTier: 'standard',
     supportsTools: true,
     supportsStreaming: true,
@@ -37,8 +46,8 @@ const GEMINI_MODELS: ModelCatalogEntry[] = [
   },
   {
     providerId: 'gemini',
-    modelId: 'gemini-1.5-pro',
-    label: 'Gemini 1.5 Pro',
+    modelId: 'gemini-2.5-pro',
+    label: 'Gemini 2.5 Pro',
     reasoningTier: 'advanced',
     supportsTools: true,
     supportsStreaming: true,
@@ -277,10 +286,10 @@ export class GeminiProviderRuntime implements ProviderRuntime {
       buffer += decoder.decode(chunk.value, { stream: true });
 
       while (true) {
-        const boundary = buffer.indexOf('\n\n');
-        if (boundary < 0) break;
-        const rawEvent = buffer.slice(0, boundary);
-        buffer = buffer.slice(boundary + 2);
+        const boundary = this.findSseBoundary(buffer);
+        if (!boundary) break;
+        const rawEvent = buffer.slice(0, boundary.index);
+        buffer = buffer.slice(boundary.index + boundary.length);
         const parsed = this.parseSseEvent(rawEvent);
         if (parsed !== null) {
           yield parsed;
@@ -309,5 +318,27 @@ export class GeminiProviderRuntime implements ProviderRuntime {
     if (!payload || payload === '[DONE]') return null;
 
     return JSON.parse(payload) as unknown;
+  }
+
+  private findSseBoundary(
+    buffer: string
+  ): { index: number; length: number } | null {
+    let boundaryIndex = -1;
+    let boundaryLength = 0;
+
+    const separators = ['\r\n\r\n', '\n\n', '\r\r'] as const;
+    for (const separator of separators) {
+      const index = buffer.indexOf(separator);
+      if (index >= 0 && (boundaryIndex < 0 || index < boundaryIndex)) {
+        boundaryIndex = index;
+        boundaryLength = separator.length;
+      }
+    }
+
+    if (boundaryIndex < 0) {
+      return null;
+    }
+
+    return { index: boundaryIndex, length: boundaryLength };
   }
 }

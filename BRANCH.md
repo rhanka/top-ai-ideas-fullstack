@@ -108,6 +108,10 @@ Deliver the provider abstraction layer and runtime routing with OpenAI and Gemin
 - BR-01 UI validation run (2026-02-24): `make lint-ui REGISTRY=local API_PORT=8761 UI_PORT=5161 MAILDEV_UI_PORT=1161 ENV=test-br01-ux` passed (`eslint .` exit 0).
 - BR-01 E2E rerun trace (2026-02-24): background rerun of `make test-e2e REGISTRY=local E2E_SPEC=e2e/tests/03-chat.spec.ts WORKERS=2 RETRIES=0 MAX_FAILURES=1 API_PORT=8791 UI_PORT=5191 MAILDEV_UI_PORT=1091 ENV=e2e-feat-model-runtime-openai-gemini` failed before Playwright assertions at `db-seed-test` (`Cannot find module /app/dist/tests/utils/seed-test-data.js`).
 - BR-01 E2E rerun trace (2026-02-24): after `make build-api-image REGISTRY=local API_PORT=8791 UI_PORT=5191 MAILDEV_UI_PORT=1091 ENV=e2e-br01-chat`, scoped rerun on `e2e-br01-chat` failed on host port collision (`Bind for 0.0.0.0:1091 failed: port is already allocated`); second scoped rerun on `e2e-br01-chat2` (`API_PORT=8891 UI_PORT=5291 MAILDEV_UI_PORT=1191`) reached Playwright and failed functional assertion in `tests/03-chat.spec.ts` (`button[aria-controls="chat-widget-dialog"]` not found, `1 failed`, `11 not run`).
+- BR-01 bug note (2026-02-24): when editing/resending an existing chat message after changing the composer model, the rerun still uses the original message model. Expected behavior: rerun must use the currently selected provider/model from the composer.
+- BR-01 Gemini runtime fix note (2026-02-24): replaced invalid evaluator/catalog ID `gemini-3.0-flash-preview` with `gemini-3-flash-preview` and refreshed Gemini catalog to current public IDs (`gemini-3.1-pro-preview-customtools`, `gemini-3.1-pro-preview`, `gemini-2.5-flash`, `gemini-2.5-pro`).
+- BR-01 Gemini runtime fix note (2026-02-24): hardened Gemini SSE parser to support CRLF separators (`\r\n\r\n`) in addition to LF, preventing multi-event payload concatenation and downstream JSON parse failures.
+- BR-01 Gemini runtime fix validation (2026-02-24): `make test-api-unit SCOPE=tests/unit/gemini-provider-sse.test.ts REGISTRY=local API_PORT=8767 UI_PORT=5167 MAILDEV_UI_PORT=1167 ENV=test-br01-gemini-fix` passed (`2 tests`), `make test-api-endpoints SCOPE=tests/api/models.test.ts REGISTRY=local API_PORT=8767 UI_PORT=5167 MAILDEV_UI_PORT=1167 ENV=test-br01-gemini-fix` passed (`1 test`), `make test-api-unit SCOPE=tests/unit/chat-service-tools.test.ts REGISTRY=local API_PORT=8767 UI_PORT=5167 MAILDEV_UI_PORT=1167 ENV=test-br01-gemini-fix` passed (`6 tests`).
 
 ## Orchestration Mode (AI-selected)
 - [x] **Mono-branch + cherry-pick** (default for orthogonal tasks; single final test cycle)
@@ -167,14 +171,15 @@ Deliver the provider abstraction layer and runtime routing with OpenAI and Gemin
 
 - [ ] **Lot N-2 — UAT (user execution pending)**
   - [ ] UAT-00 Pre-flight (nominal root env): `make -C /home/antoinefa/src/top-ai-ideas-fullstack down ENV=dev` then `make -C /home/antoinefa/src/top-ai-ideas-fullstack dev ENV=dev`.
-  - [ ] UAT-01 Provider switch + catalog: in settings and chat, use the single grouped model selector, switch OpenAI <-> Gemini, and verify both model families are available (including `gemini-3.1-pro-preview-customtools` and `gemini-3.0-flash-preview`).
-  - [ ] UAT-02 Reasoning level behavior: under Gemini, trigger a chat request and confirm `reasoning_effort_selected` status is emitted with evaluator `gemini-3.0-flash-preview` (fallback path remains non-blocking if evaluator fails).
+  - [ ] UAT-01 Provider switch + catalog: in settings and chat, use the single grouped model selector, switch OpenAI <-> Gemini, and verify both model families are available (including `gemini-3.1-pro-preview-customtools` and `gemini-3-flash-preview`).
+  - [ ] UAT-02 Reasoning level behavior: under Gemini, trigger a chat request and confirm `reasoning_effort_selected` status is emitted with evaluator `gemini-3-flash-preview` (fallback path remains non-blocking if evaluator fails).
   - [ ] UAT-03 Gemini generation: select Gemini and validate at least one successful chat generation round-trip.
   - [ ] UAT-04 Gemini tool execution: in chat under Gemini, trigger at least one tool call (e.g. `web_search`) and verify tool events/results are emitted and rendered.
   - [ ] UAT-05 OpenAI regression switch-back: switch back to OpenAI and validate one successful chat generation round-trip.
   - [ ] UAT-06 Settings persistence: save provider/model defaults in settings, reload page, verify saved defaults are still applied.
   - [ ] UAT-07 Chat composer ergonomics: verify controls are on the bottom row (`+`, model menu, stop/send), and attached document chips stay above the text input.
-  - [ ] UAT-08 Result capture: record date + tester + status (`OK` / `KO`) in this section before merge.
+  - [ ] UAT-08 Message edit + model switch: start a message with model A, edit/rerun it after switching to model B, and verify the retried generation is executed with model B.
+  - [ ] UAT-09 Result capture: record date + tester + status (`OK` / `KO`) in this section before merge.
 
 - [x] **Lot N-1 — Docs consolidation**
   - [x] Consolidate branch learnings into the relevant `spec/*` files.
