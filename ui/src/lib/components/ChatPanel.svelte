@@ -170,6 +170,10 @@
       model_id: string;
     };
   };
+  type ModelCatalogGroup = {
+    provider: ModelCatalogProvider;
+    models: ModelCatalogModel[];
+  };
 
   const getContextIcon = (type: ChatContextEntry['contextType']) => {
     if (type === 'organization') return Building2;
@@ -536,9 +540,10 @@
   let lastShownErrorMsg: string | null = null;
   let modelCatalogProviders: ModelCatalogProvider[] = [];
   let modelCatalogModels: ModelCatalogModel[] = [];
-  let modelsForSelectedProvider: ModelCatalogModel[] = [];
+  let modelCatalogGroups: ModelCatalogGroup[] = [];
   let selectedProviderId: ModelProviderId = 'openai';
   let selectedModelId = 'gpt-4.1-nano';
+  let selectedModelSelectionKey = 'openai::gpt-4.1-nano';
   let input = draft;
   let commentInput = '';
   let commentMessages: CommentItem[] = [];
@@ -2376,25 +2381,75 @@
           ?.model_id ??
         modelCatalogModels[0]?.model_id ??
         selectedModelId;
+      selectedModelSelectionKey = `${selectedProviderId}::${selectedModelId}`;
     } catch (error) {
       console.error('Failed to load model catalog for chat:', error);
     }
   };
 
-  $: modelsForSelectedProvider = modelCatalogModels.filter(
-    (entry) => entry.provider_id === selectedProviderId,
-  );
+  const parseModelSelectionKey = (
+    rawValue: string,
+  ): { providerId: ModelProviderId; modelId: string } | null => {
+    const separatorIndex = rawValue.indexOf('::');
+    if (separatorIndex <= 0) return null;
+    const providerId = rawValue.slice(0, separatorIndex) as ModelProviderId;
+    const modelId = rawValue.slice(separatorIndex + 2);
+    if (!modelId) return null;
+    if (providerId !== 'openai' && providerId !== 'gemini') return null;
+    return { providerId, modelId };
+  };
+
+  const handleModelSelectionChange = (event: Event) => {
+    const target = event.currentTarget as HTMLSelectElement | null;
+    if (!target) return;
+    const parsed = parseModelSelectionKey(target.value);
+    if (!parsed) return;
+    selectedProviderId = parsed.providerId;
+    selectedModelId = parsed.modelId;
+  };
+
+  const providerGroupLabel = (provider: ModelCatalogProvider) =>
+    provider.status === 'ready'
+      ? provider.label
+      : `${provider.label} (${provider.status})`;
+
+  const fallbackSelectedModelOption = () =>
+    modelCatalogModels.find(
+      (entry) =>
+        entry.provider_id === selectedProviderId &&
+        entry.model_id === selectedModelId,
+    ) ??
+    modelCatalogModels.find((entry) => entry.model_id === selectedModelId) ??
+    null;
+
+  $: modelCatalogGroups = modelCatalogProviders
+    .map((provider) => ({
+      provider,
+      models: modelCatalogModels.filter(
+        (entry) => entry.provider_id === provider.provider_id,
+      ),
+    }))
+    .filter((group) => group.models.length > 0);
 
   $: {
-    if (modelsForSelectedProvider.length > 0) {
-      const modelStillValid = modelsForSelectedProvider.some(
-        (entry) => entry.model_id === selectedModelId,
+    if (modelCatalogModels.length > 0) {
+      const exactMatch = modelCatalogModels.some(
+        (entry) =>
+          entry.provider_id === selectedProviderId &&
+          entry.model_id === selectedModelId,
       );
-      if (!modelStillValid) {
-        selectedModelId = modelsForSelectedProvider[0].model_id;
+      if (!exactMatch) {
+        const providerFallback =
+          modelCatalogModels.find(
+            (entry) => entry.provider_id === selectedProviderId,
+          ) ?? modelCatalogModels[0];
+        selectedProviderId = providerFallback.provider_id;
+        selectedModelId = providerFallback.model_id;
       }
     }
   }
+
+  $: selectedModelSelectionKey = `${selectedProviderId}::${selectedModelId}`;
 
   const sendMessage = async () => {
     const text = input.trim();
@@ -3310,300 +3365,299 @@
   </div>
 
   <div class="p-3 border-t border-slate-200">
-    <div class="relative flex items-center gap-2">
-      {#if mode === 'ai'}
-        <MenuPopover
-          placement="up"
-          align="left"
-          widthClass="w-80"
-          menuClass="p-3 space-y-3"
-          bind:open={showComposerMenu}
-          bind:triggerRef={composerMenuButtonRef}
+    <div class="space-y-2">
+      <div class="relative">
+        <div
+          class="relative w-full min-w-0 rounded px-3 py-2 text-xs composer-rich slim-scroll overflow-y-auto overflow-x-hidden"
+          class:composer-single-line={!composerIsMultiline}
+          class:bg-white={($workspaceCanComment && !commentThreadResolved) ||
+            mode !== 'comments'}
+          class:bg-slate-50={mode === 'comments' &&
+            (!$workspaceCanComment || commentThreadResolved)}
+          style={`max-height: ${composerMaxHeight}px; min-height: ${COMPOSER_BASE_HEIGHT}px;`}
+          bind:this={composerEl}
+          role="textbox"
+          aria-label={$_('chat.composer.ariaLabel')}
+          aria-disabled={mode === 'comments' &&
+            (!$workspaceCanComment || commentThreadResolved)}
+          tabindex={mode === 'comments' &&
+          (!$workspaceCanComment || commentThreadResolved)
+            ? -1
+            : 0}
+          on:keydown={handleKeyDown}
         >
-          <svelte:fragment slot="trigger" let:toggle>
-            <button
-              class="rounded border border-slate-300 bg-white text-slate-600 w-10 h-10 flex items-center justify-center hover:bg-slate-50"
-              aria-label={$_('common.openMenu')}
-              title={$_('common.openMenu')}
-              type="button"
-              bind:this={composerMenuButtonRef}
-              on:click={toggle}
-            >
-              <Plus class="w-4 h-4" />
-            </button>
-          </svelte:fragment>
-          <svelte:fragment slot="menu">
-            <label
-              class={'flex w-full items-center gap-2 rounded px-1 py-1 text-[11px] text-slate-700 hover:bg-slate-50 ' +
-                (sessionDocsUploading ? 'opacity-50 pointer-events-none' : '')}
-              aria-label={$_('chat.documents.addFile')}
-              title={$_('chat.documents.addFile')}
-            >
-              <input
-                class="hidden"
-                type="file"
-                on:change={onPickSessionDoc}
-                disabled={sessionDocsUploading}
-                accept="application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.presentationml.presentation,text/markdown,text/plain,application/json"
-              />
-              <Paperclip class="w-4 h-4" />
-              <span>{$_('chat.documents.addFile')}</span>
-            </label>
-            <div class="border-t border-slate-100 pt-2"></div>
-            <div class="text-xs font-semibold text-slate-600">
-              {$_('chat.contexts.title')}
-            </div>
-            {#if contextEntries.length === 0 && !extensionActiveTabContext}
-              <div class="text-[11px] text-slate-500">
-                {$_('chat.contexts.none')}
+          {#if mode === 'ai'}
+            {#if sessionDocsError}
+              <div
+                class="mb-2 rounded bg-red-50 border border-red-200 px-2 py-1 text-[11px] text-red-700"
+              >
+                {sessionDocsError}
+              </div>
+            {/if}
+            {#if sessionDocs.length > 0}
+              <div class="mb-2 flex flex-wrap gap-2">
+                {#each sessionDocs as doc (doc.id)}
+                  <div
+                    class="flex items-center gap-2 rounded border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] text-slate-700"
+                  >
+                    <div class="max-w-[220px] truncate">{doc.filename}</div>
+                    <span class="text-slate-400"
+                      >· {sessionDocStatusLabel(doc.status)}</span
+                    >
+                    <button
+                      class="rounded p-0.5 text-slate-400 hover:text-slate-600 hover:bg-white"
+                      type="button"
+                      aria-label={$_('chat.documents.delete.ariaLabel')}
+                      title={$_('common.delete')}
+                      on:click={() => void removeSessionDoc(doc)}
+                    >
+                      <X class="w-3 h-3" />
+                    </button>
+                  </div>
+                {/each}
+              </div>
+            {/if}
+            <EditableInput
+              markdown={true}
+              bind:value={input}
+              placeholder={$_('chat.composer.placeholder.chat')}
+              on:change={handleComposerChange}
+            />
+          {:else}
+            {#if (commentThreadResolved || !$workspaceCanComment) && commentInput.trim().length === 0}
+              <div
+                class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400"
+              >
+                {commentPlaceholder}
+              </div>
+            {/if}
+            {#if assignedToLabel}
+              <div
+                class="mb-2 inline-flex items-center gap-2 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] text-slate-600"
+              >
+                <span
+                  >{$_('chat.comments.assignedTo', {
+                    values: { label: assignedToLabel },
+                  })}</span
+                >
+                <button
+                  type="button"
+                  class="rounded p-0.5 text-slate-400 hover:text-slate-600 hover:bg-slate-200"
+                  on:click={() => {
+                    assignedToUserId = null;
+                    assignedToLabel = null;
+                  }}
+                  aria-label={$_('chat.comments.unassign')}
+                  title={$_('chat.comments.unassign')}
+                >
+                  <X class="w-3 h-3" />
+                </button>
+              </div>
+            {/if}
+            <EditableInput
+              markdown={true}
+              bind:value={commentInput}
+              placeholder={commentPlaceholder}
+              on:change={handleComposerChange}
+              disabled={!$workspaceCanComment || commentThreadResolved}
+            />
+          {/if}
+        </div>
+        {#if mode === 'comments' && showMentionMenu}
+          <div
+            class="absolute bottom-12 left-0 z-30 w-64 rounded-lg border border-slate-200 bg-white shadow-lg p-2"
+            bind:this={mentionMenuRef}
+          >
+            {#if mentionLoading && mentionDelayElapsed}
+              <div class="px-2 py-1 text-[11px] text-slate-500">
+                {$_('common.loading')}
+              </div>
+            {:else if mentionError}
+              <div class="px-2 py-1 text-[11px] text-red-600">
+                {$_('chat.comments.mention.loadError')}
+              </div>
+            {:else if !mentionLoading && mentionMatches.length === 0}
+              <div class="px-2 py-1 text-[11px] text-slate-500">
+                {$_('chat.comments.mention.none')}
               </div>
             {:else}
-              <div class="space-y-1 max-h-40 overflow-auto slim-scroll">
-                {#if extensionActiveTabContext}
-                  <div
-                    class="flex w-full items-center gap-2 rounded px-1 py-1 text-[11px] text-slate-700 bg-slate-50"
-                    title={extensionActiveTabContext.url}
-                  >
-                    <Globe class="w-4 h-4 text-slate-500" />
-                    <span class="truncate max-w-[220px]">
-                      {$_('chat.context.activeTabPrefix', {
-                        values: {
-                          title:
-                            extensionActiveTabContext.title ||
-                            extensionActiveTabContext.origin,
-                        },
-                      })}
-                    </span>
-                  </div>
-                {/if}
-                {#each sortedContexts as c (c.contextType + ':' + c.contextId)}
+              <div class="space-y-1 max-h-48 overflow-auto slim-scroll">
+                {#each mentionMatches as member (member.userId)}
                   <button
-                    class={`flex w-full items-center gap-2 rounded px-1 py-1 text-[11px] hover:bg-slate-50 ${
-                      c.active ? 'text-slate-900' : 'text-slate-400'
-                    }`}
+                    class="w-full text-left rounded px-2 py-1 text-xs hover:bg-slate-50"
                     type="button"
-                    on:click={() => toggleContextActive(c)}
+                    on:click={() => selectMentionMember(member)}
                   >
-                    <svelte:component
-                      this={getContextIcon(c.contextType)}
-                      class="w-4 h-4"
-                    />
-                    <span class="truncate max-w-[220px]">{c.label}</span>
+                    <div class="font-medium text-slate-900 truncate">
+                      {mentionLabelFor(member)}
+                    </div>
+                    {#if member.email}
+                      <div class="text-[10px] text-slate-400 truncate">
+                        {member.email}
+                      </div>
+                    {/if}
                   </button>
                 {/each}
               </div>
             {/if}
+          </div>
+        {/if}
+      </div>
 
-            <div class="border-t border-slate-100 pt-2">
-              <div class="text-xs font-semibold text-slate-600 mb-1">
-                {$_('chat.tools.title')}
-              </div>
-              <div class="space-y-1 max-h-48 overflow-auto slim-scroll">
-                {#each getVisibleToolToggles() as t (t.id)}
-                  <button
-                    class="flex w-full items-center gap-2 rounded px-1 py-1 text-[11px] text-slate-700 hover:bg-slate-50"
-                    type="button"
-                    on:click={() => toggleTool(t.id)}
-                  >
-                    <svelte:component
-                      this={t.icon}
-                      class={`w-4 h-4 ${toolEnabledById[t.id] !== false ? 'text-slate-900' : 'text-slate-400'}`}
-                    />
-                    <span class="truncate">{t.label}</span>
-                  </button>
-                {/each}
-                {#if getVisibleLocalToolToggles().length > 0}
-                  <div class="pt-1 mt-1 border-t border-slate-100">
-                    <div class="px-1 py-1 text-xs font-semibold text-slate-600">
-                      Outils locaux
-                    </div>
-                    {#each getVisibleLocalToolToggles() as localToolToggle (localToolToggle.id)}
-                      <button
-                        class="flex w-full items-center gap-2 rounded px-1 py-1 text-[11px] text-slate-700 hover:bg-slate-50"
-                        type="button"
-                        on:click={() => toggleTool(localToolToggle.id)}
-                      >
-                        <svelte:component
-                          this={localToolToggle.icon}
-                          class={`w-4 h-4 ${toolEnabledById[localToolToggle.id] !== false ? 'text-slate-900' : 'text-slate-400'}`}
-                        />
-                        <span class="truncate">{localToolToggle.label}</span>
-                      </button>
-                    {/each}
-                  </div>
-                {/if}
-              </div>
-            </div>
-          </svelte:fragment>
-        </MenuPopover>
-      {/if}
-      <div
-        class="relative flex-1 min-w-0 rounded border border-slate-300 px-3 py-2 text-xs composer-rich slim-scroll overflow-y-auto overflow-x-hidden"
-        class:composer-single-line={!composerIsMultiline}
-        class:bg-white={($workspaceCanComment && !commentThreadResolved) ||
-          mode !== 'comments'}
-        class:bg-slate-50={mode === 'comments' &&
-          (!$workspaceCanComment || commentThreadResolved)}
-        style={`max-height: ${composerMaxHeight}px; min-height: ${COMPOSER_BASE_HEIGHT}px;`}
-        bind:this={composerEl}
-        role="textbox"
-        aria-label={$_('chat.composer.ariaLabel')}
-        aria-disabled={mode === 'comments' &&
-          (!$workspaceCanComment || commentThreadResolved)}
-        tabindex={mode === 'comments' &&
-        (!$workspaceCanComment || commentThreadResolved)
-          ? -1
-          : 0}
-        on:keydown={handleKeyDown}
-      >
+      <div class="flex items-center gap-2 pt-1">
         {#if mode === 'ai'}
-          {#if modelCatalogProviders.length > 0}
-            <div class="mb-2 flex flex-wrap items-center gap-2">
-              <select
-                class="rounded border border-slate-300 bg-white px-2 py-1 text-[11px] text-slate-700"
-                bind:value={selectedProviderId}
+          <MenuPopover
+            placement="up"
+            align="left"
+            widthClass="w-80"
+            menuClass="p-3 space-y-3"
+            bind:open={showComposerMenu}
+            bind:triggerRef={composerMenuButtonRef}
+          >
+            <svelte:fragment slot="trigger" let:toggle>
+              <button
+                class="rounded text-slate-600 w-10 h-10 flex items-center justify-center hover:bg-slate-100"
+                aria-label={$_('common.openMenu')}
+                title={$_('common.openMenu')}
+                type="button"
+                bind:this={composerMenuButtonRef}
+                on:click={toggle}
               >
-                {#each modelCatalogProviders as provider}
-                  <option value={provider.provider_id}>
-                    {provider.label}
-                  </option>
-                {/each}
-              </select>
-              <select
-                class="min-w-[170px] rounded border border-slate-300 bg-white px-2 py-1 text-[11px] text-slate-700"
-                bind:value={selectedModelId}
+                <Plus class="w-4 h-4" />
+              </button>
+            </svelte:fragment>
+            <svelte:fragment slot="menu">
+              <label
+                class={'flex w-full items-center gap-2 rounded px-1 py-1 text-[11px] text-slate-700 hover:bg-slate-50 ' +
+                  (sessionDocsUploading ? 'opacity-50 pointer-events-none' : '')}
+                aria-label={$_('chat.documents.addFile')}
+                title={$_('chat.documents.addFile')}
               >
-                {#if modelsForSelectedProvider.length === 0}
-                  <option value={selectedModelId}>{selectedModelId}</option>
-                {:else}
-                  {#each modelsForSelectedProvider as modelOption}
-                    <option value={modelOption.model_id}>
+                <input
+                  class="hidden"
+                  type="file"
+                  on:change={onPickSessionDoc}
+                  disabled={sessionDocsUploading}
+                  accept="application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.presentationml.presentation,text/markdown,text/plain,application/json"
+                />
+                <Paperclip class="w-4 h-4" />
+                <span>{$_('chat.documents.addFile')}</span>
+              </label>
+              <div class="border-t border-slate-100 pt-2"></div>
+              <div class="text-xs font-semibold text-slate-600">
+                {$_('chat.contexts.title')}
+              </div>
+              {#if contextEntries.length === 0 && !extensionActiveTabContext}
+                <div class="text-[11px] text-slate-500">
+                  {$_('chat.contexts.none')}
+                </div>
+              {:else}
+                <div class="space-y-1 max-h-40 overflow-auto slim-scroll">
+                  {#if extensionActiveTabContext}
+                    <div
+                      class="flex w-full items-center gap-2 rounded px-1 py-1 text-[11px] text-slate-700 bg-slate-50"
+                      title={extensionActiveTabContext.url}
+                    >
+                      <Globe class="w-4 h-4 text-slate-500" />
+                      <span class="truncate max-w-[220px]">
+                        {$_('chat.context.activeTabPrefix', {
+                          values: {
+                            title:
+                              extensionActiveTabContext.title ||
+                              extensionActiveTabContext.origin,
+                          },
+                        })}
+                      </span>
+                    </div>
+                  {/if}
+                  {#each sortedContexts as c (c.contextType + ':' + c.contextId)}
+                    <button
+                      class={`flex w-full items-center gap-2 rounded px-1 py-1 text-[11px] hover:bg-slate-50 ${
+                        c.active ? 'text-slate-900' : 'text-slate-400'
+                      }`}
+                      type="button"
+                      on:click={() => toggleContextActive(c)}
+                    >
+                      <svelte:component
+                        this={getContextIcon(c.contextType)}
+                        class="w-4 h-4"
+                      />
+                      <span class="truncate max-w-[220px]">{c.label}</span>
+                    </button>
+                  {/each}
+                </div>
+              {/if}
+
+              <div class="border-t border-slate-100 pt-2">
+                <div class="text-xs font-semibold text-slate-600 mb-1">
+                  {$_('chat.tools.title')}
+                </div>
+                <div class="space-y-1 max-h-48 overflow-auto slim-scroll">
+                  {#each getVisibleToolToggles() as t (t.id)}
+                    <button
+                      class="flex w-full items-center gap-2 rounded px-1 py-1 text-[11px] text-slate-700 hover:bg-slate-50"
+                      type="button"
+                      on:click={() => toggleTool(t.id)}
+                    >
+                      <svelte:component
+                        this={t.icon}
+                        class={`w-4 h-4 ${toolEnabledById[t.id] !== false ? 'text-slate-900' : 'text-slate-400'}`}
+                      />
+                      <span class="truncate">{t.label}</span>
+                    </button>
+                  {/each}
+                  {#if getVisibleLocalToolToggles().length > 0}
+                    <div class="pt-1 mt-1 border-t border-slate-100">
+                      <div class="px-1 py-1 text-xs font-semibold text-slate-600">
+                        Outils locaux
+                      </div>
+                      {#each getVisibleLocalToolToggles() as localToolToggle (localToolToggle.id)}
+                        <button
+                          class="flex w-full items-center gap-2 rounded px-1 py-1 text-[11px] text-slate-700 hover:bg-slate-50"
+                          type="button"
+                          on:click={() => toggleTool(localToolToggle.id)}
+                        >
+                          <svelte:component
+                            this={localToolToggle.icon}
+                            class={`w-4 h-4 ${toolEnabledById[localToolToggle.id] !== false ? 'text-slate-900' : 'text-slate-400'}`}
+                          />
+                          <span class="truncate">{localToolToggle.label}</span>
+                        </button>
+                      {/each}
+                    </div>
+                  {/if}
+                </div>
+              </div>
+            </svelte:fragment>
+          </MenuPopover>
+          <div class="h-6 w-px bg-slate-200"></div>
+          <select
+            id="chat-model-selection"
+            value={selectedModelSelectionKey}
+            on:change={handleModelSelectionChange}
+            class="min-w-[220px] bg-transparent px-0 py-0 text-[11px] text-slate-700 focus:outline-none"
+          >
+            {#if modelCatalogGroups.length === 0 && fallbackSelectedModelOption()}
+              <option value={`${fallbackSelectedModelOption()?.provider_id ?? selectedProviderId}::${fallbackSelectedModelOption()?.model_id ?? selectedModelId}`}>
+                {fallbackSelectedModelOption()?.label ?? selectedModelId}
+              </option>
+            {:else}
+              {#each modelCatalogGroups as group}
+                <optgroup label={providerGroupLabel(group.provider)}>
+                  {#each group.models as modelOption}
+                    <option value={`${modelOption.provider_id}::${modelOption.model_id}`}>
                       {modelOption.label}
                     </option>
                   {/each}
-                {/if}
-              </select>
-            </div>
-          {/if}
-          {#if sessionDocsError}
-            <div
-              class="mb-2 rounded bg-red-50 border border-red-200 px-2 py-1 text-[11px] text-red-700"
-            >
-              {sessionDocsError}
-            </div>
-          {/if}
-          {#if sessionDocs.length > 0}
-            <div class="mb-2 flex flex-wrap gap-2">
-              {#each sessionDocs as doc (doc.id)}
-                <div
-                  class="flex items-center gap-2 rounded border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] text-slate-700"
-                >
-                  <div class="max-w-[220px] truncate">{doc.filename}</div>
-                  <span class="text-slate-400"
-                    >· {sessionDocStatusLabel(doc.status)}</span
-                  >
-                  <button
-                    class="rounded p-0.5 text-slate-400 hover:text-slate-600 hover:bg-white"
-                    type="button"
-                    aria-label={$_('chat.documents.delete.ariaLabel')}
-                    title={$_('common.delete')}
-                    on:click={() => void removeSessionDoc(doc)}
-                  >
-                    <X class="w-3 h-3" />
-                  </button>
-                </div>
+                </optgroup>
               {/each}
-            </div>
-          {/if}
-          <EditableInput
-            markdown={true}
-            bind:value={input}
-            placeholder={$_('chat.composer.placeholder.chat')}
-            on:change={handleComposerChange}
-          />
-        {:else}
-          {#if (commentThreadResolved || !$workspaceCanComment) && commentInput.trim().length === 0}
-            <div
-              class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400"
-            >
-              {commentPlaceholder}
-            </div>
-          {/if}
-          {#if assignedToLabel}
-            <div
-              class="mb-2 inline-flex items-center gap-2 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] text-slate-600"
-            >
-              <span
-                >{$_('chat.comments.assignedTo', {
-                  values: { label: assignedToLabel },
-                })}</span
-              >
-              <button
-                type="button"
-                class="rounded p-0.5 text-slate-400 hover:text-slate-600 hover:bg-slate-200"
-                on:click={() => {
-                  assignedToUserId = null;
-                  assignedToLabel = null;
-                }}
-                aria-label={$_('chat.comments.unassign')}
-                title={$_('chat.comments.unassign')}
-              >
-                <X class="w-3 h-3" />
-              </button>
-            </div>
-          {/if}
-          <EditableInput
-            markdown={true}
-            bind:value={commentInput}
-            placeholder={commentPlaceholder}
-            on:change={handleComposerChange}
-            disabled={!$workspaceCanComment || commentThreadResolved}
-          />
+            {/if}
+          </select>
         {/if}
-      </div>
-      {#if mode === 'comments' && showMentionMenu}
-        <div
-          class="absolute bottom-12 left-0 z-30 w-64 rounded-lg border border-slate-200 bg-white shadow-lg p-2"
-          bind:this={mentionMenuRef}
-        >
-          {#if mentionLoading && mentionDelayElapsed}
-            <div class="px-2 py-1 text-[11px] text-slate-500">
-              {$_('common.loading')}
-            </div>
-          {:else if mentionError}
-            <div class="px-2 py-1 text-[11px] text-red-600">
-              {$_('chat.comments.mention.loadError')}
-            </div>
-          {:else if !mentionLoading && mentionMatches.length === 0}
-            <div class="px-2 py-1 text-[11px] text-slate-500">
-              {$_('chat.comments.mention.none')}
-            </div>
-          {:else}
-            <div class="space-y-1 max-h-48 overflow-auto slim-scroll">
-              {#each mentionMatches as member (member.userId)}
-                <button
-                  class="w-full text-left rounded px-2 py-1 text-xs hover:bg-slate-50"
-                  type="button"
-                  on:click={() => selectMentionMember(member)}
-                >
-                  <div class="font-medium text-slate-900 truncate">
-                    {mentionLabelFor(member)}
-                  </div>
-                  {#if member.email}
-                    <div class="text-[10px] text-slate-400 truncate">
-                      {member.email}
-                    </div>
-                  {/if}
-                </button>
-              {/each}
-            </div>
-          {/if}
-        </div>
-      {/if}
-      <div class="flex items-center gap-2">
+        <div class="ml-auto flex items-center gap-2">
         {#if mode === 'ai' && activeAssistantMessage}
           <button
-            class="rounded border border-slate-200 text-slate-600 w-10 h-10 flex items-center justify-center hover:bg-slate-100 disabled:opacity-60"
+            class="rounded text-slate-600 w-10 h-10 flex items-center justify-center hover:bg-slate-100 disabled:opacity-60"
             on:click={stopAssistantMessage}
             disabled={stoppingMessageId === activeAssistantMessage.id}
             type="button"
@@ -3631,6 +3685,7 @@
         >
           <Send class="w-4 h-4" />
         </button>
+        </div>
       </div>
     </div>
   </div>

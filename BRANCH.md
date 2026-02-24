@@ -102,6 +102,11 @@ Deliver the provider abstraction layer and runtime routing with OpenAI and Gemin
 - BR-01 final gate run log (2026-02-24): `REGISTRY=local make test-ui API_PORT=8751 UI_PORT=5151 MAILDEV_UI_PORT=1151 ENV=test-br01-final-gemini` passed (`19 files`, `171 tests`).
 - BR-01 lot cleanup (2026-02-24): `make down API_PORT=8751 UI_PORT=5151 MAILDEV_UI_PORT=1151 ENV=test-br01-final-gemini` passed, then `make ps API_PORT=8751 UI_PORT=5151 MAILDEV_UI_PORT=1151 ENV=test-br01-final-gemini` confirmed empty stack (`NAME IMAGE COMMAND SERVICE CREATED STATUS PORTS` only header).
 - BR-01 AI allowlist traceability (2026-02-24): non-AI gates are green; AI suite remains non-blocking with explicit signatures already captured in this file (`tests/ai/chat-tools.test.ts` and peers with `401 invalid_api_key`, `tests/ai/usecase-generation-async.test.ts` timeout in `120000ms`, plus `up-api-test` unhealthy startup signature). Per policy, these signatures are retained as merge-time evidence.
+- BR-01 UI ergonomics update (2026-02-24): settings + chat now use a single grouped model selector (provider sections), and chat composer controls are aligned on the bottom row (`+`, model menu, stop/send) while attached document chips remain displayed above the input.
+- BR-01 UI validation run (2026-02-24): `make typecheck-ui REGISTRY=local API_PORT=8761 UI_PORT=5161 MAILDEV_UI_PORT=1161 ENV=test-br01-ux` passed (`svelte-check found 0 errors and 0 warnings`).
+- BR-01 UI validation run (2026-02-24): `make lint-ui REGISTRY=local API_PORT=8761 UI_PORT=5161 MAILDEV_UI_PORT=1161 ENV=test-br01-ux` passed (`eslint .` exit 0).
+- BR-01 E2E rerun trace (2026-02-24): background rerun of `make test-e2e REGISTRY=local E2E_SPEC=e2e/tests/03-chat.spec.ts WORKERS=2 RETRIES=0 MAX_FAILURES=1 API_PORT=8791 UI_PORT=5191 MAILDEV_UI_PORT=1091 ENV=e2e-feat-model-runtime-openai-gemini` failed before Playwright assertions at `db-seed-test` (`Cannot find module /app/dist/tests/utils/seed-test-data.js`).
+- BR-01 E2E rerun trace (2026-02-24): after `make build-api-image REGISTRY=local API_PORT=8791 UI_PORT=5191 MAILDEV_UI_PORT=1091 ENV=e2e-br01-chat`, scoped rerun on `e2e-br01-chat` failed on host port collision (`Bind for 0.0.0.0:1091 failed: port is already allocated`); second scoped rerun on `e2e-br01-chat2` (`API_PORT=8891 UI_PORT=5291 MAILDEV_UI_PORT=1191`) reached Playwright and failed functional assertion in `tests/03-chat.spec.ts` (`button[aria-controls="chat-widget-dialog"]` not found, `1 failed`, `11 not run`).
 
 ## Orchestration Mode (AI-selected)
 - [x] **Mono-branch + cherry-pick** (default for orthogonal tasks; single final test cycle)
@@ -161,13 +166,14 @@ Deliver the provider abstraction layer and runtime routing with OpenAI and Gemin
 
 - [ ] **Lot N-2 — UAT (user execution pending)**
   - [ ] UAT-00 Pre-flight (nominal root env): `make -C /home/antoinefa/src/top-ai-ideas-fullstack down ENV=dev` then `make -C /home/antoinefa/src/top-ai-ideas-fullstack dev ENV=dev`.
-  - [ ] UAT-01 Provider switch + catalog: in settings and chat, switch OpenAI <-> Gemini and verify both model lists are available (including `gemini-3.1-pro-preview-customtools` and `gemini-3.0-flash-preview`).
+  - [ ] UAT-01 Provider switch + catalog: in settings and chat, use the single grouped model selector, switch OpenAI <-> Gemini, and verify both model families are available (including `gemini-3.1-pro-preview-customtools` and `gemini-3.0-flash-preview`).
   - [ ] UAT-02 Reasoning level behavior: under Gemini, trigger a chat request and confirm `reasoning_effort_selected` status is emitted with evaluator `gemini-3.0-flash-preview` (fallback path remains non-blocking if evaluator fails).
   - [ ] UAT-03 Gemini generation: select Gemini and validate at least one successful chat generation round-trip.
   - [ ] UAT-04 Gemini tool execution: in chat under Gemini, trigger at least one tool call (e.g. `web_search`) and verify tool events/results are emitted and rendered.
   - [ ] UAT-05 OpenAI regression switch-back: switch back to OpenAI and validate one successful chat generation round-trip.
   - [ ] UAT-06 Settings persistence: save provider/model defaults in settings, reload page, verify saved defaults are still applied.
-  - [ ] UAT-07 Result capture: record date + tester + status (`OK` / `KO`) in this section before merge.
+  - [ ] UAT-07 Chat composer ergonomics: verify controls are on the bottom row (`+`, model menu, stop/send), and attached document chips stay above the text input.
+  - [ ] UAT-08 Result capture: record date + tester + status (`OK` / `KO`) in this section before merge.
 
 - [x] **Lot N-1 — Docs consolidation**
   - [x] Consolidate branch learnings into the relevant `spec/*` files.

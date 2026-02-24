@@ -46,6 +46,11 @@
     };
   }
 
+  interface ModelCatalogGroup {
+    provider: CatalogProvider;
+    models: CatalogModel[];
+  }
+
   let isResetting = false;
   let prompts: Prompt[] = [];
   let selectedPrompt: Prompt | null = null;
@@ -71,10 +76,26 @@
     models: [],
     defaults: { provider_id: 'openai', model_id: 'gpt-4.1-nano' }
   };
-  let modelsForSelectedProvider: CatalogModel[] = [];
+  let modelCatalogGroups: ModelCatalogGroup[] = [];
   let isLoadingAISettings = false;
   let isLoadingModelCatalog = false;
   let isSavingAISettings = false;
+
+  const modelSelectionKey = (providerId: 'openai' | 'gemini', modelId: string) =>
+    `${providerId}::${modelId}`;
+
+  const parseModelSelectionKey = (
+    rawKey: string
+  ): { providerId: 'openai' | 'gemini'; modelId: string } | null => {
+    const separatorIndex = rawKey.indexOf('::');
+    if (separatorIndex <= 0) return null;
+    const providerCandidate = rawKey.slice(0, separatorIndex);
+    const modelId = rawKey.slice(separatorIndex + 2);
+    if ((providerCandidate !== 'openai' && providerCandidate !== 'gemini') || !modelId) {
+      return null;
+    }
+    return { providerId: providerCandidate, modelId };
+  };
   
   // Gestion de la queue
   let queueStats = {
@@ -253,24 +274,77 @@
     }
   };
 
-  $: modelsForSelectedProvider = modelCatalog.models.filter(
-    (entry) => entry.provider_id === aiSettings.defaultProviderId
-  );
+  $: modelCatalogGroups = modelCatalog.providers
+    .map((provider) => ({
+      provider,
+      models: modelCatalog.models.filter((entry) => entry.provider_id === provider.provider_id)
+    }))
+    .filter((group) => group.models.length > 0);
 
   $: {
-    if (modelsForSelectedProvider.length > 0) {
-      const hasCurrent = modelsForSelectedProvider.some(
-        (entry) => entry.model_id === aiSettings.defaultModel
+    if (modelCatalog.models.length > 0) {
+      const exactMatch = modelCatalog.models.find(
+        (entry) =>
+          entry.provider_id === aiSettings.defaultProviderId &&
+          entry.model_id === aiSettings.defaultModel
       );
-      if (!hasCurrent) {
-        aiSettings.defaultModel = modelsForSelectedProvider[0].model_id;
+      if (!exactMatch) {
+        const providerFallback =
+          modelCatalog.models.find((entry) => entry.provider_id === aiSettings.defaultProviderId) ??
+          modelCatalog.models[0];
+        aiSettings.defaultProviderId = providerFallback.provider_id;
+        aiSettings.defaultModel = providerFallback.model_id;
       }
     }
   }
 
+  const handleDefaultModelSelectionChange = (event: Event) => {
+    const target = event.currentTarget as HTMLSelectElement | null;
+    if (!target) return;
+    const parsed = parseModelSelectionKey(target.value);
+    if (!parsed) return;
+    aiSettings.defaultProviderId = parsed.providerId;
+    aiSettings.defaultModel = parsed.modelId;
+  };
+
+  const selectedDefaultModelSelectionKey = () => {
+    if (!aiSettings.defaultModel) return '';
+    return modelSelectionKey(aiSettings.defaultProviderId, aiSettings.defaultModel);
+  };
+
+  const providerGroupLabel = (provider: CatalogProvider) => {
+    return provider.status === 'ready'
+      ? provider.label
+      : `${provider.label} (${provider.status})`;
+  };
+
+  const fallbackDefaultModelOption = () => {
+    return modelCatalog.models.find((entry) => entry.model_id === aiSettings.defaultModel);
+  };
+
+  const normalizeAIModelSelection = () => {
+    const selectedModel = modelCatalog.models.find(
+      (entry) =>
+        entry.provider_id === aiSettings.defaultProviderId &&
+        entry.model_id === aiSettings.defaultModel
+    );
+    if (selectedModel) return;
+    const byModelId = modelCatalog.models.find((entry) => entry.model_id === aiSettings.defaultModel);
+    if (byModelId) {
+      aiSettings.defaultProviderId = byModelId.provider_id;
+      return;
+    }
+    const firstModel = modelCatalog.models[0];
+    if (firstModel) {
+      aiSettings.defaultProviderId = firstModel.provider_id;
+      aiSettings.defaultModel = firstModel.model_id;
+    }
+  };
+
   const saveAISettings = async () => {
     isSavingAISettings = true;
     try {
+      normalizeAIModelSelection();
       const result = await apiPut('/ai-settings', aiSettings);
       aiSettings = result.settings;
       addToast({
@@ -557,44 +631,38 @@
       </div>
     {:else}
       <div class="grid gap-6 md:grid-cols-2">
-        <!-- Provider par défaut -->
         <div>
-          <label for="ai-default-provider" class="block text-sm font-medium text-slate-700 mb-2">{$_('settings.aiDefaultProvider')}</label>
+          <label for="ai-default-model" class="block text-sm font-medium text-slate-700 mb-2">{$_('settings.aiDefaultModel')}</label>
           <select
-            id="ai-default-provider"
-            bind:value={aiSettings.defaultProviderId}
+            id="ai-default-model"
+            value={selectedDefaultModelSelectionKey()}
+            on:change={handleDefaultModelSelectionChange}
             class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            {#if modelCatalog.providers.length === 0}
-              <option value="openai">OpenAI</option>
-              <option value="gemini">Google Gemini</option>
-            {:else}
-              {#each modelCatalog.providers as provider}
-                <option value={provider.provider_id}>
-                  {provider.label}{provider.status !== 'ready' ? ` (${provider.status})` : ''}
+            {#if modelCatalogGroups.length === 0}
+              {#if fallbackDefaultModelOption()}
+                <option
+                  value={modelSelectionKey(fallbackDefaultModelOption()?.provider_id ?? aiSettings.defaultProviderId, aiSettings.defaultModel)}
+                >
+                  {fallbackDefaultModelOption()?.label ?? aiSettings.defaultModel}
                 </option>
+              {:else}
+                <option value={selectedDefaultModelSelectionKey()}>
+                  {aiSettings.defaultModel}
+                </option>
+              {/if}
+            {:else}
+              {#each modelCatalogGroups as group}
+                <optgroup label={providerGroupLabel(group.provider)}>
+                  {#each group.models as modelOption}
+                    <option value={modelSelectionKey(modelOption.provider_id, modelOption.model_id)}>
+                      {modelOption.label}
+                    </option>
+                  {/each}
+                </optgroup>
               {/each}
             {/if}
           </select>
-          <p class="text-xs text-slate-500 mt-1">{$_('settings.aiDefaultProviderHint')}</p>
-        </div>
-
-        <!-- Modèle par défaut -->
-        <div>
-          <label for="ai-default-model" class="block text-sm font-medium text-slate-700 mb-2">{$_('settings.aiDefaultModel')}</label>
-                  <select 
-                    id="ai-default-model"
-                    bind:value={aiSettings.defaultModel}
-                    class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    {#if modelsForSelectedProvider.length === 0}
-                      <option value={aiSettings.defaultModel}>{aiSettings.defaultModel}</option>
-                    {:else}
-                      {#each modelsForSelectedProvider as modelOption}
-                        <option value={modelOption.model_id}>{modelOption.label}</option>
-                      {/each}
-                    {/if}
-                  </select>
           <p class="text-xs text-slate-500 mt-1">{$_('settings.aiDefaultModelHint')}</p>
         </div>
 
