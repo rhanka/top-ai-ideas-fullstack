@@ -232,5 +232,8 @@ Deliver the provider abstraction layer and runtime routing with OpenAI and Gemin
 
 - [ ] **Lot N — Final validation**
   - [ ] Re-run full branch gates (typecheck, lint, tests, e2e when impacted).
+  - [x] Post-UAT tests fix (targeted UI regressions introduced by recent model-display/settings changes):
+    - [x] `make test-ui SCOPE=tests/utils/model-display.test.ts REGISTRY=local API_PORT=8771 UI_PORT=5171 MAILDEV_UI_PORT=1171 ENV=test-br01-user-defaults` (pass: `3 tests`)
+    - [x] `make test-ui SCOPE=tests/utils/user-ai-settings-events.test.ts REGISTRY=local API_PORT=8771 UI_PORT=5171 MAILDEV_UI_PORT=1171 ENV=test-br01-user-defaults` (pass: `1 test`)
   - [ ] Verify CI status and attach executed command list in PR notes.
   - [ ] Ensure branch remains orthogonal, mergeable, and non-blocking.
