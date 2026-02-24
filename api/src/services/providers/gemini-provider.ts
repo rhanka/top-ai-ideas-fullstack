@@ -10,39 +10,12 @@ import type {
 const GEMINI_MODELS: ModelCatalogEntry[] = [
   {
     providerId: 'gemini',
-    modelId: 'gemini-3-flash-preview',
-    label: 'Gemini 3 Flash Preview',
-    reasoningTier: 'standard',
-    supportsTools: true,
-    supportsStreaming: true,
-    defaultContexts: ['chat'],
-  },
-  {
-    providerId: 'gemini',
     modelId: 'gemini-3.1-pro-preview-customtools',
-    label: 'Gemini 3.1 Pro Preview (Custom Tools)',
+    label: 'Gemini 3.1 Pro',
     reasoningTier: 'advanced',
     supportsTools: true,
     supportsStreaming: true,
-    defaultContexts: ['structured', 'summary'],
-  },
-  {
-    providerId: 'gemini',
-    modelId: 'gemini-3.1-pro-preview',
-    label: 'Gemini 3.1 Pro Preview',
-    reasoningTier: 'standard',
-    supportsTools: true,
-    supportsStreaming: true,
-    defaultContexts: ['structured', 'summary'],
-  },
-  {
-    providerId: 'gemini',
-    modelId: 'gemini-2.5-flash',
-    label: 'Gemini 2.5 Flash',
-    reasoningTier: 'standard',
-    supportsTools: true,
-    supportsStreaming: true,
-    defaultContexts: ['chat'],
+    defaultContexts: ['chat', 'structured', 'summary'],
   },
   {
     providerId: 'gemini',
@@ -52,15 +25,6 @@ const GEMINI_MODELS: ModelCatalogEntry[] = [
     supportsTools: true,
     supportsStreaming: true,
     defaultContexts: ['chat'],
-  },
-  {
-    providerId: 'gemini',
-    modelId: 'gemini-2.5-pro',
-    label: 'Gemini 2.5 Pro',
-    reasoningTier: 'advanced',
-    supportsTools: true,
-    supportsStreaming: true,
-    defaultContexts: ['structured', 'summary'],
   },
 ];
 

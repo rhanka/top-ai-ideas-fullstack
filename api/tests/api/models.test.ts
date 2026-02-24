@@ -35,12 +35,19 @@ describe('Models API', () => {
     expect(providerIds).toContain('openai');
     expect(providerIds).toContain('gemini');
 
+    const openaiModelIds = data.models
+      .filter((model: { provider_id: string; model_id: string }) => model.provider_id === 'openai')
+      .map((model: { model_id: string }) => model.model_id)
+      .sort();
+
     const geminiModelIds = data.models
       .filter((model: { provider_id: string; model_id: string }) => model.provider_id === 'gemini')
-      .map((model: { model_id: string }) => model.model_id);
-    expect(geminiModelIds).toContain('gemini-3.1-pro-preview-customtools');
-    expect(geminiModelIds).toContain('gemini-3-flash-preview');
-    expect(geminiModelIds).toContain('gemini-2.5-flash-lite');
+      .map((model: { model_id: string }) => model.model_id)
+      .sort();
+
+    expect(openaiModelIds).toEqual(['gpt-4.1-nano', 'gpt-5.2']);
+    expect(geminiModelIds).toEqual(['gemini-2.5-flash-lite', 'gemini-3.1-pro-preview-customtools']);
+    expect(data.models).toHaveLength(4);
 
     expect(data.defaults).toBeDefined();
     expect(typeof data.defaults.provider_id).toBe('string');

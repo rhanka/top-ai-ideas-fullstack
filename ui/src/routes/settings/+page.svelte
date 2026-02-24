@@ -68,7 +68,7 @@
     concurrency: 10,
     publishingConcurrency: 5,
     defaultProviderId: 'openai' as 'openai' | 'gemini',
-    defaultModel: 'gpt-5',
+    defaultModel: 'gpt-5.2',
     processingInterval: 1000
   };
   let modelCatalog: ModelCatalogPayload = {

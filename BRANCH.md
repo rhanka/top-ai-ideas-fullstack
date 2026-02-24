@@ -111,6 +111,7 @@ Deliver the provider abstraction layer and runtime routing with OpenAI and Gemin
 - BR-01 bug note (2026-02-24): when editing/resending an existing chat message after changing the composer model, the rerun still uses the original message model. Expected behavior: rerun must use the currently selected provider/model from the composer.
 - BR-01 Gemini runtime fix note (2026-02-24): replaced invalid evaluator/catalog ID `gemini-3.0-flash-preview` with `gemini-3-flash-preview` and refreshed Gemini catalog to current public IDs (`gemini-3.1-pro-preview-customtools`, `gemini-3.1-pro-preview`, `gemini-2.5-flash`, `gemini-2.5-pro`).
 - BR-01 Gemini performance tune (2026-02-24): switched complexity-evaluation model from `gemini-3-flash-preview` to `gemini-2.5-flash-lite` to reduce latency on the evaluator pass while keeping Gemini generation on the selected main model.
+- BR-01 catalog simplification (2026-02-24): reduced user-selectable model catalog to four entries only: `gpt-4.1-nano`, `gpt-5.2`, `gemini-2.5-flash-lite`, `gemini-3.1-pro-preview-customtools`.
 - BR-01 Gemini runtime fix note (2026-02-24): hardened Gemini SSE parser to support CRLF separators (`\r\n\r\n`) in addition to LF, preventing multi-event payload concatenation and downstream JSON parse failures.
 - BR-01 Gemini runtime fix validation (2026-02-24): `make test-api-unit SCOPE=tests/unit/gemini-provider-sse.test.ts REGISTRY=local API_PORT=8767 UI_PORT=5167 MAILDEV_UI_PORT=1167 ENV=test-br01-gemini-fix` passed (`2 tests`), `make test-api-endpoints SCOPE=tests/api/models.test.ts REGISTRY=local API_PORT=8767 UI_PORT=5167 MAILDEV_UI_PORT=1167 ENV=test-br01-gemini-fix` passed (`1 test`), `make test-api-unit SCOPE=tests/unit/chat-service-tools.test.ts REGISTRY=local API_PORT=8767 UI_PORT=5167 MAILDEV_UI_PORT=1167 ENV=test-br01-gemini-fix` passed (`6 tests`).
 
@@ -172,7 +173,7 @@ Deliver the provider abstraction layer and runtime routing with OpenAI and Gemin
 
 - [ ] **Lot N-2 — UAT (user execution pending)**
   - [ ] UAT-00 Pre-flight (nominal root env): `make -C /home/antoinefa/src/top-ai-ideas-fullstack down ENV=dev` then `make -C /home/antoinefa/src/top-ai-ideas-fullstack dev ENV=dev`.
-  - [ ] UAT-01 Provider switch + catalog: in settings and chat, use the single grouped model selector, switch OpenAI <-> Gemini, and verify both model families are available (including `gemini-3.1-pro-preview-customtools`, `gemini-3-flash-preview`, and `gemini-2.5-flash-lite`).
+  - [ ] UAT-01 Provider switch + catalog: in settings and chat, use the single grouped model selector, switch OpenAI <-> Gemini, and verify the simplified four-model catalog (`gpt-4.1-nano`, `gpt-5.2`, `gemini-2.5-flash-lite`, `gemini-3.1-pro-preview-customtools`).
   - [ ] UAT-02 Reasoning level behavior: under Gemini, trigger a chat request and confirm `reasoning_effort_selected` status is emitted with evaluator `gemini-2.5-flash-lite` (fallback path remains non-blocking if evaluator fails).
   - [ ] UAT-03 Gemini generation: select Gemini and validate at least one successful chat generation round-trip.
   - [ ] UAT-04 Gemini tool execution: in chat under Gemini, trigger at least one tool call (e.g. `web_search`) and verify tool events/results are emitted and rendered.
