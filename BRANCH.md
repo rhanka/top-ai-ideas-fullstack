@@ -87,7 +87,7 @@ Deliver the provider abstraction layer and runtime routing with OpenAI and Gemin
 - BR-01 scoped gate cleanup (2026-02-23): executed `make down ENV=test-br01-feat-model-runtime-openai-gemini` and `make down ENV=e2e-br01-feat-model-runtime-openai-gemini`.
 - BR-01 credential wiring check (2026-02-23): synced `GEMINI_API_KEY` from root `.env` into branch `.env`, added `GEMINI_API_KEY` forwarding in `docker-compose.yml`, then verified inside API container with `make exec-api ...` output `GEMINI_API_KEY_present` on env `test-br01-drumbeat`.
 - BR-01 baseline commit trace (2026-02-23): `456de01 chore(br01): wire gemini env into api compose runtime` is included in this branch state and retained for final validation.
-- BR-01 UAT trace (2026-02-24): user confirmed UAT was completed earlier; branch remains no-push pending conductor closure.
+- BR-01 UAT trace (2026-02-24): previous `UAT done` mark was incorrect; reset to `UAT pending` after user correction. Branch is ready for manual UAT execution.
 - BR-01 final gate run log (2026-02-24): attempted `REGISTRY=local make typecheck-api API_PORT=8741 UI_PORT=5141 MAILDEV_UI_PORT=1041 ENV=test-br01-final-gemini`; startup blocked by host port collision (`Bind for 0.0.0.0:1041 failed: port is already allocated`), then by `8741` collision; moved to `API_PORT=8751 UI_PORT=5151 MAILDEV_UI_PORT=1151`.
 - BR-01 final gate run log (2026-02-24): `REGISTRY=local make typecheck-api API_PORT=8751 UI_PORT=5151 MAILDEV_UI_PORT=1151 ENV=test-br01-final-gemini` failed first attempt (`container test-br01-final-gemini-api-1 is unhealthy`), then passed after `REGISTRY=local make wait-ready-api ... ENV=test-br01-final-gemini`.
 - BR-01 final gate run log (2026-02-24): `REGISTRY=local make lint-api API_PORT=8751 UI_PORT=5151 MAILDEV_UI_PORT=1151 ENV=test-br01-final-gemini` passed.
@@ -159,9 +159,13 @@ Deliver the provider abstraction layer and runtime routing with OpenAI and Gemin
     - [x] `REGISTRY=local OPENAI_API_KEY=test-key TAVILY_API_KEY=test-key make test-e2e E2E_SPEC=e2e/tests/03-chat.spec.ts WORKERS=2 RETRIES=0 MAX_FAILURES=1 ENV=e2e-br01-feat-model-runtime-openai-gemini` (pass on 2026-02-23 after scoped stabilization: `12 passed`)
     - [x] `REGISTRY=local OPENAI_API_KEY=test-key TAVILY_API_KEY=test-key make test-e2e E2E_SPEC=e2e/tests/06-settings.spec.ts WORKERS=2 RETRIES=0 MAX_FAILURES=1 ENV=e2e-br01-feat-model-runtime-openai-gemini` (pass on 2026-02-23 after scoped stabilization: `14 passed`, `3 skipped`)
 
-- [x] **Lot N-2 — UAT**
-  - [x] Run targeted UAT scenarios for impacted capabilities.
-  - [x] Run non-regression checks on adjacent workflows.
+- [ ] **Lot N-2 — UAT (user execution pending)**
+  - [ ] UAT-00 Pre-flight (nominal root env): `make -C /home/antoinefa/src/top-ai-ideas-fullstack down ENV=dev` then `make -C /home/antoinefa/src/top-ai-ideas-fullstack dev ENV=dev`.
+  - [ ] UAT-01 Provider catalog: open app, verify chat/settings show OpenAI + Gemini provider/model options (native model IDs, no load error).
+  - [ ] UAT-02 Gemini runtime: select a Gemini model and validate one successful chat round-trip response.
+  - [ ] UAT-03 OpenAI runtime regression (if OpenAI key is available): switch to an OpenAI model and validate one successful chat round-trip response.
+  - [ ] UAT-04 Settings persistence: save provider/model defaults in settings, reload page, verify saved defaults are still applied.
+  - [ ] UAT-05 Result capture: record date + tester + status (`OK` / `KO`) in this section before merge.
 
 - [x] **Lot N-1 — Docs consolidation**
   - [x] Consolidate branch learnings into the relevant `spec/*` files.
