@@ -534,12 +534,12 @@
     "aiConfig": "Configuration IA",
     "aiLoading": "Chargement des paramètres…",
     "userAi": {
-      "title": "Mon défaut IA",
-      "description": "Choisissez le modèle par défaut pour vos nouveaux chats et formulaires de génération.",
-      "save": "Sauvegarder mon défaut",
+      "title": "Configuration IA",
+      "description": "Choisissez le modèle IA par défaut pour vos nouveaux chats et formulaires de génération.",
+      "save": "Sauvegarder les paramètres",
       "saving": "Sauvegarde…",
       "toast": {
-        "updated": "Défaut IA personnel mis à jour."
+        "updated": "Configuration IA personnelle mise à jour."
       },
       "errors": {
         "load": "Erreur lors du chargement des paramètres IA personnels",

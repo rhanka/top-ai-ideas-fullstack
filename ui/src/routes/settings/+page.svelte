@@ -12,6 +12,7 @@
     getChromeExtensionDownloadErrorMessage,
     type ChromeExtensionDownloadMetadata,
   } from '$lib/utils/chrome-extension-download';
+  import { emitUserAISettingsUpdated } from '$lib/utils/user-ai-settings-events';
   import AdminUsersPanel from '$lib/components/AdminUsersPanel.svelte';
   import WorkspaceSettingsPanel from '$lib/components/WorkspaceSettingsPanel.svelte';
   import { Download, Edit, X } from '@lucide/svelte';
@@ -461,6 +462,10 @@
       });
       userAISettings.defaultProviderId = result.settings.defaultProviderId;
       userAISettings.defaultModel = result.settings.defaultModel;
+      emitUserAISettingsUpdated({
+        defaultProviderId: userAISettings.defaultProviderId,
+        defaultModel: userAISettings.defaultModel,
+      });
       addToast({
         type: 'success',
         message: get(_)('settings.userAi.toast.updated')
@@ -636,7 +641,7 @@
         <p class="text-sm text-blue-700">{$_('settings.aiLoading')}</p>
       </div>
     {:else}
-      <div class="grid gap-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
+      <div class="space-y-4">
         <div>
           <label for="user-ai-default-model" class="block text-sm font-medium text-slate-700 mb-2">
             {$_('settings.aiDefaultModel')}
@@ -677,7 +682,7 @@
         <button
           on:click={saveUserAISettings}
           disabled={isSavingUserAISettings}
-          class="px-4 py-2 bg-primary text-white rounded hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+          class="w-full px-4 py-2 bg-primary text-white rounded hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isSavingUserAISettings ? $_('settings.userAi.saving') : $_('settings.userAi.save')}
         </button>

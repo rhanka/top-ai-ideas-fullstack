@@ -162,7 +162,9 @@ W2:
   - `GET /api/v1/me/ai-settings` and `PUT /api/v1/me/ai-settings` for personal default model management.
   - `GET /api/v1/models/catalog` defaults now resolved with authenticated user scope.
   - `/settings` exposes user default model selection (all users), admin defaults remain in `/ai-settings`.
+  - Saving user AI settings emits a browser event to update ChatWidget new-conversation defaults immediately (no page reload).
   - `/folder/new` sends generation model override while preserving user defaults.
+  - Model badges use compact display labels for Gemini IDs (e.g. `gemini-3.1`).
 
 ## 8) Open questions
 

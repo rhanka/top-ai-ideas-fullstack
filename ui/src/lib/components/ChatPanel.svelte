@@ -84,6 +84,10 @@
     computeVisibleToolToggleIds,
     isExtensionRestrictedToolsetMode as computeIsExtensionRestrictedToolsetMode,
   } from '$lib/utils/chat-tool-scope';
+  import {
+    USER_AI_SETTINGS_UPDATED_EVENT,
+    type UserAISettingsUpdatedPayload,
+  } from '$lib/utils/user-ai-settings-events';
 
   type ChatSession = {
     id: string;
@@ -949,6 +953,8 @@
   let composerMenuButtonRef: HTMLButtonElement | null = null;
   // eslint-disable-next-line no-unused-vars
   let handleDocumentClick: ((_: MouseEvent) => void) | null = null;
+  // eslint-disable-next-line no-unused-vars
+  let handleUserAISettingsUpdated: ((_: Event) => void) | null = null;
   let contextEntries: ChatContextEntry[] = [];
   let sortedContexts: ChatContextEntry[] = [];
   let toolEnabledById: Record<string, boolean> = {};
@@ -2413,6 +2419,45 @@
     }
   };
 
+  const applyUserDefaultsForNewSessions = (
+    providerId: ModelProviderId,
+    modelId: string,
+  ) => {
+    if (!modelId) return;
+    let nextProviderId: ModelProviderId = providerId;
+    let nextModelId = modelId;
+
+    if (modelCatalogModels.length > 0) {
+      const exactMatch = modelCatalogModels.find(
+        (entry) =>
+          entry.provider_id === providerId && entry.model_id === modelId,
+      );
+      if (!exactMatch) {
+        const modelMatch = modelCatalogModels.find(
+          (entry) => entry.model_id === modelId,
+        );
+        if (modelMatch) {
+          nextProviderId = modelMatch.provider_id;
+          nextModelId = modelMatch.model_id;
+        } else {
+          const providerFallback =
+            modelCatalogModels.find(
+              (entry) => entry.provider_id === providerId,
+            ) ?? modelCatalogModels[0];
+          nextProviderId = providerFallback.provider_id;
+          nextModelId = providerFallback.model_id;
+        }
+      }
+    }
+
+    defaultProviderIdForNewSession = nextProviderId;
+    defaultModelIdForNewSession = nextModelId;
+    if (!sessionId) {
+      selectedProviderId = nextProviderId;
+      selectedModelId = nextModelId;
+    }
+  };
+
   const parseModelSelectionKey = (
     rawValue: string,
   ): { providerId: ModelProviderId; modelId: string } | null => {
@@ -2670,6 +2715,19 @@
       ensureDefaultToolToggles();
       updateContextFromRoute();
       void loadExtensionActiveTabContext();
+      handleUserAISettingsUpdated = (event: Event) => {
+        const detail = (event as CustomEvent<UserAISettingsUpdatedPayload>)
+          .detail;
+        if (!detail?.defaultModel) return;
+        applyUserDefaultsForNewSessions(
+          detail.defaultProviderId,
+          detail.defaultModel,
+        );
+      };
+      window.addEventListener(
+        USER_AI_SETTINGS_UPDATED_EVENT,
+        handleUserAISettingsUpdated,
+      );
     }
     handleDocumentClick = (event: MouseEvent) => {
       const target = event.target as Node | null;
@@ -2792,6 +2850,12 @@
       window.removeEventListener(
         'streamhub:workspace_membership_update',
         handleMentionRefresh,
+      );
+    }
+    if (handleUserAISettingsUpdated) {
+      window.removeEventListener(
+        USER_AI_SETTINGS_UPDATED_EVENT,
+        handleUserAISettingsUpdated,
       );
     }
   });

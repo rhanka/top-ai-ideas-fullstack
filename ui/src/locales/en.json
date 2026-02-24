@@ -534,12 +534,12 @@
     "aiConfig": "AI configuration",
     "aiLoading": "Loading settings…",
     "userAi": {
-      "title": "My AI default",
-      "description": "Choose the default model for your new chats and generation forms.",
-      "save": "Save my default",
+      "title": "AI configuration",
+      "description": "Choose the default AI model for your new chats and generation forms.",
+      "save": "Save settings",
       "saving": "Saving…",
       "toast": {
-        "updated": "Personal AI default updated."
+        "updated": "Personal AI configuration updated."
       },
       "errors": {
         "load": "Error while loading personal AI settings",
