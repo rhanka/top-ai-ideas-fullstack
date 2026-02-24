@@ -3364,17 +3364,17 @@
     </div>
   </div>
 
-  <div class="p-3 border-t border-slate-200">
-    <div class="space-y-2">
+  <div class="p-2 border-t border-slate-200">
+    <div>
       <div class="relative">
         <div
-          class="relative w-full min-w-0 rounded px-3 py-2 text-xs composer-rich slim-scroll overflow-y-auto overflow-x-hidden"
+          class="relative w-full min-w-0 rounded px-2 text-xs composer-rich slim-scroll overflow-y-auto overflow-x-hidden"
           class:composer-single-line={!composerIsMultiline}
           class:bg-white={($workspaceCanComment && !commentThreadResolved) ||
             mode !== 'comments'}
           class:bg-slate-50={mode === 'comments' &&
             (!$workspaceCanComment || commentThreadResolved)}
-          style={`max-height: ${composerMaxHeight}px; min-height: ${COMPOSER_BASE_HEIGHT}px;`}
+          style={`max-height: ${composerMaxHeight}px;`}
           bind:this={composerEl}
           role="textbox"
           aria-label={$_('chat.composer.ariaLabel')}
@@ -3426,7 +3426,7 @@
           {:else}
             {#if (commentThreadResolved || !$workspaceCanComment) && commentInput.trim().length === 0}
               <div
-                class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400"
+                class="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-xs text-slate-400"
               >
                 {commentPlaceholder}
               </div>
@@ -3504,7 +3504,7 @@
         {/if}
       </div>
 
-      <div class="flex items-center gap-2 pt-1">
+      <div class="flex items-center gap-1.5">
         {#if mode === 'ai'}
           <MenuPopover
             placement="up"
@@ -3516,7 +3516,7 @@
           >
             <svelte:fragment slot="trigger" let:toggle>
               <button
-                class="rounded text-slate-600 w-10 h-10 flex items-center justify-center hover:bg-slate-100"
+                class="rounded text-slate-600 w-8 h-8 flex items-center justify-center hover:bg-slate-100"
                 aria-label={$_('common.openMenu')}
                 title={$_('common.openMenu')}
                 type="button"
@@ -3630,7 +3630,6 @@
               </div>
             </svelte:fragment>
           </MenuPopover>
-          <div class="h-6 w-px bg-slate-200"></div>
           <select
             id="chat-model-selection"
             value={selectedModelSelectionKey}
@@ -3657,7 +3656,7 @@
         <div class="ml-auto flex items-center gap-2">
         {#if mode === 'ai' && activeAssistantMessage}
           <button
-            class="rounded text-slate-600 w-10 h-10 flex items-center justify-center hover:bg-slate-100 disabled:opacity-60"
+            class="rounded text-slate-600 w-8 h-8 flex items-center justify-center hover:bg-slate-100 disabled:opacity-60"
             on:click={stopAssistantMessage}
             disabled={stoppingMessageId === activeAssistantMessage.id}
             type="button"
@@ -3668,7 +3667,7 @@
           </button>
         {/if}
         <button
-          class="rounded bg-primary hover:bg-primary/90 text-white w-10 h-10 flex items-center justify-center disabled:opacity-60"
+          class="rounded bg-primary hover:bg-primary/90 text-white w-8 h-8 flex items-center justify-center disabled:opacity-60"
           on:click={() =>
             mode === 'comments'
               ? void sendCommentMessage()
