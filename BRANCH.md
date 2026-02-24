@@ -123,6 +123,7 @@ Deliver the provider abstraction layer and runtime routing with OpenAI and Gemin
 - BR-01 Gemini structured-output validation run (2026-02-24): `make typecheck-api REGISTRY=local API_PORT=8771 UI_PORT=5171 MAILDEV_UI_PORT=1171 ENV=test-br01-user-defaults` passed, `make lint-api REGISTRY=local API_PORT=8771 UI_PORT=5171 MAILDEV_UI_PORT=1171 ENV=test-br01-user-defaults` passed.
 - BR-01 Gemini structured-output validation run (2026-02-24): `make test-api-unit SCOPE=tests/unit/gemini-response-schema.test.ts REGISTRY=local API_PORT=8771 UI_PORT=5171 MAILDEV_UI_PORT=1171 ENV=test-br01-user-defaults` passed (`2 tests`), `make test-api-unit SCOPE=tests/unit/context-matrix-template.test.ts REGISTRY=local API_PORT=8771 UI_PORT=5171 MAILDEV_UI_PORT=1171 ENV=test-br01-user-defaults` passed (`1 test`), `make test-api-endpoints SCOPE=tests/api/use-cases.test.ts REGISTRY=local API_PORT=8771 UI_PORT=5171 MAILDEV_UI_PORT=1171 ENV=test-br01-user-defaults` passed (`18 tests`).
 - BR-01 UI follow-up (2026-02-24): user settings wording/layout aligned (`Configuration IA`, full-width `Sauvegarder les paramètres`), chat default updates are now propagated immediately via browser event (`topai:user-ai-settings-updated`) for new conversations, and Gemini model badges are compacted to short labels (e.g. `gemini-3.1`).
+- BR-01 docs consolidation (2026-02-24): delivered runtime behavior consolidated into `spec/SPEC_CHATBOT.md`; delivered sections pruned from `spec/SPEC_EVOL_MODEL_AUTH_PROVIDERS.md`; roadmap status synchronized in `PLAN.md` and `TODO.md`.
 
 ## Orchestration Mode (AI-selected)
 - [x] **Mono-branch + cherry-pick** (default for orthogonal tasks; single final test cycle)
@@ -226,8 +227,8 @@ Deliver the provider abstraction layer and runtime routing with OpenAI and Gemin
   - [x] UAT-13 Folder generation override: in `/folder/new`, choose a non-default model, generate, and verify generation succeeds with override while user default remains unchanged.
 
 - [ ] **Lot N-1 — Docs consolidation**
-  - [ ] Consolidate branch learnings into the relevant `spec/*` files.
-  - [ ] Update `PLAN.md` status and dependency notes after integration readiness.
+  - [x] Consolidate branch learnings into the relevant `spec/*` files.
+  - [x] Update `PLAN.md` status and dependency notes after integration readiness.
 
 - [ ] **Lot N — Final validation**
   - [ ] Re-run full branch gates (typecheck, lint, tests, e2e when impacted).

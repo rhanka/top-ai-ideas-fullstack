@@ -1,6 +1,6 @@
 # SPEC EVOL - Model Providers and SSO Federation
 
-Status: Draft for roadmap orchestration (2026-02-22)
+Status: Active evolution backlog (2026-02-24). Delivered BR-01 baseline has been consolidated into `spec/SPEC_CHATBOT.md`.
 
 ## 1) Objective
 Deliver a production-ready multi-provider AI runtime and identity federation in two milestones:
@@ -37,8 +37,8 @@ Relevant references:
 
 Current state summary:
 - Auth and session flows are WebAuthn-first.
-- AI runtime is mostly OpenAI-centric.
-- Model switching in chat is not complete (`SPEC_CHATBOT.md`, CU-006/CU-007).
+- AI runtime baseline is OpenAI+Gemini (delivered in BR-01).
+- Remaining chatbot delta in this EVOL scope is mainly deepening/fallback behavior (`SPEC_CHATBOT.md`, CU-007).
 
 ## 4) Target capabilities
 
@@ -78,29 +78,9 @@ Current state summary:
 - Keep existing WebAuthn login path available (no regression).
 - Support linking/unlinking SSO identities from existing users.
 
-### 4.5 User-scoped default model and generation alignment (BR-01 follow-up)
-- Introduce user-level default provider/model preferences for all authenticated users.
-- User default initialization chain:
-  1. user-scoped preference (if set),
-  2. admin workspace defaults (`default_provider_id`, `default_model`),
-  3. hard fallback (`openai`, `gpt-4.1-nano`).
-- Storage strategy for BR-01 follow-up:
-  - Extend existing `settings` table with nullable `user_id` (FK `users.id`) to support scoped KV entries.
-  - Keep admin/global settings in rows where `user_id IS NULL`.
-  - Store user defaults with stable keys and scoped `user_id`:
-    - `default_provider_id`
-    - `default_model`
-  - Add uniqueness constraints for both scopes:
-    - global uniqueness for `key` when `user_id IS NULL`,
-    - per-user uniqueness for `(user_id, key)` when `user_id IS NOT NULL`.
-- Chat behavior:
-  - New conversation composer initializes from user defaults.
-  - Reopening an existing conversation restores its latest effective provider/model selection.
-  - Retry/edit execution uses the current composer selection, not the original message model.
-- Structured generation behavior:
-  - `/folder/new` exposes a grouped provider/model selector.
-  - Selector default comes from user defaults.
-  - Generation payload can override provider/model for that generation only, without mutating user defaults.
+### 4.5 User-scoped defaults and generation alignment
+- Delivered in BR-01 and consolidated into `spec/SPEC_CHATBOT.md` (runtime baseline section).
+- Out of this EVOL backlog unless new deltas are explicitly opened.
 
 ## 5) Branch plan
 
@@ -129,48 +109,15 @@ W2:
 - Google SSO is functional with account linking.
 - Provider outage on one adapter does not break all runtime flows.
 
-## 7) BR-01 Closure Notes (2026-02-24)
+## 7) Consolidation note (2026-02-24)
 
-- Branch `feat/model-runtime-openai-gemini` includes baseline commit `456de01 chore(br01): wire gemini env into api compose runtime`.
-- W1 provider runtime target is achieved for this branch scope:
-  - provider contract + registry delivered,
-  - OpenAI and Gemini adapters available behind routing policy,
-  - BYOK precedence and provider/model selection flows integrated in API/UI surfaces.
-- UI selection ergonomics aligned for BR-01:
-  - settings now use a single grouped model selector (`provider -> model`) instead of split provider/model inputs,
-  - chat composer uses the same grouped model selector in a bottom control bar (with `+`, model menu, stop/send),
-  - attached document chips remain rendered above the text composer,
-  - chat streaming now applies a UI-only smooth rendering mode for Gemini large deltas (pseudo-stream), without changing API streaming contracts.
-- Final non-AI validation rerun passed on isolated env `test-br01-final-gemini`:
-  - API: `typecheck-api`, `lint-api`, `test-api-smoke`, `test-api-unit`, `test-api-endpoints`, `test-api-queue`, `test-api-security`, `test-api-limit`.
-  - UI: `typecheck-ui`, `lint-ui`, `test-ui`.
-- AI allowlist remains non-blocking with explicit traceability captured in `BRANCH.md`:
-  - `tests/ai/chat-tools.test.ts` and related suites with `401 invalid_api_key`,
-  - `tests/ai/usecase-generation-async.test.ts` timeout signature (`120000ms`),
-  - startup flakiness signature (`up-api-test`: `api-1 is unhealthy`).
-- Dependency note: BR-01 branch scope is push-ready and continues to unblock BR-05 (`feat/vscode-plugin-v1`) and BR-08 (`feat/model-runtime-claude-mistral`).
-
-## 7.1) BR-01 Follow-up Delta (2026-02-24)
-
-- BR-01 follow-up delivered: user-scoped default model management and `/folder/new` model selector alignment.
-- Delivered storage design: keep one KV table (`settings`) and add scoped user settings via nullable `user_id` FK.
-- Delivered structured-output compatibility for Gemini without lowering OpenAI strictness:
-  - OpenAI path keeps strict JSON schema contract unchanged.
-  - Gemini path compiles response schema to provider-compatible subset (e.g. strips unsupported `additionalProperties` keyword before request serialization).
-  - Structured generation (`use_case_list`, `use_case_detail`) adds one-shot JSON repair retry using centralized default prompt `structured_json_repair`.
-- Delivered API/UI surface:
-  - `GET /api/v1/me/ai-settings` and `PUT /api/v1/me/ai-settings` for personal default model management.
-  - `GET /api/v1/models/catalog` defaults now resolved with authenticated user scope.
-  - `/settings` exposes user default model selection (all users), admin defaults remain in `/ai-settings`.
-  - Saving user AI settings emits a browser event to update ChatWidget new-conversation defaults immediately (no page reload).
-  - `/folder/new` sends generation model override while preserving user defaults.
-  - Model badges use compact display labels for Gemini IDs (e.g. `gemini-3.1`).
+- Delivered BR-01 runtime scope has been moved to `spec/SPEC_CHATBOT.md` to keep one canonical implementation spec.
+- This EVOL document now tracks remaining roadmap deltas (not yet delivered), primarily:
+  - OpenAI/ChatGPT SSO and Google SSO federation milestones,
+  - W2 provider expansion (`Claude`, `Mistral`) and associated routing/fallback policies.
 
 ## 8) Open questions
 
-- `MPA-Q1`: What is the canonical naming/versioning policy for model IDs exposed in UI?
-- `MPA-Q2`: Should SSO users be auto-linked by email, or require explicit user confirmation?
-- `MPA-Q3`: Are admins allowed to enforce provider deny/allow lists per workspace?
 - `MPA-Q4`: What is the compliance baseline for provider request/response retention?
 - `MPA-Q5`: Do we require provider-level fallback in the same request, or only user-driven retry?
 
