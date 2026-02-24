@@ -10,6 +10,24 @@ import type {
 const GEMINI_MODELS: ModelCatalogEntry[] = [
   {
     providerId: 'gemini',
+    modelId: 'gemini-3.0-flash-preview',
+    label: 'Gemini 3.0 Flash Preview',
+    reasoningTier: 'standard',
+    supportsTools: true,
+    supportsStreaming: true,
+    defaultContexts: ['chat'],
+  },
+  {
+    providerId: 'gemini',
+    modelId: 'gemini-3.1-pro-preview-customtools',
+    label: 'Gemini 3.1 Pro Preview (Custom Tools)',
+    reasoningTier: 'advanced',
+    supportsTools: true,
+    supportsStreaming: true,
+    defaultContexts: ['structured', 'summary'],
+  },
+  {
+    providerId: 'gemini',
     modelId: 'gemini-2.0-flash',
     label: 'Gemini 2.0 Flash',
     reasoningTier: 'standard',

@@ -1466,14 +1466,23 @@ Règles :
     const selectedProviderId = resolvedSelection.provider_id;
     const selectedModel = resolvedSelection.model_id;
 
-    // If the selected model is gpt-5*, dynamically evaluate the reasoning effort needed for the last user question
-    // using gpt-5-nano (cheap classifier). This value (low/medium/high) is then passed as `reasoning.effort`.
+    // Reasoning-effort evaluation (best effort):
+    // - OpenAI gpt-5* keeps its existing evaluator behavior.
+    // - Gemini provider uses gemini-3.0-flash-preview for the same classification intent.
     const isGpt5 = typeof selectedModel === 'string' && selectedModel.startsWith('gpt-5');
+    const shouldEvaluateReasoningEffort =
+      isGpt5 || selectedProviderId === 'gemini';
+    const evaluatorProviderId: ProviderId =
+      selectedProviderId === 'gemini' ? 'gemini' : 'openai';
+    const evaluatorModel =
+      selectedProviderId === 'gemini'
+        ? 'gemini-3.0-flash-preview'
+        : 'gpt-4.1-nano';
     let reasoningEffortForThisMessage: 'none' | 'low' | 'medium' | 'high' | 'xhigh' | undefined;
     // Default fallback if evaluator fails: medium.
     let reasoningEffortLabel: 'none' | 'low' | 'medium' | 'high' | 'xhigh' = 'medium';
     let reasoningEffortBy: string | undefined;
-    if (isGpt5) {
+    if (shouldEvaluateReasoningEffort) {
       try {
         const evalTemplate = defaultPrompts.find((p) => p.id === 'chat_reasoning_effort_eval')?.content || '';
         if (evalTemplate) {
@@ -1488,13 +1497,9 @@ Règles :
             .replace('{{last_user_message}}', lastUserMessage || '(vide)')
             .replace('{{context_excerpt}}', excerpt || '(vide)');
 
-          // Evaluator model: prefer robustness over reasoning controls.
-          // gpt-4.1-nano does not support reasoning params (we already skip them in openai.ts),
-          // and avoids the server_error observed with gpt-5-nano effort=minimal.
-          const evaluatorModel = 'gpt-4.1-nano';
           let out = '';
           for await (const ev of callOpenAIResponseStream({
-            providerId: 'openai',
+            providerId: evaluatorProviderId,
             model: evaluatorModel,
             userId: options.userId,
             workspaceId: sessionWorkspaceId,
@@ -1510,7 +1515,10 @@ Règles :
             } else if (ev.type === 'error') {
               const d = (ev.data ?? {}) as Record<string, unknown>;
               const reqId = typeof d.request_id === 'string' ? d.request_id : '';
-              const msg = typeof d.message === 'string' ? d.message : 'Erreur OpenAI (effort eval)';
+              const msg =
+                typeof d.message === 'string'
+                  ? d.message
+                  : 'Reasoning effort evaluation failed';
               throw new Error(reqId ? `${msg} (request_id=${reqId})` : msg);
             }
           }
@@ -1536,7 +1544,7 @@ Règles :
             assistantMessageId: options.assistantMessageId,
             sessionId: options.sessionId,
             model: selectedModel,
-            evaluatorModel: 'gpt-4.1-nano',
+            evaluatorModel,
             error: safeMsg,
           });
         } catch {
@@ -1553,7 +1561,9 @@ Règles :
       }
     }
     // Always emit a "selected" status so the UI can display what was used.
-    if (!reasoningEffortBy) reasoningEffortBy = isGpt5 ? 'fallback' : 'non-gpt-5';
+    if (!reasoningEffortBy) {
+      reasoningEffortBy = shouldEvaluateReasoningEffort ? 'fallback' : 'non-gpt-5';
+    }
     await writeStreamEvent(
       options.assistantMessageId,
       'status',

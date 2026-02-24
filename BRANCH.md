@@ -161,11 +161,13 @@ Deliver the provider abstraction layer and runtime routing with OpenAI and Gemin
 
 - [ ] **Lot N-2 — UAT (user execution pending)**
   - [ ] UAT-00 Pre-flight (nominal root env): `make -C /home/antoinefa/src/top-ai-ideas-fullstack down ENV=dev` then `make -C /home/antoinefa/src/top-ai-ideas-fullstack dev ENV=dev`.
-  - [ ] UAT-01 Provider catalog: open app, verify chat/settings show OpenAI + Gemini provider/model options (native model IDs, no load error).
-  - [ ] UAT-02 Gemini runtime: select a Gemini model and validate one successful chat round-trip response.
-  - [ ] UAT-03 OpenAI runtime regression (if OpenAI key is available): switch to an OpenAI model and validate one successful chat round-trip response.
-  - [ ] UAT-04 Settings persistence: save provider/model defaults in settings, reload page, verify saved defaults are still applied.
-  - [ ] UAT-05 Result capture: record date + tester + status (`OK` / `KO`) in this section before merge.
+  - [ ] UAT-01 Provider switch + catalog: in settings and chat, switch OpenAI <-> Gemini and verify both model lists are available (including `gemini-3.1-pro-preview-customtools` and `gemini-3.0-flash-preview`).
+  - [ ] UAT-02 Reasoning level behavior: under Gemini, trigger a chat request and confirm `reasoning_effort_selected` status is emitted with evaluator `gemini-3.0-flash-preview` (fallback path remains non-blocking if evaluator fails).
+  - [ ] UAT-03 Gemini generation: select Gemini and validate at least one successful chat generation round-trip.
+  - [ ] UAT-04 Gemini tool execution: in chat under Gemini, trigger at least one tool call (e.g. `web_search`) and verify tool events/results are emitted and rendered.
+  - [ ] UAT-05 OpenAI regression switch-back: switch back to OpenAI and validate one successful chat generation round-trip.
+  - [ ] UAT-06 Settings persistence: save provider/model defaults in settings, reload page, verify saved defaults are still applied.
+  - [ ] UAT-07 Result capture: record date + tester + status (`OK` / `KO`) in this section before merge.
 
 - [x] **Lot N-1 — Docs consolidation**
   - [x] Consolidate branch learnings into the relevant `spec/*` files.
