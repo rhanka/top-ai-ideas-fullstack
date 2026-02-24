@@ -51,6 +51,11 @@ const editMessageInput = z.object({
   content: z.string().min(1)
 });
 
+const retryMessageInput = z.object({
+  providerId: z.enum(['openai', 'gemini']).optional(),
+  model: z.string().min(1).optional(),
+});
+
 const createSessionInput = z.object({
   primaryContextType: z.enum(['organization', 'folder', 'usecase', 'executive_summary']).optional(),
   primaryContextId: z.string().optional(),
@@ -430,13 +435,28 @@ chatRouter.patch('/messages/:id', requireWorkspaceEditorRole(), zValidator('json
 chatRouter.post('/messages/:id/retry', requireWorkspaceAccessRole(), async (c) => {
   const user = c.get('user');
   const messageId = c.req.param('id');
+  const payload = retryMessageInput.safeParse(await c.req.json().catch(() => ({})));
+  if (!payload.success) {
+    return c.json(
+      {
+        error: 'Invalid retry payload',
+        details: payload.error.issues,
+      },
+      400
+    );
+  }
   const requestLocale = resolveLocaleFromHeaders({
     appLocaleHeader: c.req.header('x-app-locale'),
     acceptLanguageHeader: c.req.header('accept-language')
   });
 
   try {
-    const created = await chatService.retryUserMessage({ messageId, userId: user.userId });
+    const created = await chatService.retryUserMessage({
+      messageId,
+      userId: user.userId,
+      providerId: payload.data.providerId ?? null,
+      model: payload.data.model ?? null,
+    });
     const jobId = await queueManager.addJob(
       'chat_message',
       {

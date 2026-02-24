@@ -144,7 +144,9 @@ export const resolveDefaultSelection = (
   return FALLBACK_DEFAULT;
 };
 
-export const getModelCatalogPayload = async (): Promise<ModelCatalogPayload> => {
+export const getModelCatalogPayload = async (options?: {
+  userId?: string | null;
+}): Promise<ModelCatalogPayload> => {
   const providers = providerRegistry.listProviders().map((provider) => ({
     provider_id: provider.providerId,
     label: provider.label,
@@ -159,7 +161,9 @@ export const getModelCatalogPayload = async (): Promise<ModelCatalogPayload> => 
 
   const models = providerRegistry.listModels().map(toCatalogModel);
 
-  const settings = await settingsService.getAISettings();
+  const settings = await settingsService.getAISettings({
+    userId: options?.userId ?? null,
+  });
   const defaults = resolveDefaultSelection(
     {
       providerId: settings.defaultProviderId,

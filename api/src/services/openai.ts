@@ -38,9 +38,10 @@ type RuntimeSelection = {
 const resolveRuntimeSelection = async (input: {
   providerId?: string | null;
   model?: string | null;
+  userId?: string | null;
 }): Promise<RuntimeSelection> => {
   const [aiSettings, models] = await Promise.all([
-    settingsService.getAISettings(),
+    settingsService.getAISettings({ userId: input.userId ?? null }),
     Promise.resolve(providerRegistry.listModels()),
   ]);
 
@@ -375,6 +376,7 @@ export const callOpenAI = async (options: CallOpenAIOptions): Promise<OpenAI.Cha
   const selection = await resolveRuntimeSelection({
     providerId,
     model,
+    userId,
   });
   const credentialResolution = await buildCredentialResolutionContext({
     providerId: selection.providerId,
@@ -480,6 +482,7 @@ export async function* callOpenAIStream(
   const selection = await resolveRuntimeSelection({
     providerId,
     model,
+    userId,
   });
   const credentialResolution = await buildCredentialResolutionContext({
     providerId: selection.providerId,
@@ -732,6 +735,7 @@ export async function* callOpenAIResponseStream(
   const selection = await resolveRuntimeSelection({
     providerId,
     model,
+    userId,
   });
   const credentialResolution = await buildCredentialResolutionContext({
     providerId: selection.providerId,

@@ -563,7 +563,12 @@ export class ChatService {
     return { messageId: options.messageId };
   }
 
-  async retryUserMessage(options: { messageId: string; userId: string }): Promise<{
+  async retryUserMessage(options: {
+    messageId: string;
+    userId: string;
+    providerId?: ProviderId | null;
+    model?: string | null;
+  }): Promise<{
     sessionId: string;
     userMessageId: string;
     assistantMessageId: string;
@@ -576,13 +581,18 @@ export class ChatService {
     if (msg.role !== 'user') throw new Error('Only user messages can be retried');
 
     const [aiSettings, catalog] = await Promise.all([
-      settingsService.getAISettings(),
-      getModelCatalogPayload(),
+      settingsService.getAISettings({ userId: options.userId }),
+      getModelCatalogPayload({ userId: options.userId }),
     ]);
+    const inferredProviderId = inferProviderFromModelId(
+      catalog.models,
+      options.model
+    );
     const resolvedSelection = resolveDefaultSelection(
       {
-        providerId: aiSettings.defaultProviderId,
-        modelId: aiSettings.defaultModel,
+        providerId:
+          options.providerId || inferredProviderId || aiSettings.defaultProviderId,
+        modelId: options.model || aiSettings.defaultModel,
       },
       catalog.models
     );
@@ -740,8 +750,8 @@ export class ChatService {
 
     // Provider/model selection (request overrides > inferred by model id > workspace defaults).
     const [aiSettings, catalog] = await Promise.all([
-      settingsService.getAISettings(),
-      getModelCatalogPayload(),
+      settingsService.getAISettings({ userId: input.userId }),
+      getModelCatalogPayload({ userId: input.userId }),
     ]);
     const inferredProviderId = inferProviderFromModelId(catalog.models, input.model);
     const resolvedSelection = resolveDefaultSelection(
@@ -1446,8 +1456,8 @@ Règles :
       : null;
 
     const [aiSettings, catalog] = await Promise.all([
-      settingsService.getAISettings(),
-      getModelCatalogPayload(),
+      settingsService.getAISettings({ userId: options.userId }),
+      getModelCatalogPayload({ userId: options.userId }),
     ]);
     const inferredProviderId = inferProviderFromModelId(
       catalog.models,

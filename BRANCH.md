@@ -48,6 +48,10 @@ Deliver the provider abstraction layer and runtime routing with OpenAI and Gemin
   - Reason: Lot N-1 requires roadmap/spec synchronization for BR-01 closure and push-readiness traceability.
   - Impact: documentation-only updates; no runtime code or infrastructure changes.
   - Rollback: revert BR-01 documentation notes from `spec/SPEC_EVOL_MODEL_AUTH_PROVIDERS.md` and `PLAN.md`.
+- `BR01-EX3` (approved): update `spec/SPEC_EVOL_MODEL_AUTH_PROVIDERS.md` and `BRANCH.md` for BR-01 follow-up planning (user-scoped defaults + `/folder/new` model selection).
+  - Reason: user requested a new BR-01 scope increment and explicit UAT/gating traceability before implementation.
+  - Impact: documentation-only updates; no runtime or infrastructure change.
+  - Rollback: revert BR-01 follow-up planning notes from `spec/SPEC_EVOL_MODEL_AUTH_PROVIDERS.md` and `BRANCH.md`.
 - Gate execution note (2026-02-22): API gates require `REGISTRY=local` in this workspace to avoid invalid Docker tag with empty `REGISTRY`.
 - Lot 1 gate run log (2026-02-22): `make test-api ENV=test-feat-model-runtime-openai-gemini` failed first attempt (`up-api-test`: api container unhealthy during initial startup wait); second attempt reached `test-api-ai` and failed (`OpenAI API key is not configured`); third attempt (with injected non-empty test keys) failed early again while API container was still unhealthy during startup wait.
 - Lot 1 gate run log (2026-02-22): `OPENAI_API_KEY=test-key TAVILY_API_KEY=test-key make test-api ENV=test-feat-model-runtime-openai-gemini` reached `test-api-endpoints` and failed with 2 flaky assertions (`tests/api/chat.test.ts` global job count comparison, `tests/api/chat-tools.test.ts` immediate thread-wide closed-state check). Patched assertions to scoped/causal checks; scoped reruns passed (`make test-api-endpoints SCOPE=tests/api/chat.test.ts ...`, `make test-api-endpoints SCOPE=tests/api/chat-tools.test.ts ...`).
@@ -173,6 +177,33 @@ Deliver the provider abstraction layer and runtime routing with OpenAI and Gemin
     - [x] `REGISTRY=local OPENAI_API_KEY=test-key TAVILY_API_KEY=test-key make test-e2e E2E_SPEC=e2e/tests/03-chat.spec.ts WORKERS=2 RETRIES=0 MAX_FAILURES=1 ENV=e2e-br01-feat-model-runtime-openai-gemini` (pass on 2026-02-23 after scoped stabilization: `12 passed`)
     - [x] `REGISTRY=local OPENAI_API_KEY=test-key TAVILY_API_KEY=test-key make test-e2e E2E_SPEC=e2e/tests/06-settings.spec.ts WORKERS=2 RETRIES=0 MAX_FAILURES=1 ENV=e2e-br01-feat-model-runtime-openai-gemini` (pass on 2026-02-23 after scoped stabilization: `14 passed`, `3 skipped`)
 
+- [x] **Lot 3 — User defaults and generation model alignment (NEW)**
+  - [x] Freeze the scoped-`settings` strategy with conductor before implementation (mandatory checkpoint):
+    - add nullable `settings.user_id` FK -> `users.id` (single migration in `api/drizzle/*.sql`);
+    - keep admin/global settings in rows with `user_id IS NULL`;
+    - store user defaults with keys `default_provider_id` and `default_model` scoped by `user_id`;
+    - enforce uniqueness for global scope (`key` where `user_id IS NULL`) and user scope (`user_id,key` where `user_id IS NOT NULL`);
+    - conversation reopening restores latest effective conversation model/provider.
+  - [x] Add user-scoped settings API/UI to configure personal default provider/model.
+  - [x] Initialize new chat conversations from user default provider/model.
+  - [x] Keep per-conversation stickiness when revisiting a conversation.
+  - [x] Ensure message edit/retry uses current composer provider/model selection.
+  - [x] Add grouped provider/model selector in `/folder/new` defaulted from user settings.
+  - [x] Send selected provider/model override from `/folder/new` to generation endpoint; fallback to user defaults when unset.
+  - [x] Lot 3 gate:
+    - [x] `make typecheck-api REGISTRY=local API_PORT=8771 UI_PORT=5171 MAILDEV_UI_PORT=1171 ENV=test-br01-user-defaults`
+    - [x] `make lint-api REGISTRY=local API_PORT=8771 UI_PORT=5171 MAILDEV_UI_PORT=1171 ENV=test-br01-user-defaults`
+    - [x] `make test-api-endpoints SCOPE=tests/api/chat.test.ts REGISTRY=local API_PORT=8771 UI_PORT=5171 MAILDEV_UI_PORT=1171 ENV=test-br01-user-defaults`
+    - [x] `make test-api-endpoints SCOPE=tests/api/use-cases.test.ts REGISTRY=local API_PORT=8771 UI_PORT=5171 MAILDEV_UI_PORT=1171 ENV=test-br01-user-defaults`
+    - [x] `make test-api-endpoints SCOPE=tests/api/chat-message-actions.test.ts REGISTRY=local API_PORT=8771 UI_PORT=5171 MAILDEV_UI_PORT=1171 ENV=test-br01-user-defaults`
+    - [x] `make test-api-endpoints SCOPE=tests/api/models.test.ts REGISTRY=local API_PORT=8771 UI_PORT=5171 MAILDEV_UI_PORT=1171 ENV=test-br01-user-defaults`
+    - [x] `make test-api-endpoints SCOPE=tests/api/me.test.ts REGISTRY=local API_PORT=8771 UI_PORT=5171 MAILDEV_UI_PORT=1171 ENV=test-br01-user-defaults`
+    - [x] `make typecheck-ui REGISTRY=local API_PORT=8771 UI_PORT=5171 MAILDEV_UI_PORT=1171 ENV=test-br01-user-defaults`
+    - [x] `make lint-ui REGISTRY=local API_PORT=8771 UI_PORT=5171 MAILDEV_UI_PORT=1171 ENV=test-br01-user-defaults`
+    - [x] `make test-ui REGISTRY=local API_PORT=8771 UI_PORT=5171 MAILDEV_UI_PORT=1171 ENV=test-br01-user-defaults`
+    - [ ] `make test-e2e REGISTRY=local E2E_SPEC=e2e/tests/03-chat.spec.ts WORKERS=2 RETRIES=0 MAX_FAILURES=1 ENV=e2e-feat-model-runtime-openai-gemini`
+    - [ ] `make test-e2e REGISTRY=local E2E_SPEC=e2e/tests/06-usecase.spec.ts WORKERS=2 RETRIES=0 MAX_FAILURES=1 ENV=e2e-feat-model-runtime-openai-gemini`
+
 - [ ] **Lot N-2 — UAT (user execution pending)**
   - [ ] UAT-00 Pre-flight (nominal root env): `make -C /home/antoinefa/src/top-ai-ideas-fullstack down ENV=dev` then `make -C /home/antoinefa/src/top-ai-ideas-fullstack dev ENV=dev`.
   - [ ] UAT-01 Provider switch + catalog: in settings and chat, use the single grouped model selector, switch OpenAI <-> Gemini, and verify the simplified four-model catalog (`gpt-4.1-nano`, `gpt-5.2`, `gemini-2.5-flash-lite`, `gemini-3.1-pro-preview-customtools`).
@@ -183,13 +214,18 @@ Deliver the provider abstraction layer and runtime routing with OpenAI and Gemin
   - [ ] UAT-06 Settings persistence: save provider/model defaults in settings, reload page, verify saved defaults are still applied.
   - [ ] UAT-07 Chat composer ergonomics: verify controls are on the bottom row (`+`, model menu, stop/send), and attached document chips stay above the text input.
   - [ ] UAT-08 Message edit + model switch: start a message with model A, edit/rerun it after switching to model B, and verify the retried generation is executed with model B.
-  - [ ] UAT-09 Result capture: record date + tester + status (`OK` / `KO`) in this section before merge.
+  - [ ] UAT-09 User default inheritance: reset user preference, verify user default resolves to admin defaults (`openai` + `gpt-4.1-nano` unless admin changed).
+  - [ ] UAT-10 New conversation default: start a brand new conversation and verify initial model matches user settings default.
+  - [ ] UAT-11 Conversation stickiness: switch model in conversation A, navigate away, return to conversation A, verify selected model is preserved.
+  - [ ] UAT-12 Folder generation default: open `/folder/new`, verify model selector preloads user default.
+  - [ ] UAT-13 Folder generation override: in `/folder/new`, choose a non-default model, generate, and verify generation succeeds with override while user default remains unchanged.
+  - [ ] UAT-14 Result capture: record date + tester + status (`OK` / `KO`) in this section before merge.
 
-- [x] **Lot N-1 — Docs consolidation**
-  - [x] Consolidate branch learnings into the relevant `spec/*` files.
-  - [x] Update `PLAN.md` status and dependency notes after integration readiness.
+- [ ] **Lot N-1 — Docs consolidation**
+  - [ ] Consolidate branch learnings into the relevant `spec/*` files.
+  - [ ] Update `PLAN.md` status and dependency notes after integration readiness.
 
-- [x] **Lot N — Final validation**
-  - [x] Re-run full branch gates (typecheck, lint, tests, e2e when impacted).
-  - [x] Verify CI status and attach executed command list in PR notes.
-  - [x] Ensure branch remains orthogonal, mergeable, and non-blocking.
+- [ ] **Lot N — Final validation**
+  - [ ] Re-run full branch gates (typecheck, lint, tests, e2e when impacted).
+  - [ ] Verify CI status and attach executed command list in PR notes.
+  - [ ] Ensure branch remains orthogonal, mergeable, and non-blocking.

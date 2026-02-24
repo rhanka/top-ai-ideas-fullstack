@@ -5,7 +5,10 @@ export const modelsRouter = new Hono();
 
 modelsRouter.get('/catalog', async (c) => {
   try {
-    const payload = await getModelCatalogPayload();
+    const user = c.get('user') as { userId?: string } | undefined;
+    const payload = await getModelCatalogPayload({
+      userId: user?.userId ?? null,
+    });
     return c.json(payload);
   } catch (error) {
     console.error('Error fetching model catalog:', error);

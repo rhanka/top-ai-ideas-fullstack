@@ -61,4 +61,27 @@ describe('Models API', () => {
 
     expect(hasDefaultPair).toBe(true);
   });
+
+  it('returns user-scoped defaults when user overrides default model', async () => {
+    const updateResponse = await authenticatedRequest(
+      app,
+      'PUT',
+      '/api/v1/me/ai-settings',
+      user.sessionToken!,
+      { defaultModel: 'gemini-2.5-flash-lite' }
+    );
+    expect(updateResponse.status).toBe(200);
+
+    const response = await authenticatedRequest(
+      app,
+      'GET',
+      '/api/v1/models/catalog',
+      user.sessionToken!
+    );
+
+    expect(response.status).toBe(200);
+    const data = await response.json();
+    expect(data.defaults.provider_id).toBe('gemini');
+    expect(data.defaults.model_id).toBe('gemini-2.5-flash-lite');
+  });
 });

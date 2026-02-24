@@ -544,6 +544,8 @@
   let modelCatalogGroups: ModelCatalogGroup[] = [];
   let selectedProviderId: ModelProviderId = 'openai';
   let selectedModelId = 'gpt-4.1-nano';
+  let defaultProviderIdForNewSession: ModelProviderId = 'openai';
+  let defaultModelIdForNewSession = 'gpt-4.1-nano';
   let selectedModelSelectionKey = 'openai::gpt-4.1-nano';
   let input = draft;
   let commentInput = '';
@@ -2074,7 +2076,10 @@
     if (!sessionId) return;
     errorMsg = null;
     try {
-      await apiPost(`/chat/messages/${encodeURIComponent(messageId)}/retry`);
+      await apiPost(`/chat/messages/${encodeURIComponent(messageId)}/retry`, {
+        providerId: selectedProviderId,
+        model: selectedModelId,
+      });
       await loadMessages(sessionId, { scrollToBottom: true });
     } catch (e) {
       errorMsg = formatApiError(e, $_('chat.errors.retry'));
@@ -2221,6 +2226,18 @@
         _streamId: m.id,
         _localStatus: m.content ? 'completed' : undefined,
       }));
+      const lastAssistantModel = [...raw]
+        .reverse()
+        .find((m) => m.role === 'assistant' && Boolean(m.model))?.model;
+      if (lastAssistantModel) {
+        const fromCatalog = modelCatalogModels.find(
+          (entry) => entry.model_id === lastAssistantModel,
+        );
+        if (fromCatalog) {
+          selectedProviderId = fromCatalog.provider_id;
+          selectedModelId = fromCatalog.model_id;
+        }
+      }
       if (opts?.scrollToBottom !== false)
         scheduleScrollToBottom({ force: true });
 
@@ -2276,6 +2293,8 @@
     messages = [];
     initialEventsByMessageId = new Map();
     resetLocalToolInterceptionState();
+    selectedProviderId = defaultProviderIdForNewSession;
+    selectedModelId = defaultModelIdForNewSession;
     errorMsg = null;
     scheduleScrollToBottom({ force: true });
   };
@@ -2374,14 +2393,20 @@
         ? payload.providers
         : [];
       modelCatalogModels = Array.isArray(payload.models) ? payload.models : [];
-      selectedProviderId =
-        payload.defaults?.provider_id ?? modelCatalogProviders[0]?.provider_id ?? 'openai';
-      selectedModelId =
+      const initialProviderId =
+        payload.defaults?.provider_id ??
+        modelCatalogProviders[0]?.provider_id ??
+        'openai';
+      const initialModelId =
         payload.defaults?.model_id ??
-        modelCatalogModels.find((entry) => entry.provider_id === selectedProviderId)
+        modelCatalogModels.find((entry) => entry.provider_id === initialProviderId)
           ?.model_id ??
         modelCatalogModels[0]?.model_id ??
         selectedModelId;
+      defaultProviderIdForNewSession = initialProviderId;
+      defaultModelIdForNewSession = initialModelId;
+      selectedProviderId = initialProviderId;
+      selectedModelId = initialModelId;
       selectedModelSelectionKey = `${selectedProviderId}::${selectedModelId}`;
     } catch (error) {
       console.error('Failed to load model catalog for chat:', error);

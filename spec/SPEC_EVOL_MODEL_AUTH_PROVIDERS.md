@@ -78,6 +78,30 @@ Current state summary:
 - Keep existing WebAuthn login path available (no regression).
 - Support linking/unlinking SSO identities from existing users.
 
+### 4.5 User-scoped default model and generation alignment (BR-01 follow-up)
+- Introduce user-level default provider/model preferences for all authenticated users.
+- User default initialization chain:
+  1. user-scoped preference (if set),
+  2. admin workspace defaults (`default_provider_id`, `default_model`),
+  3. hard fallback (`openai`, `gpt-4.1-nano`).
+- Storage strategy for BR-01 follow-up:
+  - Extend existing `settings` table with nullable `user_id` (FK `users.id`) to support scoped KV entries.
+  - Keep admin/global settings in rows where `user_id IS NULL`.
+  - Store user defaults with stable keys and scoped `user_id`:
+    - `default_provider_id`
+    - `default_model`
+  - Add uniqueness constraints for both scopes:
+    - global uniqueness for `key` when `user_id IS NULL`,
+    - per-user uniqueness for `(user_id, key)` when `user_id IS NOT NULL`.
+- Chat behavior:
+  - New conversation composer initializes from user defaults.
+  - Reopening an existing conversation restores its latest effective provider/model selection.
+  - Retry/edit execution uses the current composer selection, not the original message model.
+- Structured generation behavior:
+  - `/folder/new` exposes a grouped provider/model selector.
+  - Selector default comes from user defaults.
+  - Generation payload can override provider/model for that generation only, without mutating user defaults.
+
 ## 5) Branch plan
 
 - `feat/model-runtime-openai-gemini` (W1)
@@ -96,6 +120,9 @@ W1:
 - Two providers are selectable and functional in chat and structured flows.
 - OpenAI/ChatGPT SSO works for admin and user roles.
 - No regression on existing WebAuthn login and session refresh.
+- User can set a personal default provider/model, inherited from admin defaults when unset.
+- Chat and generation flows default to user preferences, with per-conversation/per-generation overrides.
+- BR-01 follow-up is delivered with a single schema migration on `settings` (`user_id` FK + scoped uniqueness constraints).
 
 W2:
 - Four providers are available and testable (`OpenAI`, `Gemini`, `Claude`, `Mistral`).
@@ -122,6 +149,16 @@ W2:
   - `tests/ai/usecase-generation-async.test.ts` timeout signature (`120000ms`),
   - startup flakiness signature (`up-api-test`: `api-1 is unhealthy`).
 - Dependency note: BR-01 branch scope is push-ready and continues to unblock BR-05 (`feat/vscode-plugin-v1`) and BR-08 (`feat/model-runtime-claude-mistral`).
+
+## 7.1) BR-01 Follow-up Delta (2026-02-24)
+
+- BR-01 follow-up delivered: user-scoped default model management and `/folder/new` model selector alignment.
+- Delivered storage design: keep one KV table (`settings`) and add scoped user settings via nullable `user_id` FK.
+- Delivered API/UI surface:
+  - `GET /api/v1/me/ai-settings` and `PUT /api/v1/me/ai-settings` for personal default model management.
+  - `GET /api/v1/models/catalog` defaults now resolved with authenticated user scope.
+  - `/settings` exposes user default model selection (all users), admin defaults remain in `/ai-settings`.
+  - `/folder/new` sends generation model override while preserving user defaults.
 
 ## 8) Open questions
 

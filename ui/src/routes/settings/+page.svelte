@@ -80,6 +80,12 @@
   let isLoadingAISettings = false;
   let isLoadingModelCatalog = false;
   let isSavingAISettings = false;
+  let userAISettings = {
+    defaultProviderId: 'openai' as 'openai' | 'gemini',
+    defaultModel: 'gpt-4.1-nano',
+  };
+  let isLoadingUserAISettings = false;
+  let isSavingUserAISettings = false;
 
   const modelSelectionKey = (providerId: 'openai' | 'gemini', modelId: string) =>
     `${providerId}::${modelId}`;
@@ -110,9 +116,10 @@
   onMount(async () => {
     await loadMe();
     await loadChromeExtensionDownloadMetadata();
+    await loadModelCatalog();
+    await loadUserAISettings();
     if (isAdmin()) {
       await loadPrompts();
-      await loadModelCatalog();
       await loadAISettings();
       await loadQueueStats();
     }
@@ -259,6 +266,26 @@
     }
   };
 
+  const loadUserAISettings = async () => {
+    isLoadingUserAISettings = true;
+    try {
+      const payload = await apiGet<{
+        defaultProviderId: 'openai' | 'gemini';
+        defaultModel: string;
+      }>('/me/ai-settings');
+      userAISettings.defaultProviderId = payload.defaultProviderId;
+      userAISettings.defaultModel = payload.defaultModel;
+    } catch (error) {
+      console.error('Failed to load user AI settings:', error);
+      addToast({
+        type: 'error',
+        message: get(_)('settings.userAi.errors.load')
+      });
+    } finally {
+      isLoadingUserAISettings = false;
+    }
+  };
+
   const loadModelCatalog = async () => {
     isLoadingModelCatalog = true;
     try {
@@ -298,6 +325,24 @@
     }
   }
 
+  $: {
+    if (modelCatalog.models.length > 0) {
+      const exactMatch = modelCatalog.models.find(
+        (entry) =>
+          entry.provider_id === userAISettings.defaultProviderId &&
+          entry.model_id === userAISettings.defaultModel
+      );
+      if (!exactMatch) {
+        const providerFallback =
+          modelCatalog.models.find(
+            (entry) => entry.provider_id === userAISettings.defaultProviderId
+          ) ?? modelCatalog.models[0];
+        userAISettings.defaultProviderId = providerFallback.provider_id;
+        userAISettings.defaultModel = providerFallback.model_id;
+      }
+    }
+  }
+
   const handleDefaultModelSelectionChange = (event: Event) => {
     const target = event.currentTarget as HTMLSelectElement | null;
     if (!target) return;
@@ -307,9 +352,26 @@
     aiSettings.defaultModel = parsed.modelId;
   };
 
+  const handleUserDefaultModelSelectionChange = (event: Event) => {
+    const target = event.currentTarget as HTMLSelectElement | null;
+    if (!target) return;
+    const parsed = parseModelSelectionKey(target.value);
+    if (!parsed) return;
+    userAISettings.defaultProviderId = parsed.providerId;
+    userAISettings.defaultModel = parsed.modelId;
+  };
+
   const selectedDefaultModelSelectionKey = () => {
     if (!aiSettings.defaultModel) return '';
     return modelSelectionKey(aiSettings.defaultProviderId, aiSettings.defaultModel);
+  };
+
+  const selectedUserDefaultModelSelectionKey = () => {
+    if (!userAISettings.defaultModel) return '';
+    return modelSelectionKey(
+      userAISettings.defaultProviderId,
+      userAISettings.defaultModel
+    );
   };
 
   const providerGroupLabel = (provider: CatalogProvider) => {
@@ -320,6 +382,12 @@
 
   const fallbackDefaultModelOption = () => {
     return modelCatalog.models.find((entry) => entry.model_id === aiSettings.defaultModel);
+  };
+
+  const fallbackUserDefaultModelOption = () => {
+    return modelCatalog.models.find(
+      (entry) => entry.model_id === userAISettings.defaultModel
+    );
   };
 
   const normalizeAIModelSelection = () => {
@@ -341,6 +409,27 @@
     }
   };
 
+  const normalizeUserAIModelSelection = () => {
+    const selectedModel = modelCatalog.models.find(
+      (entry) =>
+        entry.provider_id === userAISettings.defaultProviderId &&
+        entry.model_id === userAISettings.defaultModel
+    );
+    if (selectedModel) return;
+    const byModelId = modelCatalog.models.find(
+      (entry) => entry.model_id === userAISettings.defaultModel
+    );
+    if (byModelId) {
+      userAISettings.defaultProviderId = byModelId.provider_id;
+      return;
+    }
+    const firstModel = modelCatalog.models[0];
+    if (firstModel) {
+      userAISettings.defaultProviderId = firstModel.provider_id;
+      userAISettings.defaultModel = firstModel.model_id;
+    }
+  };
+
   const saveAISettings = async () => {
     isSavingAISettings = true;
     try {
@@ -359,6 +448,31 @@
       });
     } finally {
       isSavingAISettings = false;
+    }
+  };
+
+  const saveUserAISettings = async () => {
+    isSavingUserAISettings = true;
+    try {
+      normalizeUserAIModelSelection();
+      const result = await apiPut('/me/ai-settings', {
+        defaultProviderId: userAISettings.defaultProviderId,
+        defaultModel: userAISettings.defaultModel,
+      });
+      userAISettings.defaultProviderId = result.settings.defaultProviderId;
+      userAISettings.defaultModel = result.settings.defaultModel;
+      addToast({
+        type: 'success',
+        message: get(_)('settings.userAi.toast.updated')
+      });
+    } catch (error) {
+      console.error('Failed to save user AI settings:', error);
+      addToast({
+        type: 'error',
+        message: get(_)('settings.userAi.errors.save')
+      });
+    } finally {
+      isSavingUserAISettings = false;
     }
   };
 
@@ -509,6 +623,65 @@
 	          </button>
 	        </div>
 	      </div>
+    {/if}
+  </div>
+
+  <div class="space-y-4 rounded border border-slate-200 bg-white p-6">
+    <h2 class="text-lg font-semibold text-slate-800">{$_('settings.userAi.title')}</h2>
+    <p class="text-sm text-slate-600">{$_('settings.userAi.description')}</p>
+
+    {#if isLoadingModelCatalog || isLoadingUserAISettings}
+      <div class="flex items-center gap-3">
+        <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+        <p class="text-sm text-blue-700">{$_('settings.aiLoading')}</p>
+      </div>
+    {:else}
+      <div class="grid gap-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
+        <div>
+          <label for="user-ai-default-model" class="block text-sm font-medium text-slate-700 mb-2">
+            {$_('settings.aiDefaultModel')}
+          </label>
+          <select
+            id="user-ai-default-model"
+            value={selectedUserDefaultModelSelectionKey()}
+            on:change={handleUserDefaultModelSelectionChange}
+            class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            {#if modelCatalogGroups.length === 0}
+              {#if fallbackUserDefaultModelOption()}
+                <option
+                  value={modelSelectionKey(fallbackUserDefaultModelOption()?.provider_id ?? userAISettings.defaultProviderId, userAISettings.defaultModel)}
+                >
+                  {fallbackUserDefaultModelOption()?.label ?? userAISettings.defaultModel}
+                </option>
+              {:else}
+                <option value={selectedUserDefaultModelSelectionKey()}>
+                  {userAISettings.defaultModel}
+                </option>
+              {/if}
+            {:else}
+              {#each modelCatalogGroups as group}
+                <optgroup label={providerGroupLabel(group.provider)}>
+                  {#each group.models as modelOption}
+                    <option value={modelSelectionKey(modelOption.provider_id, modelOption.model_id)}>
+                      {modelOption.label}
+                    </option>
+                  {/each}
+                </optgroup>
+              {/each}
+            {/if}
+          </select>
+          <p class="text-xs text-slate-500 mt-1">{$_('settings.aiDefaultModelHint')}</p>
+        </div>
+
+        <button
+          on:click={saveUserAISettings}
+          disabled={isSavingUserAISettings}
+          class="px-4 py-2 bg-primary text-white rounded hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isSavingUserAISettings ? $_('settings.userAi.saving') : $_('settings.userAi.save')}
+        </button>
+      </div>
     {/if}
   </div>
 
