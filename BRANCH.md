@@ -40,6 +40,10 @@ Deliver the provider abstraction layer and runtime routing with OpenAI and Gemin
 - MPA-Q1 resolved (2026-02-22): provider-native model IDs + always pair with `provider_id`.
 - MPA-Q2 resolved (2026-02-22): explicit linking only.
 - MPA-Q3 resolved (2026-02-22): provider allow/deny policy is out of W1 scope.
+- `BR01-EX1` (approved): forward `GEMINI_API_KEY` to API service in `docker-compose.yml`.
+  - Reason: BR-01 requires Gemini runtime credentials to be reachable from API process in isolated branch environments.
+  - Impact: compose env wiring only, no runtime logic change.
+  - Rollback: remove `GEMINI_API_KEY` env forwarding line from API service in `docker-compose.yml`.
 - Gate execution note (2026-02-22): API gates require `REGISTRY=local` in this workspace to avoid invalid Docker tag with empty `REGISTRY`.
 - Lot 1 gate run log (2026-02-22): `make test-api ENV=test-feat-model-runtime-openai-gemini` failed first attempt (`up-api-test`: api container unhealthy during initial startup wait); second attempt reached `test-api-ai` and failed (`OpenAI API key is not configured`); third attempt (with injected non-empty test keys) failed early again while API container was still unhealthy during startup wait.
 - Lot 1 gate run log (2026-02-22): `OPENAI_API_KEY=test-key TAVILY_API_KEY=test-key make test-api ENV=test-feat-model-runtime-openai-gemini` reached `test-api-endpoints` and failed with 2 flaky assertions (`tests/api/chat.test.ts` global job count comparison, `tests/api/chat-tools.test.ts` immediate thread-wide closed-state check). Patched assertions to scoped/causal checks; scoped reruns passed (`make test-api-endpoints SCOPE=tests/api/chat.test.ts ...`, `make test-api-endpoints SCOPE=tests/api/chat-tools.test.ts ...`).
@@ -77,6 +81,7 @@ Deliver the provider abstraction layer and runtime routing with OpenAI and Gemin
 - BR-01 scoped gate run log (2026-02-23): after minimal E2E assertion/selector/context fixes in `e2e/tests/03-chat.spec.ts` and `e2e/tests/06-settings.spec.ts`, scoped rerun `REGISTRY=local OPENAI_API_KEY=test-key TAVILY_API_KEY=test-key make test-e2e E2E_SPEC=e2e/tests/03-chat.spec.ts WORKERS=2 RETRIES=0 MAX_FAILURES=1 ENV=e2e-br01-feat-model-runtime-openai-gemini` passed (`12 passed`).
 - BR-01 scoped gate run log (2026-02-23): scoped rerun `REGISTRY=local OPENAI_API_KEY=test-key TAVILY_API_KEY=test-key make test-e2e E2E_SPEC=e2e/tests/06-settings.spec.ts WORKERS=2 RETRIES=0 MAX_FAILURES=1 ENV=e2e-br01-feat-model-runtime-openai-gemini` passed (`14 passed`, `3 skipped`).
 - BR-01 scoped gate cleanup (2026-02-23): executed `make down ENV=test-br01-feat-model-runtime-openai-gemini` and `make down ENV=e2e-br01-feat-model-runtime-openai-gemini`.
+- BR-01 credential wiring check (2026-02-23): synced `GEMINI_API_KEY` from root `.env` into branch `.env`, added `GEMINI_API_KEY` forwarding in `docker-compose.yml`, then verified inside API container with `make exec-api ...` output `GEMINI_API_KEY_present` on env `test-br01-drumbeat`.
 
 ## Orchestration Mode (AI-selected)
 - [x] **Mono-branch + cherry-pick** (default for orthogonal tasks; single final test cycle)
@@ -84,13 +89,13 @@ Deliver the provider abstraction layer and runtime routing with OpenAI and Gemin
 - Rationale: This branch is scoped to one capability and remains independently mergeable.
 
 ## UAT Management (in orchestration context)
-- **Mono-branch**: UAT is performed on the integrated branch only (after each lot when UI/plugin surface is impacted).
+- **Mono-branch**: UAT is performed on the branch worktree environment before push (after each lot when UI/plugin surface is impacted).
 - UAT checkpoints must be listed as checkboxes inside each relevant lot.
 - Execution flow (mandatory):
   - Develop and run tests in `tmp/feat-<slug>`.
-  - Push branch before UAT.
-  - Run user UAT from root workspace (`~/src/top-ai-ideas-fullstack`, `ENV=dev`).
-  - Switch back to `tmp/feat-<slug>` after UAT.
+  - Keep branch local (commit allowed), do not push before user UAT sign-off.
+  - Run user UAT against the branch environment (`ENV=feat-<slug>`, dedicated ports).
+  - After `UAT OK`, push branch and continue PR/CI flow.
 
 ## Plan / Todo (lot-based)
 - [x] **Lot 0 — Baseline & constraints**

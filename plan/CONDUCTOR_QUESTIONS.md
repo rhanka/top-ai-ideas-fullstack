@@ -71,3 +71,9 @@ Resolved on 2026-02-22: owner is conductor (Codex) and `tmp/feat-roadmap-stabili
   Reason: close Lot N-1 by consolidating Chrome plugin download-distribution behavior into long-lived specs and by updating roadmap branch status/dependencies.
   Impact: documentation-only updates for branch traceability and merge readiness.
   Rollback: revert BR-13 documentation consolidation commit.
+
+- **BR01-EX1** (resolved, 2026-02-23)
+  Path: `docker-compose.yml` (`Forbidden Paths` override for BR-01).
+  Reason: pass `GEMINI_API_KEY` into the API container so BR-01 Gemini runtime can use branch/root `.env` credentials in test/dev envs.
+  Impact: compose environment wiring only (`api` service), no app logic change.
+  Rollback: remove `GEMINI_API_KEY=${GEMINI_API_KEY}` from `api.environment`.
