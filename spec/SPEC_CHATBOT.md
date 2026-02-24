@@ -133,6 +133,15 @@
 - User-level defaults are managed by:
   - `GET /api/v1/me/ai-settings`,
   - `PUT /api/v1/me/ai-settings`.
+- Storage strategy (delivered):
+  - existing `settings` table extended with nullable `user_id` (FK `users.id`) for scoped KV entries,
+  - admin/global settings remain in rows with `user_id IS NULL`,
+  - user defaults are persisted with keys:
+    - `default_provider_id`,
+    - `default_model`,
+  - uniqueness constraints are scoped:
+    - global uniqueness on `key` when `user_id IS NULL`,
+    - per-user uniqueness on `(user_id, key)` when `user_id IS NOT NULL`.
 - Effective default chain:
   1. user scoped default,
   2. admin/workspace default,
