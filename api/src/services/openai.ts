@@ -253,6 +253,16 @@ const sanitizeGeminiResponseSchemaNode = (
     if (!insideMap && GEMINI_UNSUPPORTED_RESPONSE_SCHEMA_KEYS.has(key)) {
       continue;
     }
+    // Gemini responseSchema currently rejects non-string enum values.
+    // Keep string enums, drop numeric/mixed enums in provider-compiled schema.
+    if (key === 'enum') {
+      if (!Array.isArray(child)) continue;
+      const stringEnum = child.filter((entry) => typeof entry === 'string');
+      if (stringEnum.length === child.length && stringEnum.length > 0) {
+        out[key] = stringEnum;
+      }
+      continue;
+    }
     const nextInsideMap =
       key === 'properties' || key === '$defs' || key === 'definitions';
     out[key] = sanitizeGeminiResponseSchemaNode(child, nextInsideMap);

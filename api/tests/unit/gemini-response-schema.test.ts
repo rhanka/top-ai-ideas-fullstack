@@ -66,4 +66,27 @@ describe('sanitizeGeminiResponseSchema', () => {
     ).toEqual({ type: 'string' });
     expect('additionalProperties' in sanitized).toBe(false);
   });
+
+  it('drops non-string enum values for Gemini response schema compatibility', () => {
+    const schema = {
+      type: 'object',
+      properties: {
+        rating: {
+          type: 'number',
+          enum: [0, 1, 3, 5, 8],
+        },
+        status: {
+          type: 'string',
+          enum: ['draft', 'ready'],
+        },
+      },
+      required: ['rating', 'status'],
+    } as Record<string, unknown>;
+
+    const sanitized = sanitizeGeminiResponseSchema(schema);
+    const properties = sanitized.properties as Record<string, Record<string, unknown>>;
+
+    expect(properties.rating.enum).toBeUndefined();
+    expect(properties.status.enum).toEqual(['draft', 'ready']);
+  });
 });
