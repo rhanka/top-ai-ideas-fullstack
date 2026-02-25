@@ -128,6 +128,16 @@ Deliver the provider abstraction layer and runtime routing with OpenAI and Gemin
 - BR-01 Gemini structured-output validation run (2026-02-24): `make test-api-unit SCOPE=tests/unit/gemini-response-schema.test.ts REGISTRY=local API_PORT=8771 UI_PORT=5171 MAILDEV_UI_PORT=1171 ENV=test-br01-user-defaults` passed (`2 tests`), `make test-api-unit SCOPE=tests/unit/context-matrix-template.test.ts REGISTRY=local API_PORT=8771 UI_PORT=5171 MAILDEV_UI_PORT=1171 ENV=test-br01-user-defaults` passed (`1 test`), `make test-api-endpoints SCOPE=tests/api/use-cases.test.ts REGISTRY=local API_PORT=8771 UI_PORT=5171 MAILDEV_UI_PORT=1171 ENV=test-br01-user-defaults` passed (`18 tests`).
 - BR-01 UI follow-up (2026-02-24): user settings wording/layout aligned (`Configuration IA`, full-width `Sauvegarder les paramètres`), chat default updates are now propagated immediately via browser event (`topai:user-ai-settings-updated`) for new conversations, and Gemini model badges are compacted to short labels (e.g. `gemini-3.1`).
 - BR-01 docs consolidation (2026-02-24): delivered runtime behavior consolidated into `spec/SPEC_CHATBOT.md`; delivered sections pruned from `spec/SPEC_EVOL_MODEL_AUTH_PROVIDERS.md`; roadmap status synchronized in `PLAN.md` and `TODO.md`.
+- BR-01 CI triage (2026-02-24): latest branch run `22375640458` failed only on `test-e2e (group-b, 03 04 05)` with deterministic assertion timeout in `e2e/tests/05-usecase-detail.spec.ts:213` (`constraintsSection` missing expected token), while API AI job was green on that run.
+- BR-01 recadrage (2026-02-24): reverted branch-only test relaxations to `origin/main` state for:
+  - `api/tests/api/chat.test.ts`
+  - `api/tests/api/chat-tools.test.ts`
+  - `api/tests/api/documents.test.ts`
+  - `e2e/tests/03-chat.spec.ts`
+  - `e2e/tests/06-settings.spec.ts`
+- BR-01 local CI parity rerun (2026-02-24): `make up-api-test REGISTRY=local API_PORT=9751 UI_PORT=6251 MAILDEV_UI_PORT=2151 ENV=test-br01-ci-recheck` + `make wait-ready-api ...` + `make test-api-ai ...` -> passed (`9` files, `26` tests).
+- BR-01 local CI parity rerun (2026-02-24): `make build-api-image build-ui-image REGISTRY=local API_PORT=9781 UI_PORT=6281 MAILDEV_UI_PORT=2181 ENV=e2e-br01-ci-recheck` + `make test-e2e REGISTRY=local E2E_SPEC=e2e/tests/05-usecase-detail.spec.ts WORKERS=2 RETRIES=2 MAX_FAILURES=1 API_PORT=9781 UI_PORT=6281 MAILDEV_UI_PORT=2181 ENV=e2e-br01-ci-recheck` -> passed (`15` passed, `1` skipped).
+- BR-01 env hygiene (2026-02-24): explicit cleanup confirmed with `make down ... ENV=test-br01-ci-recheck`, `make down ... ENV=e2e-br01-ci-recheck`, and `make ps ...` empty for both environments.
 
 ## Orchestration Mode (AI-selected)
 - [x] **Mono-branch + cherry-pick** (default for orthogonal tasks; single final test cycle)

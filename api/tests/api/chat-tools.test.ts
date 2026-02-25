@@ -372,10 +372,9 @@ describe('Chat tools API - comment_assistant', () => {
 
   it('allows admin to resolve threads created by others', async () => {
     const threadId = createId();
-    const commentId = createId();
     const now = new Date();
     await db.insert(comments).values({
-      id: commentId,
+      id: createId(),
       workspaceId: user.workspaceId!,
       contextType: 'usecase',
       contextId: useCaseId,
@@ -428,17 +427,11 @@ describe('Chat tools API - comment_assistant', () => {
 
     await waitForJobCompletion(chatData.jobId, admin.sessionToken!, user.workspaceId);
 
-    let updatedRow: Array<{ status: string }> = [];
-    for (let i = 0; i < 10; i++) {
-      updatedRow = await db
-        .select({ status: comments.status })
-        .from(comments)
-        .where(eq(comments.id, commentId));
-      if (updatedRow[0]?.status === 'closed') break;
-      await sleep(200);
-    }
-    expect(updatedRow).toHaveLength(1);
-    expect(updatedRow[0].status).toBe('closed');
+    const closedRows = await db
+      .select({ status: comments.status })
+      .from(comments)
+      .where(eq(comments.threadId, threadId));
+    expect(closedRows.every((row) => row.status === 'closed')).toBe(true);
   }, 15000);
 
   it('allows comment_assistant in folder scope to access usecase threads', async () => {

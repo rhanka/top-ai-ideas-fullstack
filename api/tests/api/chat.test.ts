@@ -313,6 +313,8 @@ describe('Chat API Endpoints', () => {
       );
       const created = await create.json();
 
+      const before = await db.select({ id: jobQueue.id }).from(jobQueue);
+
       const acceptSpy = vi
         .spyOn(chatService, 'acceptLocalToolResult')
         .mockResolvedValue({
@@ -320,7 +322,6 @@ describe('Chat API Endpoints', () => {
           waitingForToolCallIds: ['call_local_2'],
           localToolDefinitions: []
         });
-      const addJobSpy = vi.spyOn(queueManager, 'addJob');
 
       try {
         const response = await authenticatedRequest(
@@ -336,10 +337,11 @@ describe('Chat API Endpoints', () => {
         expect(body.ok).toBe(true);
         expect(body.resumed).toBe(false);
         expect(body.waitingForToolCallIds).toEqual(['call_local_2']);
-        expect(addJobSpy).not.toHaveBeenCalled();
+
+        const after = await db.select({ id: jobQueue.id }).from(jobQueue);
+        expect(after.length).toBe(before.length);
       } finally {
         acceptSpy.mockRestore();
-        addJobSpy.mockRestore();
       }
     });
 
