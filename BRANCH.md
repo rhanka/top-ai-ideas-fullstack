@@ -56,6 +56,10 @@ Deliver the provider abstraction layer and runtime routing with OpenAI and Gemin
   - Reason: reduce endpoint-suite contention and stabilize completion time/variance without changing test semantics.
   - Impact: CI-only fan-out for `endpoints`; product runtime and local make workflow unchanged.
   - Rollback: revert commit `cd73ea8` to restore the single non-sharded `endpoints` matrix entry.
+- `BR01-EX6` (approved): rebalance E2E matrix and split heavy flows into `08-*` specs.
+  - Reason: E2E `group-b` became the critical path after BR-01 additions (chat + documents heavy scenarios); isolate heavy cases to reduce tail duration variance.
+  - Impact: test-organization + CI matrix distribution only (`.github/workflows/ci.yml`, `e2e/tests/03-chat.spec.ts`, `e2e/tests/08-chat-heavy.spec.ts`, `e2e/tests/08-documents-summary.spec.ts`); no runtime/app behavior change.
+  - Rollback: move heavy chat viewer flow back to `e2e/tests/03-chat.spec.ts`, rename `e2e/tests/08-documents-summary.spec.ts` back to `e2e/tests/04-documents-summary.spec.ts`, and restore previous 3-group E2E matrix mapping in `.github/workflows/ci.yml`.
 - `BR01-EX4` (approved): update `.github/workflows/ci.yml` to inject `GEMINI_API_KEY` anywhere CI already injects `OPENAI_API_KEY`.
   - Reason: BR-01 runtime supports Gemini; CI test/e2e/smoke jobs must receive Gemini credentials with the same scope as OpenAI to prevent false negatives and keep provider parity.
   - Impact: CI env wiring only; no runtime or infrastructure behavior change outside workflow job environment variables.
@@ -256,5 +260,10 @@ Deliver the provider abstraction layer and runtime routing with OpenAI and Gemin
   - [x] CI stabilization (endpoints matrix sharding only):
     - [x] `.github/workflows/ci.yml` updated to shard `endpoints` as `--shard=1/4..4/4` while keeping other suites unchanged.
     - [x] Rollback path captured: revert `cd73ea8` to return to the previous single `endpoints` job.
+  - [x] CI stabilization (E2E matrix rebalance + heavy split):
+    - [x] Extracted heavy chat viewer flow from `e2e/tests/03-chat.spec.ts` into `e2e/tests/08-chat-heavy.spec.ts`.
+    - [x] Moved heavy documents-summary scenario to `e2e/tests/08-documents-summary.spec.ts`.
+    - [x] `.github/workflows/ci.yml` E2E matrix rebalanced to 4 groups: `00 02 06`, `01 04`, `03 05 07`, `08`.
+    - [x] Rollback path captured in `BR01-EX6` (restore `03`/`04` locations + previous 3-group matrix).
   - [ ] Verify CI status and attach executed command list in PR notes.
   - [ ] Ensure branch remains orthogonal, mergeable, and non-blocking.

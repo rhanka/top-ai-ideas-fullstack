@@ -101,3 +101,9 @@ Resolved on 2026-02-22: owner is conductor (Codex) and `tmp/feat-roadmap-stabili
   Reason: shard `test-api-unit-integration` `endpoints` suite into four shards to reduce suite contention and stabilize CI runtime.
   Impact: CI-only change; no runtime/app behavior change.
   Rollback: revert commit `cd73ea8` to restore the previous non-sharded endpoints matrix entry.
+
+- **BR01-EX6** (resolved, 2026-02-25)
+  Path: `.github/workflows/ci.yml`, `e2e/tests/03-chat.spec.ts`, `e2e/tests/08-chat-heavy.spec.ts`, `e2e/tests/08-documents-summary.spec.ts` (`Conditional Paths` override for BR-01 E2E rebalance).
+  Reason: split heavy `03`/`04` E2E flows into dedicated `08-*` specs and add a 4th E2E matrix group to reduce critical-path tail duration.
+  Impact: CI/test-organization only; no runtime/app behavior change.
+  Rollback: move the heavy viewer chat flow back to `03-chat.spec.ts`, rename `08-documents-summary.spec.ts` back to `04-documents-summary.spec.ts`, and restore the prior 3-group E2E matrix in `.github/workflows/ci.yml`.
