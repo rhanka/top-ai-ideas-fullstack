@@ -52,6 +52,10 @@ Deliver the provider abstraction layer and runtime routing with OpenAI and Gemin
   - Reason: user requested a new BR-01 scope increment and explicit UAT/gating traceability before implementation.
   - Impact: documentation-only updates; no runtime or infrastructure change.
   - Rollback: revert BR-01 follow-up planning notes from `spec/SPEC_EVOL_MODEL_AUTH_PROVIDERS.md` and `BRANCH.md`.
+- `BR01-EX5` (approved): update `.github/workflows/ci.yml` to shard the API `endpoints` suite into 4 CI shards.
+  - Reason: reduce endpoint-suite contention and stabilize completion time/variance without changing test semantics.
+  - Impact: CI-only fan-out for `endpoints`; product runtime and local make workflow unchanged.
+  - Rollback: revert commit `cd73ea8` to restore the single non-sharded `endpoints` matrix entry.
 - `BR01-EX4` (approved): update `.github/workflows/ci.yml` to inject `GEMINI_API_KEY` anywhere CI already injects `OPENAI_API_KEY`.
   - Reason: BR-01 runtime supports Gemini; CI test/e2e/smoke jobs must receive Gemini credentials with the same scope as OpenAI to prevent false negatives and keep provider parity.
   - Impact: CI env wiring only; no runtime or infrastructure behavior change outside workflow job environment variables.
@@ -249,5 +253,8 @@ Deliver the provider abstraction layer and runtime routing with OpenAI and Gemin
   - [x] Post-UAT tests fix (targeted UI regressions introduced by recent model-display/settings changes):
     - [x] `make test-ui SCOPE=tests/utils/model-display.test.ts REGISTRY=local API_PORT=8771 UI_PORT=5171 MAILDEV_UI_PORT=1171 ENV=test-br01-user-defaults` (pass: `3 tests`)
     - [x] `make test-ui SCOPE=tests/utils/user-ai-settings-events.test.ts REGISTRY=local API_PORT=8771 UI_PORT=5171 MAILDEV_UI_PORT=1171 ENV=test-br01-user-defaults` (pass: `1 test`)
+  - [x] CI stabilization (endpoints matrix sharding only):
+    - [x] `.github/workflows/ci.yml` updated to shard `endpoints` as `--shard=1/4..4/4` while keeping other suites unchanged.
+    - [x] Rollback path captured: revert `cd73ea8` to return to the previous single `endpoints` job.
   - [ ] Verify CI status and attach executed command list in PR notes.
   - [ ] Ensure branch remains orthogonal, mergeable, and non-blocking.

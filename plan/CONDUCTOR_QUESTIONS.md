@@ -83,3 +83,21 @@ Resolved on 2026-02-22: owner is conductor (Codex) and `tmp/feat-roadmap-stabili
   Reason: close BR-01 Lot N-1 by consolidating provider-runtime branch learnings and integration readiness status.
   Impact: documentation-only updates to roadmap/spec traceability, no product/runtime behavior change.
   Rollback: revert the BR-01 closure notes added to the spec and roadmap plan.
+
+- **BR01-EX3** (resolved, 2026-02-24)
+  Path: `spec/SPEC_EVOL_MODEL_AUTH_PROVIDERS.md`, `BRANCH.md` (`Conditional Paths` override for BR-01 follow-up planning update).
+  Reason: document and gate the BR-01 scope increment (user-scoped defaults + `/folder/new` model selection) before implementation.
+  Impact: documentation-only updates; no runtime or infrastructure change.
+  Rollback: revert BR-01 follow-up planning notes from `spec/SPEC_EVOL_MODEL_AUTH_PROVIDERS.md` and `BRANCH.md`.
+
+- **BR01-EX4** (resolved, 2026-02-25)
+  Path: `.github/workflows/ci.yml` (`Conditional Paths` override for BR-01 CI credential parity).
+  Reason: inject `GEMINI_API_KEY` in the same CI jobs/scopes where `OPENAI_API_KEY` is already injected.
+  Impact: CI env wiring only; no runtime/app behavior change.
+  Rollback: remove `GEMINI_API_KEY` workflow env lines added alongside `OPENAI_API_KEY`.
+
+- **BR01-EX5** (resolved, 2026-02-25)
+  Path: `.github/workflows/ci.yml` (`Conditional Paths` override for BR-01 CI matrix adjustment).
+  Reason: shard `test-api-unit-integration` `endpoints` suite into four shards to reduce suite contention and stabilize CI runtime.
+  Impact: CI-only change; no runtime/app behavior change.
+  Rollback: revert commit `cd73ea8` to restore the previous non-sharded endpoints matrix entry.
