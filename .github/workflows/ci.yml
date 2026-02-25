@@ -140,11 +140,13 @@ jobs:
         run: make up-api-test-ci
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
       - name: Test API (${{ matrix.suite }})
         run: make test-api-${{ matrix.suite }}
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
       - name: Show API logs on failure
         if: failure()
@@ -239,6 +241,7 @@ jobs:
       - name: Test e2e API & UI (${{ matrix.group }})
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
           E2E_GROUPS: ${{ matrix.e2e_groups }}
         run: make test-e2e
@@ -365,6 +368,7 @@ jobs:
       - name: Test restore and smoke tests
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
         run: make db-restore up-api-test test-api-smoke-restore BACKUP_FILE=$(ls -t data/backup/prod-*.dump | head -1 | xargs basename) SKIP_CONFIRM=true
 

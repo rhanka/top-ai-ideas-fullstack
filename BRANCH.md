@@ -52,6 +52,10 @@ Deliver the provider abstraction layer and runtime routing with OpenAI and Gemin
   - Reason: user requested a new BR-01 scope increment and explicit UAT/gating traceability before implementation.
   - Impact: documentation-only updates; no runtime or infrastructure change.
   - Rollback: revert BR-01 follow-up planning notes from `spec/SPEC_EVOL_MODEL_AUTH_PROVIDERS.md` and `BRANCH.md`.
+- `BR01-EX4` (approved): update `.github/workflows/ci.yml` to inject `GEMINI_API_KEY` anywhere CI already injects `OPENAI_API_KEY`.
+  - Reason: BR-01 runtime supports Gemini; CI test/e2e/smoke jobs must receive Gemini credentials with the same scope as OpenAI to prevent false negatives and keep provider parity.
+  - Impact: CI env wiring only; no runtime or infrastructure behavior change outside workflow job environment variables.
+  - Rollback: remove `GEMINI_API_KEY` workflow env lines added alongside `OPENAI_API_KEY`.
 - Gate execution note (2026-02-22): API gates require `REGISTRY=local` in this workspace to avoid invalid Docker tag with empty `REGISTRY`.
 - Lot 1 gate run log (2026-02-22): `make test-api ENV=test-feat-model-runtime-openai-gemini` failed first attempt (`up-api-test`: api container unhealthy during initial startup wait); second attempt reached `test-api-ai` and failed (`OpenAI API key is not configured`); third attempt (with injected non-empty test keys) failed early again while API container was still unhealthy during startup wait.
 - Lot 1 gate run log (2026-02-22): `OPENAI_API_KEY=test-key TAVILY_API_KEY=test-key make test-api ENV=test-feat-model-runtime-openai-gemini` reached `test-api-endpoints` and failed with 2 flaky assertions (`tests/api/chat.test.ts` global job count comparison, `tests/api/chat-tools.test.ts` immediate thread-wide closed-state check). Patched assertions to scoped/causal checks; scoped reruns passed (`make test-api-endpoints SCOPE=tests/api/chat.test.ts ...`, `make test-api-endpoints SCOPE=tests/api/chat-tools.test.ts ...`).
