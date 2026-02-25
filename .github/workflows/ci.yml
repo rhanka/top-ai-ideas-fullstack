@@ -124,7 +124,21 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        suite: [smoke, unit, endpoints, queue, ai, security, limit]
+        include:
+          - suite: smoke
+          - suite: unit
+          - suite: queue
+          - suite: ai
+          - suite: security
+          - suite: limit
+          - suite: endpoints
+            endpoints_shard: 1
+          - suite: endpoints
+            endpoints_shard: 2
+          - suite: endpoints
+            endpoints_shard: 3
+          - suite: endpoints
+            endpoints_shard: 4
     steps:
       - uses: actions/checkout@v4
       - name: Setup Docker
@@ -143,7 +157,12 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
       - name: Test API (${{ matrix.suite }})
-        run: make test-api-${{ matrix.suite }}
+        run: |
+          if [ "${{ matrix.suite }}" = "endpoints" ]; then
+            make exec-api CMD="TEST_CLEANUP_SCOPE=tracked VITEST_MAX_WORKERS=4 npm run test:endpoints -- --shard=${{ matrix.endpoints_shard }}/4"
+          else
+            make test-api-${{ matrix.suite }}
+          fi
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
