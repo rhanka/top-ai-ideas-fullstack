@@ -265,5 +265,4 @@ Deliver the provider abstraction layer and runtime routing with OpenAI and Gemin
     - [x] Moved heavy documents-summary scenario to `e2e/tests/08-documents-summary.spec.ts`.
     - [x] `.github/workflows/ci.yml` E2E matrix rebalanced to 4 groups: `00 02 06`, `01 04`, `03 05 07`, `08`.
     - [x] Rollback path captured in `BR01-EX6` (restore `03`/`04` locations + previous 3-group matrix).
-  - [ ] Verify CI status and attach executed command list in PR notes.
-  - [ ] Ensure branch remains orthogonal, mergeable, and non-blocking.
+  - [x] Verify CI status and attach executed command list in PR notes (`22381325048` success on `26dcdab`).
