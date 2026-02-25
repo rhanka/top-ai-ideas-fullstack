@@ -11,8 +11,13 @@ test.describe.serial('Chat', () => {
     assistantWrapper(page).locator('div.rounded.bg-white.border.border-slate-200');
 
   async function sendMessageAndWaitApi(page: any, composer: any, message: string) {
-    const editable = composer.locator('[contenteditable="true"]');
-    await editable.click();
+    const editable = page
+      .locator(
+        '[role="textbox"][aria-label="Composer"][contenteditable="true"]:visible, [role="textbox"][aria-label="Composer"]:visible [contenteditable="true"]:visible'
+      )
+      .first();
+    await expect(editable).toBeVisible({ timeout: 5_000 });
+    await editable.focus();
     await page.keyboard.press('Control+A');
     await page.keyboard.press('Backspace');
     await page.keyboard.type(message);
@@ -289,6 +294,9 @@ test.describe.serial('Chat', () => {
     await expect(menu.locator('button', { hasText: 'Web search' })).toBeVisible({ timeout: 5000 });
     await expect(menu.locator('button', { hasText: 'tab_read' })).toHaveCount(0);
     await expect(menu.locator('button', { hasText: 'tab_action' })).toHaveCount(0);
+    await menuButton.click();
+    await expect(menu).not.toBeVisible({ timeout: 5000 });
+    await expect(composer).toBeVisible({ timeout: 5000 });
 
     const requestData = await sendMessageAndWaitApi(
       page,
