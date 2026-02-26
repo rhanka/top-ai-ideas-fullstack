@@ -178,9 +178,9 @@ Open items tracked for this branch:
 
 - [ ] **Lot 2 — UI/runtime metadata integration and compatibility**
   - [ ] Expose active template metadata in workspace settings and runtime context surfaces.
-  - [ ] Ensure read-only/viewer roles cannot mutate template assignment (admin/editor only as defined).
+  - [x] Ensure read-only/viewer roles cannot mutate template assignment (admin/editor only as defined).
   - [ ] Add compatibility behavior when BR-03 config payload is partial/unavailable (explicit `status` + `fallback_reason`).
-  - [ ] Validate separation from workflow execution engine by contract tests and route-level scope checks.
+  - [x] Validate separation from workflow execution engine by contract tests and route-level scope checks.
   - [ ] Lot 2 gate:
     - [x] `make typecheck-api REGISTRY=local API_PORT=8704 UI_PORT=5104 MAILDEV_UI_PORT=1004 ENV=test-feat-workspace-template-catalog`
     - [x] `make lint-api REGISTRY=local API_PORT=8704 UI_PORT=5104 MAILDEV_UI_PORT=1004 ENV=test-feat-workspace-template-catalog`
@@ -192,20 +192,24 @@ Open items tracked for this branch:
       - [x] UI static gates executed (`typecheck-ui` + `lint-ui`) with pass signatures (2026-02-26).
       - [x] API scoped check done with `make test-api-endpoints SCOPE=tests/api/workspace-template-assignment.test.ts REGISTRY=local API_PORT=8704 UI_PORT=5104 MAILDEV_UI_PORT=1004 ENV=test-feat-workspace-template-catalog` (`1 file passed`, `3 tests passed`, 2026-02-26).
       - [x] UI scoped check done with `make test-ui SCOPE=tests/stores/workspaceTemplateCatalog.test.ts REGISTRY=local API_PORT=8704 UI_PORT=5104 MAILDEV_UI_PORT=1004 ENV=test-feat-workspace-template-catalog` (`1 file passed`, `3 tests passed`, 2026-02-26).
+      - [x] API scoped check done with `make test-api-endpoints SCOPE=tests/api/workspaces.test.ts REGISTRY=local API_PORT=8704 UI_PORT=5104 MAILDEV_UI_PORT=1004 ENV=test-feat-workspace-template-catalog` (`1 file passed`, `8 tests passed`, 2026-02-26).
+      - [x] UI scoped check done with `make test-ui SCOPE=tests/stores/workspaceScope.test.ts REGISTRY=local API_PORT=8704 UI_PORT=5104 MAILDEV_UI_PORT=1004 ENV=test-feat-workspace-template-catalog` (`1 file passed`, `9 tests passed`, 2026-02-26).
       - [ ] If one gate fails, compare with `origin/main` for touched files before fixing.
       - [ ] If failure is test/runtime, debug from logs first (`make logs-api`, `make logs-ui`, `make db-query`) before touching assertions/timeouts.
     - [ ] **API tests (file granularity)**
       - [ ] Update `api/tests/api/workspace-template-catalog.test.ts`
       - [ ] Update `api/tests/api/workspace-template-assignment.test.ts`
-      - [ ] Update `api/tests/api/workspaces.test.ts`
+      - [x] Update `api/tests/api/workspaces.test.ts`
       - [ ] Update `api/tests/unit/workspace-template-projection.test.ts`
       - [x] Scoped run: `make test-api-endpoints SCOPE=tests/api/workspace-template-assignment.test.ts REGISTRY=local API_PORT=8704 UI_PORT=5104 MAILDEV_UI_PORT=1004 ENV=test-feat-workspace-template-catalog`
+      - [x] Scoped run: `make test-api-endpoints SCOPE=tests/api/workspaces.test.ts REGISTRY=local API_PORT=8704 UI_PORT=5104 MAILDEV_UI_PORT=1004 ENV=test-feat-workspace-template-catalog`
       - [ ] Sub-lot gate: `make test-api ENV=test-feat-workspace-template-catalog`
     - [ ] **UI tests (TypeScript only)**
-      - [ ] Update `ui/tests/stores/workspaceScope.test.ts`
+      - [x] Update `ui/tests/stores/workspaceScope.test.ts`
       - [ ] Update `ui/tests/stores/workspaceTemplateCatalog.test.ts`
       - [ ] Update `ui/tests/utils/workspace-template-catalog.test.ts`
       - [x] Scoped run: `make test-ui SCOPE=tests/stores/workspaceTemplateCatalog.test.ts REGISTRY=local API_PORT=8704 UI_PORT=5104 MAILDEV_UI_PORT=1004 ENV=test-feat-workspace-template-catalog`
+      - [x] Scoped run: `make test-ui SCOPE=tests/stores/workspaceScope.test.ts REGISTRY=local API_PORT=8704 UI_PORT=5104 MAILDEV_UI_PORT=1004 ENV=test-feat-workspace-template-catalog`
       - [ ] Sub-lot gate: `make test-ui ENV=test-feat-workspace-template-catalog`
     - [ ] **E2E tests**
       - [ ] Update `e2e/tests/06-settings.spec.ts`
