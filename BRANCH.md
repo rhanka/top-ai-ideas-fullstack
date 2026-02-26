@@ -238,44 +238,33 @@ Open items tracked for this branch:
       - [x] E2E prep build on remap lane: `make build-api build-ui-image REGISTRY=local API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1184 ENV=e2e-feat-workspace-template-catalog` (pass, 2026-02-26; prior transient failure signature `failed to solve: Unavailable: error reading from server: EOF` on first attempt).
       - [x] E2E prep build rerun on remap lane: `make build-api build-ui-image REGISTRY=local API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1184 ENV=e2e-feat-workspace-template-catalog` (pass, 2026-02-26).
 
-- [ ] **Lot N-2** UAT (human execution required on root workspace `ENV=dev`)
-  - [!] **UAT playbook (operator-ready, no prior context required)**
-  - [!] **Pre-requisites**
-    - [!] Run from root workspace: `/home/antoinefa/src/top-ai-ideas-fullstack` on `ENV=dev`.
-    - [!] Prepare two authenticated browser sessions:
-      - Session A = workspace admin/editor (can update template assignment).
-      - Session B = workspace viewer/commenter (read-only on template assignment).
-    - [!] If available in your environment, use seeded users from E2E parity:
-      - Admin: `e2e-user-a@example.com`
-      - Viewer: `e2e-user-b@example.com`
-    - [!] Open DevTools Network tab (Preserve log ON) for proof capture.
-  - [!] **Execution matrix (Web app)**
-  
-    | Step ID | URL | Session / Role | Action | Expected result | Proof to capture | E2E reference |
-    |---|---|---|---|---|---|---|
-    | UAT-WEB-01 | `/settings` | Session A (admin) | Open settings page | `workspace-template-card` is visible with active key and version metadata | Screenshot `uat-br04-web-01-settings-card.png` | `e2e/tests/09-workspace-template-catalog.spec.ts` |
-    | UAT-WEB-02 | `/settings` | Session A (admin) | Change template from `ai-ideas` to `todo`, click save, reload page | Active template remains `todo` after reload; assignment metadata updated | Screenshot before/after + network call of `PUT /api/v1/workspaces/:id/template` | `e2e/tests/09-workspace-template-catalog.spec.ts` |
-    | UAT-WEB-03 | `/settings` | Session B (viewer) | Open same workspace settings | Template card visible but selector/save are disabled for viewer | Screenshot `uat-br04-web-03-viewer-disabled.png` | `e2e/tests/06-settings.spec.ts` |
-    | UAT-WEB-04 | `/organizations` then `/settings` | Session A then Session B | Verify workspace isolation: each session only sees its own workspace data set | No cross-workspace leak in organizations listing | Two screenshots (A and B) | `e2e/tests/04-tenancy-workspaces.spec.ts` |
-    | UAT-WEB-05 | `/settings` | Session A (admin) | Hide current workspace, then try `/organizations` | Redirect back to `/settings` when hidden workspace is active | Screenshot URL redirect + hidden row state | `e2e/tests/04-tenancy-workspaces.spec.ts`, `e2e/tests/06-settings.spec.ts` |
-    | UAT-WEB-06 | `/usecase/<existing-id>` | Session A (in workspace A) | Open comments panel, type `@` mention | Mention list includes workspace members only; excludes users from another workspace | Screenshot mention list | `e2e/tests/04-tenancy-workspaces.spec.ts` |
-    | UAT-WEB-07 | `/settings` | Session A (admin) | Check Chrome extension download card | Card is visible, shows version/source, CTA link valid or explicit configured error | Screenshot of card (or explicit error banner) | `e2e/tests/06-settings.spec.ts` |
-  - [!] **Execution matrix (Chrome plugin smoke)**
-  
-    | Step ID | Surface | Session / Role | Action | Expected result | Proof to capture | E2E reference |
-    |---|---|---|---|---|---|---|
-    | UAT-CHROME-01 | Chrome extension popup on a page linked to workspace A | Session A | Open plugin and request context | Plugin loads without auth loss; workspace context retrieved | Screenshot popup + console (no blocking error) | Aligned to workspace scope behavior in `e2e/tests/04-tenancy-workspaces.spec.ts` |
-    | UAT-CHROME-02 | `/settings` + plugin popup | Session A | Switch template to `todo`, reopen plugin | Plugin remains stable after template switch; no crash | Screenshot after switch | Aligned to settings/template update in `e2e/tests/09-workspace-template-catalog.spec.ts` and settings card in `e2e/tests/06-settings.spec.ts` |
-  - [!] **Execution matrix (VSCode plugin smoke)**
-  
-    | Step ID | Surface | Session / Role | Action | Expected result | Proof to capture | E2E reference |
-    |---|---|---|---|---|---|---|
-    | UAT-VSCODE-01 | VSCode extension (`plan/tools/summary/checkpoint`) | Session A token | Run baseline command flow on same workspace | Commands execute normally; no regression from template metadata rollout | Screenshot output panel | Aligned to workspace isolation assumptions in `e2e/tests/04-tenancy-workspaces.spec.ts` |
-    | UAT-VSCODE-02 | VSCode extension with workspace switched template | Session A token | Re-run summary/checkpoint after template switch | Plugin tolerates template metadata presence/absence gracefully | Screenshot output panel | Aligned to template reassignment behavior in `e2e/tests/09-workspace-template-catalog.spec.ts` |
-  - [!] **Pass/Fail criteria (unambiguous)**
-    - [!] PASS: all mandatory Web steps `UAT-WEB-01` to `UAT-WEB-07` are pass, plus smoke checks `UAT-CHROME-01`, `UAT-CHROME-02`, `UAT-VSCODE-01`, `UAT-VSCODE-02`, and evidence screenshots are attached.
-    - [!] FAIL: any mandatory step fails expected behavior, any blocker prevents role-based check completion, or required proof artifacts are missing.
-    - [!] Record final decision in this file as: `UAT BR04: PASS|FAIL - <date> - <operator> - evidence path(s)`.
+- [ ] **Lot N-2** UAT
+  - [ ] Web app (splitted by sublist for each env)
+    - [ ] Instruction by env (run from `/home/antoinefa/src/top-ai-ideas-fullstack` with `ENV=dev`; keep two browser sessions: A=admin/editor and B=viewer/commenter; keep DevTools Network with Preserve log ON; if available use `e2e-user-a@example.com` and `e2e-user-b@example.com`)
+    - [ ] Detailed evol tests
+      - [ ] UAT-WEB-01: open `/settings` in session A and confirm `workspace-template-card` is visible with active `template_key` and `template_version`; capture `uat-br04-web-01-settings-card.png` (ref `e2e/tests/09-workspace-template-catalog.spec.ts`)
+      - [ ] UAT-WEB-02: in session A on `/settings`, change template `ai-ideas -> todo`, save, reload, confirm assignment persists and metadata updates; capture before/after screenshots and the `PUT /api/v1/workspaces/:id/template` network call (ref `e2e/tests/09-workspace-template-catalog.spec.ts`)
+      - [ ] UAT-WEB-03: in session B on `/settings`, confirm template card is visible but selector/save are disabled for viewer role; capture `uat-br04-web-03-viewer-disabled.png` (ref `e2e/tests/06-settings.spec.ts`)
+      - [ ] UAT-WEB-07: in session A on `/settings`, verify Chrome extension download card is visible with valid CTA or explicit configured error banner; capture screenshot (ref `e2e/tests/06-settings.spec.ts`)
+    - [ ] Detailed non reg tests
+      - [ ] UAT-WEB-04: verify workspace isolation via `/organizations` (session A then B), each session only sees its workspace data; capture both screenshots (ref `e2e/tests/04-tenancy-workspaces.spec.ts`)
+      - [ ] UAT-WEB-05: in session A hide current workspace from `/settings`, then open `/organizations` and confirm redirect back to `/settings`; capture URL redirect + hidden row state (ref `e2e/tests/04-tenancy-workspaces.spec.ts` and `e2e/tests/06-settings.spec.ts`)
+      - [ ] UAT-WEB-06: in session A open `/usecase/<existing-id>`, type `@` in comments, confirm mention list contains only workspace members; capture mention list screenshot (ref `e2e/tests/04-tenancy-workspaces.spec.ts`)
+  - [ ] Chrome plugin (if impacted)
+    - [ ] Instruction by env (use workspace A user token/session on current BR04 commit after Web UAT setup)
+    - [ ] Detailed evol tests
+      - [ ] UAT-CHROME-01: open plugin popup on a page bound to workspace A, request context, confirm plugin loads without auth loss and returns workspace context; capture popup and console screenshot
+      - [ ] UAT-CHROME-02: switch template to `todo` from `/settings`, reopen plugin popup, confirm session stays stable and no crash
+    - [ ] Detailed non reg tests
+      - [ ] Confirm no plugin regression after template switch (no auth reset, no fatal error toast, no blocked action)
+  - [ ] VScode plugin (if impacted)
+    - [ ] Instruction by env (use workspace A token on the same commit as web/chrome checks)
+    - [ ] Detailed evol tests
+      - [ ] UAT-VSCODE-01: run baseline `plan/tools/summary/checkpoint` flow and confirm commands execute normally; capture output panel
+      - [ ] UAT-VSCODE-02: rerun summary/checkpoint after workspace template switch and confirm extension handles template metadata presence/absence gracefully; capture output panel
+    - [ ] Detailed non reg tests
+      - [ ] Confirm no regression in existing command flow after template reassignment (no crash, no auth loss, no missing panel state)
+  - [ ] UAT decision recorded in this file: `UAT BR04: PASS|FAIL - <date> - <operator> - evidence path(s)`
 
 - [x] **Lot N-1 — Docs consolidation**
   - [x] Consolidate catalog/runtime metadata contracts into `spec/SPEC_EVOL_AGENTIC_WORKSPACE_TODO.md` status reviewed: no additional delta required for BR-04 before final UAT/PR (contracts already captured in BR-04 API/UI/E2E scoped evidence and `BR04-FL1`).
