@@ -1,0 +1,294 @@
+# Feature: Chrome Upstream v1
+
+## Objective
+Deliver W1 of `SPEC_EVOL_CHROME_UPSTREAM`: upstream control protocol + single-tab remote control baseline for the Chrome plugin, while preserving compatibility with existing local tools (`tab_read`, `tab_action`).
+
+## Scope / Guardrails
+- Scope limited to upstream session protocol, command/ack lifecycle, and single-tab control path.
+- Explicitly out of scope in this branch: multi-tab orchestration and voice pipeline (deferred to `BR-11 feat/chrome-upstream-multitab-voice`).
+- One migration max in `api/drizzle/*.sql` (if applicable).
+- Make-only workflow, no direct Docker commands.
+- Root workspace `~/src/top-ai-ideas-fullstack` is reserved for user dev/UAT (`ENV=dev`) and must remain stable.
+- Branch development must happen in isolated worktree `tmp/feat-chrome-upstream-v1`.
+- Automated test campaigns must run on dedicated environments (`ENV=test-*` / `ENV=e2e-*`), never on root `dev`.
+- UAT qualification branch/worktree must be commit-identical to the branch under qualification (same HEAD SHA; no extra commits before sign-off). If subtree/sync is used, record source and target SHAs in `BRANCH.md`.
+- In every `make` command, `ENV=<env>` must be passed as the last argument.
+- All new text in English.
+- Branch environment mapping:
+  - Dev: `ENV=dev-feat-chrome-upstream-v1`, `API_PORT=8706`, `UI_PORT=5106`, `MAILDEV_UI_PORT=1006`
+  - Test: `ENV=test-feat-chrome-upstream-v1`
+  - E2E: `ENV=e2e-feat-chrome-upstream-v1`, `API_PORT=8706`, `UI_PORT=5106`, `MAILDEV_UI_PORT=1006`
+- Dependency and forward-compat assumptions for `BR-11`:
+  - W1 must expose a stable protocol version (`v1`) and capability payload (`single_tab=true`, `multi_tab=false`, `voice=false`).
+  - Command envelope must keep deterministic IDs (`session_id`, `command_id`, `sequence`) so `BR-11` can add tab registry/arbitration without breaking replay/audit.
+  - Existing local tool contracts remain valid (`localToolDefinitions`, `/chat/messages/:id/tool-results`, permission namespaces `tab_read:*` / `tab_action:*`).
+
+## Branch Scope Boundaries (MANDATORY)
+- **Allowed Paths (implementation scope)**:
+  - `api/**`
+  - `ui/**`
+  - `e2e/**`
+  - `BRANCH.md`
+  - `plan/06-BRANCH_feat-chrome-upstream-v1.md`
+- **Forbidden Paths (must not change in this branch)**:
+  - `Makefile`
+  - `docker-compose*.yml`
+  - `.cursor/rules/**`
+  - `plan/NN-BRANCH_*.md` (except this branch file)
+- **Conditional Paths (allowed only with explicit exception when not already listed in Allowed Paths)**:
+  - `api/drizzle/*.sql` (max 1 file)
+  - `.github/workflows/**`
+  - `spec/**`, `PLAN.md`, `TODO.md` (docs consolidation or roadmap sync only)
+  - `scripts/**` (only if strictly required by the branch objective)
+- **Exception process**:
+  - Declare exception ID `BR06-EXn` in `## Feedback Loop` before touching any conditional/forbidden path.
+  - Include reason, impact, and rollback strategy.
+  - Mirror the same exception in this file under `## Feedback Loop`.
+
+## Feedback Loop
+- `BR06-FL1` | Status: `acknowledge` | Topic: `CHU-Q1 transport`
+  - Decision locked (2026-02-26): WS primary for command channel, SSE/REST fallback for observability.
+  - Owner: conductor + product.
+- `BR06-FL2` | Status: `acknowledge` | Topic: `CHU-Q2 permission granularity`
+  - Decision locked (2026-02-26): reuse existing namespaces (`tab_read:*`, `tab_action:*`) plus action-level mapping (`click|input|scroll|wait`).
+  - Owner: conductor + product.
+- `BR06-FL3` | Status: `deferred` | Topic: `W2 scope`
+  - Multi-tab arbitration and voice controls are explicitly deferred to `BR-11`.
+  - Owner: BR-11.
+- `BR06-FL4` | Status: `attention` | Topic: `Lot 1 UI gate baseline`
+  - `make typecheck-ui API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 REGISTRY=local ENV=test-feat-chrome-upstream-v1` fails on pre-existing alias/type errors outside BR-06 scope.
+  - Owner: BR-06 implementation.
+
+## AI Flaky tests
+- Acceptance rule:
+  - Accept only non-systematic provider/network/model nondeterminism as `flaky accepted`.
+  - Non-systematic means at least one success on the same commit and same command.
+  - Never amend tests with additive timeouts (no timeout inflation in API/UI/E2E updates).
+  - If flaky, analyze impact vs `main`: if unrelated, accept and record command + failing test file + signature in `BRANCH.md`; if related, treat as blocking.
+  - Capture explicit user sign-off before merge.
+
+## Orchestration Mode (AI-selected)
+- [x] **Mono-branch + cherry-pick** (default for orthogonal tasks; single final test cycle)
+- [ ] **Multi-branch** (only if sub-workstreams require independent CI or long-running validation)
+- Rationale: W1 upstream protocol + single-tab control is one cohesive capability with a single integration surface.
+
+## UAT Management (in orchestration context)
+- **Mono-branch**: UAT is performed on the integrated branch only (after each lot when UI/plugin surface is impacted).
+- UAT checkpoints must be listed as checkboxes inside each relevant lot.
+- Execution flow (mandatory):
+  - Develop and run tests in `tmp/feat-chrome-upstream-v1`.
+  - Push branch before UAT.
+  - Run user UAT from root workspace (`~/src/top-ai-ideas-fullstack`, `ENV=dev`).
+  - Switch back to `tmp/feat-chrome-upstream-v1` after UAT.
+
+## Plan / Todo (lot-based)
+- [x] **Lot 0 — Baseline, protocol contract, and branch constraints**
+  - [x] Reconfirm read set alignment: `.mdc` rules, `PLAN.md`, `SPEC_EVOL_CHROME_UPSTREAM`, `SPEC_CHROME_PLUGIN`, template, and this branch file.
+  - [x] Lock W1 boundaries in implementation notes:
+    - [x] In: upstream protocol + single-tab control.
+    - [x] Out: multi-tab and voice (deferred to `BR-11`).
+  - [x] Define protocol contract v1 (implementation checklist artifact):
+    - [x] Handshake payload: auth context, capability exchange, protocol version.
+    - [x] Command envelope: `session_id`, `command_id`, `sequence`, `target_tab`.
+    - [x] Ack/result envelope: `accepted|rejected|completed|failed`, error taxonomy, timestamps.
+    - [x] Session lifecycle states: `connecting|active|paused|closing|closed|error`.
+  - [x] Define compatibility contract with current local tools:
+    - [x] Preserve `localToolDefinitions` and `/chat/messages/:id/tool-results`.
+    - [x] Preserve legacy tool aliases and permission mapping in extension runtime.
+    - [x] Preserve non-injectable URL guardrails.
+  - [x] Record BR-11 forward interfaces:
+    - [x] `target_tab` remains present in v1 even when single-tab.
+    - [x] Capability flags required for future `multi_tab` and `voice`.
+    - [x] Deterministic sequence/replay contract required by future tab registry.
+  - [x] Validate scope boundaries (`Allowed/Forbidden/Conditional`) and declare `BR06-EXn` if needed before any conditional file changes.
+  - [x] Lot 0 gate:
+    - [x] Protocol scope approved against `SPEC_EVOL_CHROME_UPSTREAM` W1.
+    - [x] `BR06-FL1` and `BR06-FL2` captured with explicit decision (2026-02-26).
+    - [x] No unauthorized path added.
+
+- [ ] **Lot 1 — Upstream session protocol foundation (API + extension runtime)**
+  - [x] Implement upstream session handshake and capability exchange with extension auth context.
+  - [x] Implement command/ack lifecycle and auditable session state transitions.
+  - [x] Integrate command guardrails with existing permission engine and non-injectable URL protections.
+  - [x] Ensure protocol fallback keeps current local tool execution path operational.
+  - [ ] Planned implementation surfaces:
+    - [x] `api/src/services/chrome-upstream-protocol.ts`
+    - [x] `api/src/routes/api/chrome-extension.ts`
+    - [ ] `api/src/services/chat-service.ts`
+    - [ ] `api/src/routes/api/chat.ts`
+    - [ ] `api/src/routes/api/streams.ts`
+    - [x] `ui/chrome-ext/background.ts`
+    - [x] `ui/chrome-ext/upstream-session.ts`
+    - [ ] `ui/chrome-ext/network-bridge.ts`
+    - [x] `ui/src/lib/stores/streamHub.ts`
+  - [ ] Lot 1 gate:
+    - [x] `make typecheck-api API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 REGISTRY=local ENV=test-feat-chrome-upstream-v1`
+    - [x] `make lint-api API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 REGISTRY=local ENV=test-feat-chrome-upstream-v1`
+    - [ ] `make typecheck-ui API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 REGISTRY=local ENV=test-feat-chrome-upstream-v1` (blocked by pre-existing UI baseline, see `BR06-FL4`)
+    - [x] `make lint-ui API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 REGISTRY=local ENV=test-feat-chrome-upstream-v1`
+    - [ ] **API tests**
+      - [x] Existing + updated:
+        - [x] `api/tests/unit/chat-service-tools.test.ts`
+        - [x] `api/tests/api/chat.test.ts`
+        - [x] `api/tests/api/streams.test.ts`
+        - [x] `api/tests/api/chat-permissions.test.ts`
+      - [x] New:
+        - [x] `api/tests/unit/chrome-upstream-protocol.test.ts`
+        - [x] `api/tests/api/chrome-upstream-session.test.ts`
+      - [x] Scoped runs while evolving:
+        - [x] `make test-api SCOPE=tests/unit/chrome-upstream-protocol.test.ts API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 REGISTRY=local ENV=test-feat-chrome-upstream-v1`
+        - [x] `make test-api SCOPE=tests/api/chrome-upstream-session.test.ts API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 REGISTRY=local ENV=test-feat-chrome-upstream-v1`
+        - [x] `make test-api SCOPE=tests/unit/chat-service-tools.test.ts API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 REGISTRY=local ENV=test-feat-chrome-upstream-v1`
+        - [x] `make test-api SCOPE=tests/api/chat.test.ts API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 REGISTRY=local ENV=test-feat-chrome-upstream-v1`
+        - [x] `make test-api SCOPE=tests/api/streams.test.ts API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 REGISTRY=local ENV=test-feat-chrome-upstream-v1`
+        - [x] `make test-api SCOPE=tests/api/chat-permissions.test.ts API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 REGISTRY=local ENV=test-feat-chrome-upstream-v1`
+      - [ ] Sub-lot gate: `make test-api ENV=test-feat-chrome-upstream-v1`
+      - [ ] AI flaky run (non-blocking only under acceptance rule): `make test-api-ai ENV=test-feat-chrome-upstream-v1`
+    - [ ] **UI tests (TypeScript only)**
+      - [x] Existing + updated:
+        - [x] `ui/tests/stores/localTools.test.ts`
+        - [x] `ui/tests/stores/streamHub.test.ts`
+        - [x] `ui/tests/chrome-ext/tool-permissions.test.ts`
+      - [x] New:
+        - [x] `ui/tests/chrome-ext/upstream-session.test.ts`
+      - [x] Scoped runs while evolving:
+        - [x] `make test-ui SCOPE=tests/chrome-ext/upstream-session.test.ts API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 REGISTRY=local ENV=test-feat-chrome-upstream-v1`
+        - [x] `make test-ui SCOPE=tests/stores/localTools.test.ts API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 REGISTRY=local ENV=test-feat-chrome-upstream-v1`
+        - [x] `make test-ui SCOPE=tests/stores/streamHub.test.ts API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 REGISTRY=local ENV=test-feat-chrome-upstream-v1`
+        - [x] `make test-ui SCOPE=tests/chrome-ext/tool-permissions.test.ts API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 REGISTRY=local ENV=test-feat-chrome-upstream-v1`
+      - [ ] Sub-lot gate: `make test-ui ENV=test-feat-chrome-upstream-v1`
+    - [ ] **E2E tests**
+      - [x] Existing + updated:
+        - [x] `e2e/tests/03-chat-chrome-extension.spec.ts` (session lifecycle assertions only)
+      - [ ] New:
+        - [ ] none in Lot 1
+      - [ ] Scoped run while evolving:
+        - [ ] `make build-api build-ui-image API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 REGISTRY=local ENV=e2e-feat-chrome-upstream-v1` (blocked: UI image `npm audit --audit-level=high` / `rollup` advisory `GHSA-mw96-cpmx-2vgc`)
+        - [x] `make clean API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=e2e-feat-chrome-upstream-v1`
+        - [x] `make test-e2e E2E_SPEC=tests/03-chat-chrome-extension.spec.ts API_PORT=8766 UI_PORT=5166 MAILDEV_UI_PORT=1166 REGISTRY=local ENV=e2e-feat-chrome-upstream-v1` (pass: `2 passed`, `0 failed`)
+        - [x] `make clean API_PORT=8766 UI_PORT=5166 MAILDEV_UI_PORT=1166 ENV=e2e-feat-chrome-upstream-v1`
+
+- [ ] **Lot 2 — Single-tab control path and UI/plugin integration**
+  - [ ] Implement single-tab control orchestration end-to-end (command dispatch, ack, completion/error propagation).
+  - [ ] Bind chat UI interception and stream rendering to upstream protocol events for one active tab.
+  - [ ] Preserve non-regression behavior for existing local tool runtime (`tab_read`, `tab_action`, permission prompts).
+  - [ ] Enforce explicit rejection behavior when command targets exceed W1 scope (multi-tab/voice).
+  - [ ] Planned implementation surfaces:
+    - [ ] `ui/src/lib/components/ChatPanel.svelte`
+    - [ ] `ui/src/lib/utils/chat-tool-scope.ts`
+    - [ ] `ui/src/lib/stores/localTools.ts`
+    - [ ] `ui/chrome-ext/background.ts`
+    - [ ] `ui/chrome-ext/tool-executor.ts`
+    - [ ] `api/src/services/chat-service.ts`
+  - [ ] Lot 2 gate:
+    - [ ] `make typecheck-api ENV=test-feat-chrome-upstream-v1`
+    - [ ] `make lint-api ENV=test-feat-chrome-upstream-v1`
+    - [ ] `make typecheck-ui ENV=test-feat-chrome-upstream-v1`
+    - [ ] `make lint-ui ENV=test-feat-chrome-upstream-v1`
+    - [ ] **API tests**
+      - [ ] Existing + updated:
+        - [ ] `api/tests/unit/chat-service-tools.test.ts`
+        - [ ] `api/tests/api/chat.test.ts`
+        - [ ] `api/tests/api/streams.test.ts`
+      - [ ] New:
+        - [ ] `api/tests/api/chrome-upstream-command.test.ts`
+      - [ ] Scoped runs while evolving:
+        - [ ] `make test-api SCOPE=tests/unit/chat-service-tools.test.ts ENV=test-feat-chrome-upstream-v1`
+        - [ ] `make test-api SCOPE=tests/api/chrome-upstream-session.test.ts ENV=test-feat-chrome-upstream-v1`
+        - [ ] `make test-api SCOPE=tests/api/chrome-upstream-command.test.ts ENV=test-feat-chrome-upstream-v1`
+      - [ ] Sub-lot gate: `make test-api ENV=test-feat-chrome-upstream-v1`
+      - [ ] AI flaky run (non-blocking only under acceptance rule): `make test-api-ai ENV=test-feat-chrome-upstream-v1`
+    - [ ] **UI tests (TypeScript only)**
+      - [ ] Existing + updated:
+        - [ ] `ui/tests/stores/localTools.test.ts`
+        - [ ] `ui/tests/stores/streamHub.test.ts`
+        - [ ] `ui/tests/chrome-ext/tool-executor.test.ts`
+        - [ ] `ui/tests/utils/chat-tool-scope.test.ts`
+      - [ ] New:
+        - [ ] `ui/tests/stores/upstream-control.test.ts`
+        - [ ] `ui/tests/chrome-ext/upstream-control-routing.test.ts`
+      - [ ] Scoped runs while evolving:
+        - [ ] `make test-ui SCOPE=tests/stores/localTools.test.ts ENV=test-feat-chrome-upstream-v1`
+        - [ ] `make test-ui SCOPE=tests/stores/streamHub.test.ts ENV=test-feat-chrome-upstream-v1`
+        - [ ] `make test-ui SCOPE=tests/utils/chat-tool-scope.test.ts ENV=test-feat-chrome-upstream-v1`
+      - [ ] Sub-lot gate: `make test-ui ENV=test-feat-chrome-upstream-v1`
+    - [ ] **E2E tests**
+      - [ ] Existing + updated:
+        - [ ] `e2e/tests/03-chat-chrome-extension.spec.ts`
+        - [ ] `e2e/tests/06-streams.spec.ts`
+      - [ ] New:
+        - [ ] `e2e/tests/09-chrome-upstream-single-tab.spec.ts`
+      - [ ] Scoped runs while evolving:
+        - [ ] `make build-api build-ui-image API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=e2e-feat-chrome-upstream-v1`
+        - [ ] `make clean API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=e2e-feat-chrome-upstream-v1`
+        - [ ] `make test-e2e E2E_SPEC=tests/03-chat-chrome-extension.spec.ts API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=e2e-feat-chrome-upstream-v1`
+        - [ ] `make test-e2e E2E_SPEC=tests/09-chrome-upstream-single-tab.spec.ts API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=e2e-feat-chrome-upstream-v1`
+        - [ ] `make clean API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=e2e-feat-chrome-upstream-v1`
+      - [ ] AI flaky E2E (non-blocking only under acceptance rule):
+        - [ ] `make test-e2e E2E_SPEC=tests/03-chat-chrome-extension.spec.ts API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=e2e-feat-chrome-upstream-v1`
+
+- [ ] **Lot N-2 — UAT (web app + chrome plugin)**
+  - [ ] UAT preparation:
+    - [ ] Push branch and confirm commit-identical SHA for UAT worktree.
+    - [ ] Start user UAT in root workspace (`ENV=dev` only).
+  - [ ] Web app UAT checklist:
+    - [ ] Open `/folders` then open chat panel; verify chat is usable without extension runtime.
+    - [ ] Send standard non-local-tool message; verify stream lifecycle (`status -> content_delta -> done`) and no regressions.
+    - [ ] Validate no unauthorized multi-tab/voice controls appear in web app tool scope.
+    - [ ] Validate errors are explicit when upstream-only features are requested outside extension context.
+  - [ ] Chrome plugin UAT checklist:
+    - [ ] Load extension package and connect extension auth from plugin settings.
+    - [ ] On a normal web tab, open overlay/sidepanel chat and verify active-tab context is detected.
+    - [ ] Trigger `tab_read` flow and confirm permission prompt/decision lifecycle and result forwarding.
+    - [ ] Trigger `tab_action` flow (click/type/scroll) and verify command ack + completion events in chat stream.
+    - [ ] Open a second tab and verify W1 single-tab rule is enforced (clear reject/guard message, no silent execution).
+    - [ ] Disconnect/reconnect extension session and verify session lifecycle transitions are auditable.
+  - [ ] Non-regression checks:
+    - [ ] Existing local tool flows still work when upstream channel is unavailable (fallback path).
+    - [ ] Existing permission policies (`allow_once`, `deny_once`, `allow_always`, `deny_always`) still apply.
+    - [ ] Multi-tab + voice remain absent/deferred (no accidental partial delivery in BR-06).
+
+- [ ] **Lot N-1 — Docs consolidation**
+  - [ ] Consolidate delivered W1 behavior into:
+    - [ ] `spec/SPEC_EVOL_CHROME_UPSTREAM.md` (W1 delivered vs W2 deferred split)
+    - [ ] `spec/SPEC_CHROME_PLUGIN.md` (runtime/protocol and compatibility notes)
+  - [ ] Add explicit BR-11 handoff notes (interfaces and deferred scope boundary).
+  - [ ] Update `PLAN.md` branch status/dependency notes if required by conductor.
+  - [ ] If any conditional path is touched (`spec/**`, `PLAN.md`, `TODO.md`), declare `BR06-EXn` before edits.
+
+- [ ] **Lot N — Final validation**
+  - [ ] Typecheck & Lint:
+    - [ ] `make typecheck-api ENV=test-feat-chrome-upstream-v1`
+    - [ ] `make lint-api ENV=test-feat-chrome-upstream-v1`
+    - [ ] `make typecheck-ui ENV=test-feat-chrome-upstream-v1`
+    - [ ] `make lint-ui ENV=test-feat-chrome-upstream-v1`
+  - [ ] Retest API (existing + updated + new):
+    - [ ] `api/tests/unit/chat-service-tools.test.ts`
+    - [ ] `api/tests/unit/chrome-upstream-protocol.test.ts`
+    - [ ] `api/tests/api/chat.test.ts`
+    - [ ] `api/tests/api/streams.test.ts`
+    - [ ] `api/tests/api/chat-permissions.test.ts`
+    - [ ] `api/tests/api/chrome-upstream-session.test.ts`
+    - [ ] `api/tests/api/chrome-upstream-command.test.ts`
+    - [ ] `make test-api ENV=test-feat-chrome-upstream-v1`
+  - [ ] Retest UI (TypeScript only; existing + updated + new):
+    - [ ] `ui/tests/stores/localTools.test.ts`
+    - [ ] `ui/tests/stores/streamHub.test.ts`
+    - [ ] `ui/tests/chrome-ext/tool-executor.test.ts`
+    - [ ] `ui/tests/chrome-ext/tool-permissions.test.ts`
+    - [ ] `ui/tests/utils/chat-tool-scope.test.ts`
+    - [ ] `ui/tests/chrome-ext/upstream-session.test.ts`
+    - [ ] `ui/tests/stores/upstream-control.test.ts`
+    - [ ] `ui/tests/chrome-ext/upstream-control-routing.test.ts`
+    - [ ] `make test-ui ENV=test-feat-chrome-upstream-v1`
+  - [ ] Retest E2E (existing + updated + new):
+    - [ ] `make build-api build-ui-image API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=e2e-feat-chrome-upstream-v1`
+    - [ ] `make clean API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=e2e-feat-chrome-upstream-v1`
+    - [ ] `make test-e2e E2E_SPEC=tests/03-chat-chrome-extension.spec.ts API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=e2e-feat-chrome-upstream-v1`
+    - [ ] `make test-e2e E2E_SPEC=tests/06-streams.spec.ts API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=e2e-feat-chrome-upstream-v1`
+    - [ ] `make test-e2e E2E_SPEC=tests/09-chrome-upstream-single-tab.spec.ts API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=e2e-feat-chrome-upstream-v1`
+    - [ ] `make clean API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=e2e-feat-chrome-upstream-v1`
+  - [ ] Retest AI flaky allowlist (non-blocking only under acceptance rule), document pass/fail signatures, and record explicit user sign-off if accepted.
+  - [ ] Final gate step 1: create/update PR using this `BRANCH.md` text as PR body (source of truth).
+  - [ ] Final gate step 2: run/verify branch CI on that PR and resolve remaining blockers.
+  - [ ] Final gate step 3: once UAT + CI are both `OK`, commit removal of this branch file, push, and merge.
