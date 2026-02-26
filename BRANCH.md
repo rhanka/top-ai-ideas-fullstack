@@ -182,22 +182,30 @@ Open items tracked for this branch:
   - [ ] Add compatibility behavior when BR-03 config payload is partial/unavailable (explicit `status` + `fallback_reason`).
   - [ ] Validate separation from workflow execution engine by contract tests and route-level scope checks.
   - [ ] Lot 2 gate:
-    - [ ] `make typecheck-api ENV=test-feat-workspace-template-catalog`
-    - [ ] `make lint-api ENV=test-feat-workspace-template-catalog`
-    - [ ] `make typecheck-ui ENV=test-feat-workspace-template-catalog`
-    - [ ] `make lint-ui ENV=test-feat-workspace-template-catalog`
+    - [x] `make typecheck-api REGISTRY=local API_PORT=8704 UI_PORT=5104 MAILDEV_UI_PORT=1004 ENV=test-feat-workspace-template-catalog`
+    - [x] `make lint-api REGISTRY=local API_PORT=8704 UI_PORT=5104 MAILDEV_UI_PORT=1004 ENV=test-feat-workspace-template-catalog`
+    - [x] `make typecheck-ui REGISTRY=local API_PORT=8704 UI_PORT=5104 MAILDEV_UI_PORT=1004 ENV=test-feat-workspace-template-catalog`
+    - [x] `make lint-ui REGISTRY=local API_PORT=8704 UI_PORT=5104 MAILDEV_UI_PORT=1004 ENV=test-feat-workspace-template-catalog`
+    - [ ] **Execution micro-tracker (atomic)**
+      - [x] API gate warm-up done with `make typecheck-api ... ENV=test-feat-workspace-template-catalog` (pass, 2026-02-26).
+      - [x] API lint gate done with `make lint-api ... ENV=test-feat-workspace-template-catalog` (pass, 2026-02-26).
+      - [x] UI static gates executed (`typecheck-ui` + `lint-ui`) with pass signatures (2026-02-26).
+      - [x] API scoped check done with `make test-api-endpoints SCOPE=tests/api/workspace-template-assignment.test.ts REGISTRY=local API_PORT=8704 UI_PORT=5104 MAILDEV_UI_PORT=1004 ENV=test-feat-workspace-template-catalog` (`1 file passed`, `3 tests passed`, 2026-02-26).
+      - [x] UI scoped check done with `make test-ui SCOPE=tests/stores/workspaceTemplateCatalog.test.ts REGISTRY=local API_PORT=8704 UI_PORT=5104 MAILDEV_UI_PORT=1004 ENV=test-feat-workspace-template-catalog` (`1 file passed`, `3 tests passed`, 2026-02-26).
+      - [ ] If one gate fails, compare with `origin/main` for touched files before fixing.
+      - [ ] If failure is test/runtime, debug from logs first (`make logs-api`, `make logs-ui`, `make db-query`) before touching assertions/timeouts.
     - [ ] **API tests (file granularity)**
       - [ ] Update `api/tests/api/workspace-template-catalog.test.ts`
       - [ ] Update `api/tests/api/workspace-template-assignment.test.ts`
       - [ ] Update `api/tests/api/workspaces.test.ts`
       - [ ] Update `api/tests/unit/workspace-template-projection.test.ts`
-      - [ ] Scoped run: `make test-api-endpoints SCOPE=tests/api/workspace-template-assignment.test.ts ENV=test-feat-workspace-template-catalog`
+      - [x] Scoped run: `make test-api-endpoints SCOPE=tests/api/workspace-template-assignment.test.ts REGISTRY=local API_PORT=8704 UI_PORT=5104 MAILDEV_UI_PORT=1004 ENV=test-feat-workspace-template-catalog`
       - [ ] Sub-lot gate: `make test-api ENV=test-feat-workspace-template-catalog`
     - [ ] **UI tests (TypeScript only)**
       - [ ] Update `ui/tests/stores/workspaceScope.test.ts`
       - [ ] Update `ui/tests/stores/workspaceTemplateCatalog.test.ts`
       - [ ] Update `ui/tests/utils/workspace-template-catalog.test.ts`
-      - [ ] Scoped run: `make test-ui SCOPE=tests/stores/workspaceTemplateCatalog.test.ts ENV=test-feat-workspace-template-catalog`
+      - [x] Scoped run: `make test-ui SCOPE=tests/stores/workspaceTemplateCatalog.test.ts REGISTRY=local API_PORT=8704 UI_PORT=5104 MAILDEV_UI_PORT=1004 ENV=test-feat-workspace-template-catalog`
       - [ ] Sub-lot gate: `make test-ui ENV=test-feat-workspace-template-catalog`
     - [ ] **E2E tests**
       - [ ] Update `e2e/tests/06-settings.spec.ts`
