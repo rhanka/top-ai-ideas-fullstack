@@ -55,8 +55,8 @@ Deliver W1 of `SPEC_EVOL_CHROME_UPSTREAM`: upstream control protocol + single-ta
 - `BR06-FL3` | Status: `deferred` | Topic: `W2 scope`
   - Multi-tab arbitration and voice controls are explicitly deferred to `BR-11`.
   - Owner: BR-11.
-- `BR06-FL4` | Status: `attention` | Topic: `Lot 1 UI gate baseline`
-  - `make typecheck-ui API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 REGISTRY=local ENV=test-feat-chrome-upstream-v1` fails on pre-existing alias/type errors outside BR-06 scope.
+- `BR06-FL4` | Status: `acknowledge` | Topic: `Lot 1 UI gate baseline`
+  - Re-validated on 2026-02-26: `make typecheck-ui API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 REGISTRY=local ENV=test-feat-chrome-upstream-v1` passes (`svelte-check found 0 errors and 0 warnings`).
   - Owner: BR-06 implementation.
 
 ## AI Flaky tests
@@ -124,7 +124,7 @@ Deliver W1 of `SPEC_EVOL_CHROME_UPSTREAM`: upstream control protocol + single-ta
   - [ ] Lot 1 gate:
     - [x] `make typecheck-api API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 REGISTRY=local ENV=test-feat-chrome-upstream-v1`
     - [x] `make lint-api API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 REGISTRY=local ENV=test-feat-chrome-upstream-v1`
-    - [ ] `make typecheck-ui API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 REGISTRY=local ENV=test-feat-chrome-upstream-v1` (blocked by pre-existing UI baseline, see `BR06-FL4`)
+    - [x] `make typecheck-ui API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 REGISTRY=local ENV=test-feat-chrome-upstream-v1`
     - [x] `make lint-ui API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 REGISTRY=local ENV=test-feat-chrome-upstream-v1`
     - [ ] **API tests**
       - [x] Existing + updated:
