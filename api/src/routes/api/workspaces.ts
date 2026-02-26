@@ -17,8 +17,18 @@ import {
 import { and, desc, eq } from 'drizzle-orm';
 import { requireEditor } from '../../middleware/rbac';
 import { createId } from '../../utils/id';
-import { getUserWorkspaces, requireWorkspaceAdmin, requireWorkspaceAccess } from '../../services/workspace-access';
+import {
+  getUserWorkspaces,
+  requireWorkspaceAccess,
+  requireWorkspaceAdmin,
+  requireWorkspaceEditor,
+} from '../../services/workspace-access';
 import { requireWorkspaceAccessRole } from '../../middleware/workspace-rbac';
+import {
+  assignWorkspaceTemplate,
+  getWorkspaceTemplateAssignment,
+  isKnownWorkspaceTemplate,
+} from '../../services/workspace-template-catalog';
 
 export const workspacesRouter = new Hono();
 
@@ -102,6 +112,10 @@ const updateWorkspaceSchema = z.object({
   name: z.string().min(1).max(128),
 });
 
+const updateWorkspaceTemplateSchema = z.object({
+  template_key: z.string().trim().min(1).max(128),
+});
+
 workspacesRouter.put('/:id', requireEditor, zValidator('json', updateWorkspaceSchema), async (c) => {
   const user = c.get('user') as { userId: string; role: string };
 
@@ -120,6 +134,55 @@ workspacesRouter.put('/:id', requireEditor, zValidator('json', updateWorkspaceSc
   await notifyWorkspaceEvent(workspaceId, { action: 'renamed' });
   return c.json({ success: true });
 });
+
+// Workspace template assignment metadata
+workspacesRouter.get('/:id/template', async (c) => {
+  const user = c.get('user') as { userId: string };
+  const workspaceId = c.req.param('id');
+
+  try {
+    await requireWorkspaceAccess(user.userId, workspaceId);
+  } catch {
+    return c.json({ error: 'Insufficient permissions' }, 403);
+  }
+
+  const payload = await getWorkspaceTemplateAssignment(workspaceId);
+  return c.json(payload);
+});
+
+workspacesRouter.put(
+  '/:id/template',
+  requireEditor,
+  zValidator('json', updateWorkspaceTemplateSchema),
+  async (c) => {
+    const user = c.get('user') as { userId: string };
+    const workspaceId = c.req.param('id');
+
+    try {
+      await requireWorkspaceEditor(user.userId, workspaceId);
+    } catch {
+      return c.json({ error: 'Insufficient permissions' }, 403);
+    }
+
+    const { template_key } = c.req.valid('json');
+    const knownTemplate = await isKnownWorkspaceTemplate(template_key);
+    if (!knownTemplate) {
+      return c.json({ message: 'Unknown template_key' }, 400);
+    }
+
+    const payload = await assignWorkspaceTemplate({
+      workspaceId,
+      templateKey: template_key,
+      assignedByUserId: user.userId,
+    });
+    await notifyWorkspaceEvent(workspaceId, {
+      action: 'template_assigned',
+      template_key: payload.active_template_key,
+    });
+
+    return c.json(payload);
+  }
+);
 
 // --- Hide / Unhide / Delete (admin-only) ---
 
@@ -353,5 +416,4 @@ workspacesRouter.delete('/:id/members/:userId', requireEditor, async (c) => {
   await notifyWorkspaceMembershipEvent(workspaceId, targetUserId, { action: 'removed' });
   return c.body(null, 204);
 });
-
 

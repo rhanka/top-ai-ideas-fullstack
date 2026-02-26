@@ -10,6 +10,7 @@ import {
   noWorkspaceLock,
   hiddenWorkspaceLock,
   workspaceReadOnlyScope,
+  workspaceCanEditTemplateAssignment,
   getScopedWorkspaceIdForUser,
 } from '../../src/lib/stores/workspaceScope';
 import type { User } from '../../src/lib/stores/session';
@@ -91,6 +92,26 @@ describe('workspaceScope store', () => {
     });
 
     expect(get(workspaceReadOnlyScope)).toBe(false);
+  });
+
+  it('allows template assignment mutation for editor/admin roles only', () => {
+    setUser(user);
+
+    workspaceScope.set({
+      loading: false,
+      items: [{ id: 'ws-viewer', name: 'Viewer', role: 'viewer', hiddenAt: null, createdAt: '2025-01-01' }],
+      selectedId: 'ws-viewer',
+      error: null,
+    });
+    expect(get(workspaceCanEditTemplateAssignment)).toBe(false);
+
+    workspaceScope.set({
+      loading: false,
+      items: [{ id: 'ws-editor', name: 'Editor', role: 'editor', hiddenAt: null, createdAt: '2025-01-01' }],
+      selectedId: 'ws-editor',
+      error: null,
+    });
+    expect(get(workspaceCanEditTemplateAssignment)).toBe(true);
   });
 
   it('returns scoped workspace id when user is present', () => {

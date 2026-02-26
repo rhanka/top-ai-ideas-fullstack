@@ -1164,6 +1164,15 @@
       "title": "Members",
       "remove": "Remove member"
     },
+    "template": {
+      "title": "Workspace template",
+      "loading": "Loading template metadata…",
+      "versionLabel": "Template version",
+      "snapshotRule": "Assignments are non-retroactive: existing artifacts keep their previous template snapshot and new artifacts use the active template.",
+      "selectLabel": "Active template",
+      "apply": "Apply template",
+      "readOnly": "Viewer/commenter roles cannot change template assignment."
+    },
     "export": {
       "title": "Export a workspace",
       "include": {
@@ -1193,7 +1202,8 @@
       "memberAdded": "Member added.",
       "roleUpdated": "Role updated.",
       "memberRemoved": "Member removed.",
-      "nameUpdated": "Workspace name updated."
+      "nameUpdated": "Workspace name updated.",
+      "templateUpdated": "Workspace template updated."
     },
     "errors": {
       "create": "Error while creating workspace.",
@@ -1203,7 +1213,8 @@
       "loadMembers": "Error while loading members.",
       "addMember": "Error while adding member.",
       "updateRole": "Error while updating role.",
-      "removeMember": "Error while removing member."
+      "removeMember": "Error while removing member.",
+      "updateTemplate": "Error while updating workspace template."
     }
   },
   "importExport": {

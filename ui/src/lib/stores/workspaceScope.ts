@@ -77,6 +77,14 @@ export const workspaceReadOnlyScope = derived([session, selectedWorkspaceRole], 
   return role !== 'editor' && role !== 'admin';
 });
 
+export const workspaceCanEditTemplateAssignment = derived(
+  [session, selectedWorkspaceRole],
+  ([$session, role]) => {
+    if (!$session.user) return false;
+    return role === 'editor' || role === 'admin';
+  }
+);
+
 export const workspaceCanComment = derived([session, selectedWorkspaceRole], ([$session, role]) => {
   if (!$session.user) return false;
   return role === 'commenter' || role === 'editor' || role === 'admin';
@@ -154,5 +162,4 @@ if (browser) {
   window.addEventListener('streamhub:workspace_membership_update', handleMembershipUpdate);
   window.addEventListener('streamhub:workspace_update', handleMembershipUpdate);
 }
-
 

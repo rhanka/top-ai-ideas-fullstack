@@ -16,6 +16,7 @@ import queueRouter from './queue';
 import aiSettingsRouter from './ai-settings';
 import { modelsRouter } from './models';
 import { workspacesRouter } from './workspaces';
+import { workspaceTemplatesRouter } from './workspace-templates';
 import { locksRouter } from './locks';
 import { commentsRouter } from './comments';
 import { exportsRouter, importsRouter } from './import-export';
@@ -87,6 +88,10 @@ apiRouter.route('/imports', importsRouter);
 // Model catalog: authenticated read access for runtime/UI selectors.
 apiRouter.use('/models/*', requireAuth);
 apiRouter.route('/models', modelsRouter);
+
+// Workspace template catalog: authenticated read access for settings/workspace surfaces.
+apiRouter.use('/workspace-templates/*', requireAuth);
+apiRouter.route('/workspace-templates', workspaceTemplatesRouter);
 
 // Admin routes (require admin_org or admin_app)
 apiRouter.use('/settings/*', requireAuth, requireAdmin);

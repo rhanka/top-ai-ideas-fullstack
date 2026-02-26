@@ -62,6 +62,29 @@ test.describe('Page Paramètres', () => {
     }
   });
 
+  test('devrait afficher la carte template et appliquer les permissions par rôle', async ({ browser }) => {
+    const adminScoped = await createScopedPage(browser, USER_A_STATE, workspaceAlphaId);
+    try {
+      await adminScoped.page.goto('/settings');
+      await adminScoped.page.waitForLoadState('domcontentloaded');
+      await expect(adminScoped.page.getByTestId('workspace-template-card')).toBeVisible();
+      await expect(adminScoped.page.getByTestId('workspace-template-select')).toBeEnabled();
+    } finally {
+      await adminScoped.context.close();
+    }
+
+    const viewerScoped = await createScopedPage(browser, USER_B_STATE, workspaceAlphaId);
+    try {
+      await viewerScoped.page.goto('/settings');
+      await viewerScoped.page.waitForLoadState('domcontentloaded');
+      await expect(viewerScoped.page.getByTestId('workspace-template-card')).toBeVisible();
+      await expect(viewerScoped.page.getByTestId('workspace-template-select')).toBeDisabled();
+      await expect(viewerScoped.page.getByTestId('workspace-template-save')).toBeDisabled();
+    } finally {
+      await viewerScoped.context.close();
+    }
+  });
+
   test('devrait afficher la carte de téléchargement de l’extension Chrome', async ({ browser }) => {
     const { context, page } = await createScopedPage(browser, USER_A_STATE, workspaceAlphaId);
     try {

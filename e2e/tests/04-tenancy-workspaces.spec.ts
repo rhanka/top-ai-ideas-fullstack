@@ -93,6 +93,45 @@ test.describe.serial('Tenancy / cloisonnement workspace', () => {
     await userAApi.dispose();
   });
 
+  test('template assignment reste cloisonnée par workspace', async () => {
+    const userAApi = await request.newContext({
+      baseURL: API_BASE_URL,
+      storageState: USER_A_STATE,
+    });
+
+    const workspaceAName = `Workspace Template A ${Date.now()}`;
+    const workspaceBName = `Workspace Template B ${Date.now()}`;
+
+    const wsARes = await userAApi.post('/api/v1/workspaces', { data: { name: workspaceAName } });
+    if (!wsARes.ok()) throw new Error(`Impossible de créer workspace A (${wsARes.status()})`);
+    const wsAJson = await wsARes.json().catch(() => null);
+    const wsAId = String(wsAJson?.id || '');
+    if (!wsAId) throw new Error('workspace A id introuvable');
+
+    const wsBRes = await userAApi.post('/api/v1/workspaces', { data: { name: workspaceBName } });
+    if (!wsBRes.ok()) throw new Error(`Impossible de créer workspace B (${wsBRes.status()})`);
+    const wsBJson = await wsBRes.json().catch(() => null);
+    const wsBId = String(wsBJson?.id || '');
+    if (!wsBId) throw new Error('workspace B id introuvable');
+
+    const assignRes = await userAApi.put(`/api/v1/workspaces/${wsAId}/template`, {
+      data: { template_key: 'todo' },
+    });
+    if (!assignRes.ok()) throw new Error(`Impossible d'assigner le template (status ${assignRes.status()})`);
+
+    const templateARes = await userAApi.get(`/api/v1/workspaces/${wsAId}/template`);
+    if (!templateARes.ok()) throw new Error(`Impossible de lire template A (status ${templateARes.status()})`);
+    const templateA = await templateARes.json().catch(() => null);
+    expect(templateA?.active_template_key).toBe('todo');
+
+    const templateBRes = await userAApi.get(`/api/v1/workspaces/${wsBId}/template`);
+    if (!templateBRes.ok()) throw new Error(`Impossible de lire template B (status ${templateBRes.status()})`);
+    const templateB = await templateBRes.json().catch(() => null);
+    expect(templateB?.active_template_key).toBe('ai-ideas');
+
+    await userAApi.dispose();
+  });
+
   test('autocomplete @ mention respecte le scope workspace', async ({ browser }) => {
     const userAApi = await request.newContext({
       baseURL: API_BASE_URL,

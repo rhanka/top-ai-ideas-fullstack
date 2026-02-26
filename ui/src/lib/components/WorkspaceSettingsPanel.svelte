@@ -5,8 +5,22 @@
   import { addToast } from '$lib/stores/toast';
   import { apiDelete, apiGet, apiPost, apiPatch } from '$lib/utils/api';
   import { session } from '$lib/stores/session';
-  import { hiddenWorkspaceLock, loadUserWorkspaces, setWorkspaceScope, workspaceScope, type UserWorkspace } from '$lib/stores/workspaceScope';
+  import {
+    hiddenWorkspaceLock,
+    loadUserWorkspaces,
+    setWorkspaceScope,
+    workspaceCanEditTemplateAssignment,
+    workspaceScope,
+    type UserWorkspace,
+  } from '$lib/stores/workspaceScope';
   import { streamHub } from '$lib/stores/streamHub';
+  import {
+    loadWorkspaceTemplateAssignment,
+    loadWorkspaceTemplateCatalog,
+    updateWorkspaceTemplateAssignment,
+    workspaceTemplateCatalog,
+  } from '$lib/stores/workspaceTemplateCatalog';
+  import type { WorkspaceTemplateAssignmentPayload } from '$lib/utils/workspace-template-catalog';
   import EditableInput from '$lib/components/EditableInput.svelte';
   import FileMenu from '$lib/components/FileMenu.svelte';
   import ImportExportDialog from '$lib/components/ImportExportDialog.svelte';
@@ -32,6 +46,10 @@
   let addMemberEmail = '';
   let addMemberRole: 'viewer' | 'commenter' | 'editor' | 'admin' = 'viewer';
   let lastMembersWorkspaceId: string | null = null;
+  let lastTemplateWorkspaceId: string | null = null;
+  let templateSelection = '';
+  let selectedTemplateAssignment: WorkspaceTemplateAssignmentPayload | null = null;
+  let templateAssignmentWarning: string | null = null;
 
   const HUB_KEY = 'workspace-settings-sse';
   let workspaceReloadTimer: ReturnType<typeof setTimeout> | null = null;
@@ -81,6 +99,7 @@
   onMount(() => {
     if ($session.user) {
       void loadUserWorkspaces();
+      void loadWorkspaceTemplateCatalog();
     }
 
     streamHub.set(HUB_KEY, (evt: any) => {
@@ -175,6 +194,27 @@
     lastMembersWorkspaceId = null;
   }
 
+  $: selectedTemplateAssignment =
+    selectedWorkspace?.id ? $workspaceTemplateCatalog.assignmentByWorkspaceId[selectedWorkspace.id] ?? null : null;
+
+  $: templateAssignmentWarning =
+    selectedWorkspace?.id
+      ? $workspaceTemplateCatalog.assignmentWarningByWorkspaceId[selectedWorkspace.id] ?? null
+      : null;
+
+  $: if (selectedWorkspace?.id) {
+    if (selectedWorkspace.id !== lastTemplateWorkspaceId) {
+      lastTemplateWorkspaceId = selectedWorkspace.id;
+      void loadWorkspaceTemplateAssignment(selectedWorkspace.id);
+    }
+  } else {
+    lastTemplateWorkspaceId = null;
+  }
+
+  $: if (selectedTemplateAssignment) {
+    templateSelection = selectedTemplateAssignment.active_template_key;
+  }
+
   async function addMember() {
     if (!selectedWorkspace?.id) return;
     const email = addMemberEmail.trim();
@@ -225,6 +265,21 @@
     originalSelectedWorkspaceName = editedSelectedWorkspaceName;
     addToast({ type: 'success', message: t('workspaceSettings.toasts.nameUpdated') });
     await loadUserWorkspaces();
+  }
+
+  async function saveWorkspaceTemplateAssignment() {
+    if (!selectedWorkspace?.id) return;
+    const selectedTemplateKey = templateSelection.trim();
+    if (!selectedTemplateKey) return;
+
+    try {
+      const response = await updateWorkspaceTemplateAssignment(selectedWorkspace.id, selectedTemplateKey);
+      templateSelection = response.active_template_key;
+      addToast({ type: 'success', message: t('workspaceSettings.toasts.templateUpdated') });
+      await loadWorkspaceTemplateAssignment(selectedWorkspace.id);
+    } catch (e: any) {
+      addToast({ type: 'error', message: e?.message ?? t('workspaceSettings.errors.updateTemplate') });
+    }
   }
 </script>
 
@@ -373,6 +428,78 @@
           {/each}
         </tbody>
       </table>
+    </div>
+  {/if}
+
+  {#if selectedWorkspace}
+    <div class="rounded border border-slate-200 p-4" data-testid="workspace-template-card">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <h4 class="font-medium">{$_('workspaceSettings.template.title')}</h4>
+        {#if selectedTemplateAssignment}
+          <span
+            class="rounded bg-slate-100 px-2 py-0.5 text-xs text-slate-700"
+            data-testid="workspace-template-active-key"
+          >
+            {selectedTemplateAssignment.active_template_key}
+          </span>
+        {/if}
+      </div>
+
+      {#if $workspaceTemplateCatalog.loadingCatalog || $workspaceTemplateCatalog.loadingAssignment}
+        <p class="mt-2 text-sm text-slate-500">{$_('workspaceSettings.template.loading')}</p>
+      {:else}
+        <p class="mt-2 text-sm text-slate-600">
+          {$_('workspaceSettings.template.versionLabel')}:
+          <span class="font-medium" data-testid="workspace-template-version">
+            {selectedTemplateAssignment?.template_version ?? '—'}
+          </span>
+        </p>
+        <p class="mt-1 text-xs text-slate-500">{$_('workspaceSettings.template.snapshotRule')}</p>
+
+        {#if templateAssignmentWarning}
+          <div
+            class="mt-3 rounded border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900"
+            data-testid="workspace-template-warning"
+          >
+            {templateAssignmentWarning}
+          </div>
+        {/if}
+
+        <div class="mt-3 flex flex-wrap items-end gap-2">
+          <label class="block text-sm">
+            <div class="text-slate-600">{$_('workspaceSettings.template.selectLabel')}</div>
+            <select
+              class="mt-1 rounded border border-slate-200 px-3 py-2"
+              bind:value={templateSelection}
+              disabled={!$workspaceCanEditTemplateAssignment || $workspaceTemplateCatalog.updatingAssignment}
+              data-testid="workspace-template-select"
+            >
+              {#each $workspaceTemplateCatalog.items as template (template.template_key)}
+                <option value={template.template_key} disabled={template.status !== 'ready'}>
+                  {template.template_key} · v{template.template_version}
+                </option>
+              {/each}
+            </select>
+          </label>
+          <button
+            class="rounded bg-primary px-3 py-2 text-sm text-white disabled:opacity-50"
+            type="button"
+            on:click={saveWorkspaceTemplateAssignment}
+            disabled={
+              !$workspaceCanEditTemplateAssignment ||
+              $workspaceTemplateCatalog.updatingAssignment ||
+              !selectedTemplateAssignment ||
+              templateSelection === selectedTemplateAssignment.active_template_key
+            }
+            data-testid="workspace-template-save"
+          >
+            {$_('workspaceSettings.template.apply')}
+          </button>
+          {#if !$workspaceCanEditTemplateAssignment}
+            <span class="text-xs text-slate-500">{$_('workspaceSettings.template.readOnly')}</span>
+          {/if}
+        </div>
+      {/if}
     </div>
   {/if}
 

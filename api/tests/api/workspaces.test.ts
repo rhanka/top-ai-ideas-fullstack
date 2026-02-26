@@ -119,6 +119,17 @@ describe('Workspaces API', () => {
     expect(res.status).toBe(404);
   });
 
+  it('returns 403 for workspace template metadata when user has no membership', async () => {
+    const otherWorkspaceId = viewer.workspaceId!;
+    const res = await authenticatedRequest(
+      app,
+      'GET',
+      `/api/v1/workspaces/${otherWorkspaceId}/template`,
+      editor.sessionToken
+    );
+    expect(res.status).toBe(403);
+  });
+
   it('returns 409 when accessing a hidden workspace on non-settings routes', async () => {
     const wsId = await createWorkspace();
     const hide = await authenticatedRequest(
