@@ -399,23 +399,125 @@ Open decision items for BR-03 restart:
       - [x] AI flaky tests run (non-blocking only under acceptance rule): scoped `E2E_SPEC` runs executed and signatures recorded in `BRANCH.md` (latest reruns include 2026-02-26): `tests/00-ai-generation.spec.ts` => pass (`2` passed, `1.3m`); `tests/03-chat.spec.ts` => pass (`11` passed, `28.7s`) on latest rerun after selector/state alignment; `tests/03-chat-chrome-extension.spec.ts` => pass (`2` passed, `11.7s`); `tests/07_comment_assistant.spec.ts` => fail signature `Test timeout of 180000ms exceeded` at `tests/07_comment_assistant.spec.ts:47` (`button[aria-label=\"Choisir une conversation\"]` not visible across retries), classification `test bug/flaky` candidate.
       - [x] Verify no timeout inflation in updated E2E specs (`test.setTimeout` unchanged). (2026-02-27: no `test.setTimeout(...)` additions/changes found in diff for `e2e/tests/03-chat.spec.ts`, `e2e/tests/06-settings.spec.ts`, `e2e/tests/09-todo-steering-core.spec.ts`, `e2e/tests/07_comment_assistant.spec.ts`; existing `180_000` declarations were pre-existing.)
 
-- [ ] **Lot 4 — Session-bound TODO progression runtime (new product intent, 2026-02-27)**
-  - [ ] API/tooling progression capabilities:
-    - [ ] Add chat tool contract for progression updates (`todo_update` and/or `task_update`) so AI can mark task/todo completion and adjust progression.
-    - [ ] Enforce one active TODO max per chat session for BR03 (clear conflict behavior if a second create is requested).
-    - [x] Confirm completion timestamp model exists (`tasks.completedAt`, `todos.closedAt`) and reuse it (no new migration required unless new hard requirement appears).
-    - [ ] Add/extend scoped API tests for progression tool path (creation + status updates + permission enforcement).
-  - [ ] UI/UX TODO panel behavior in chat:
-    - [ ] Make TODO panel sticky at the bottom of conversation.
-    - [ ] Full-width panel layout with collapsible state.
-    - [ ] Max-height + internal scroll, aligned with existing component style.
-    - [ ] Render completed tasks as checked + struck-through.
-    - [ ] Keep scope non-collaborative for now (no manual collaborative edit in BR03).
-  - [ ] Session semantics:
-    - [ ] Attach TODO lifecycle to chat session and restore state on session reopen.
-    - [ ] Allow user prompts that ask AI to modify plan/progression and verify tool usage path in stream events.
+- [ ] **Lot 4 — Session-bound TODO progression runtime (planning-only, no implementation in this planning step)**
+  - [ ] Order contract (mandatory): finish DEV slices `L4-S1` to `L4-S4` before executing any TEST slice `L4-S5` to `L4-S7`.
+  - [ ] Baseline decisions for this lot:
+    - [x] Reuse completion timestamps already present (`tasks.completedAt`, `todos.closedAt`); no migration is planned for Lot 4 unless a hard blocker appears.
+    - [x] Chat progression tools target: add runtime support for `todo_update` and `task_update` (aligned with `spec/TOOLS.md`).
+    - [x] Session rule target: one active TODO max per chat session (deterministic conflict behavior for second create attempt in same session).
+    - [!] Collaborative manual editing stays explicitly deferred for BR03 (multi-user actor markers, avatar-like overlays, concurrent editing conflict UX).
+  - [ ] **DEV slices (implementation first, no tests in this block)**
+    - [ ] `L4-S1` DEV - API chat progression tooling + one-active-TODO-per-session guard.
+      - API files impacted (planned):
+        - `api/src/services/tools.ts` (tool definitions: `todo_update`, `task_update`).
+        - `api/src/services/chat-service.ts` (requested-tool allowlist + execution path for progression tools + conflict payload on second `todo_create` in same session).
+        - `api/src/services/todo-orchestration.ts` (session-aware helpers to update task/todo status and enforce single active TODO per session).
+        - `api/src/routes/api/chat.ts` (if request/response schema exposure needs extension for progression metadata).
+      - UI files impacted (planned):
+        - `ui/src/lib/components/ChatPanel.svelte` (tool toggle exposure for progression path).
+        - `ui/src/locales/en.json`
+        - `ui/src/locales/fr.json`
+      - Scoped make checks (run only after this DEV slice is implemented):
+        - `make typecheck-api API_PORT=8703 UI_PORT=5103 MAILDEV_UI_PORT=1003 REGISTRY=local ENV=test-feat-todo-steering-workflow-core`
+        - `make lint-api API_PORT=8703 UI_PORT=5103 MAILDEV_UI_PORT=1003 REGISTRY=local ENV=test-feat-todo-steering-workflow-core`
+        - `make test-api-endpoints SCOPE=tests/api/chat-tools.test.ts API_PORT=8703 UI_PORT=5103 MAILDEV_UI_PORT=1003 REGISTRY=local ENV=test-feat-todo-steering-workflow-core`
+        - `make test-api-endpoints SCOPE=tests/api/todos.test.ts API_PORT=8703 UI_PORT=5103 MAILDEV_UI_PORT=1003 REGISTRY=local ENV=test-feat-todo-steering-workflow-core`
+        - `make test-api-endpoints SCOPE=tests/api/tasks.test.ts API_PORT=8703 UI_PORT=5103 MAILDEV_UI_PORT=1003 REGISTRY=local ENV=test-feat-todo-steering-workflow-core`
+    - [ ] `L4-S2` DEV - Sticky TODO runtime panel in chat (bottom, full-width, collapsible, max-height scroll).
+      - API files impacted (planned):
+        - `api/src/services/chat-service.ts` (tool result payload normalization if panel expects stable shape).
+      - UI files impacted (planned):
+        - `ui/src/lib/components/ChatPanel.svelte`
+        - `ui/src/lib/components/ChatWidget.svelte`
+        - `ui/src/lib/components/StreamMessage.svelte` (handoff from inline tool card to runtime panel feed).
+        - `ui/src/locales/en.json`
+        - `ui/src/locales/fr.json`
+      - Scoped make checks (run only after this DEV slice is implemented):
+        - `make typecheck-ui API_PORT=8703 UI_PORT=5103 MAILDEV_UI_PORT=1003 REGISTRY=local ENV=test-feat-todo-steering-workflow-core`
+        - `make lint-ui API_PORT=8703 UI_PORT=5103 MAILDEV_UI_PORT=1003 REGISTRY=local ENV=test-feat-todo-steering-workflow-core`
+        - `make test-ui SCOPE=tests/utils/todo-chat-rendering.test.ts API_PORT=8703 UI_PORT=5103 MAILDEV_UI_PORT=1003 REGISTRY=local ENV=test-feat-todo-steering-workflow-core`
+    - [ ] `L4-S3` DEV - Session-bound persistence and rehydration of TODO runtime state.
+      - API files impacted (planned):
+        - `api/src/services/chat-service.ts` (persist/recover session TODO runtime projection from stream/tool events).
+        - `api/src/services/todo-orchestration.ts` (session-scoped lookup utility for active TODO in current chat session).
+      - UI files impacted (planned):
+        - `ui/src/lib/components/ChatPanel.svelte` (rehydration on session switch/reopen).
+        - `ui/src/lib/stores/streamHub.ts` (if additional event wiring is required for TODO runtime state replay).
+      - Scoped make checks (run only after this DEV slice is implemented):
+        - `make typecheck-api API_PORT=8703 UI_PORT=5103 MAILDEV_UI_PORT=1003 REGISTRY=local ENV=test-feat-todo-steering-workflow-core`
+        - `make typecheck-ui API_PORT=8703 UI_PORT=5103 MAILDEV_UI_PORT=1003 REGISTRY=local ENV=test-feat-todo-steering-workflow-core`
+        - `make test-api-endpoints SCOPE=tests/api/chat.test.ts API_PORT=8703 UI_PORT=5103 MAILDEV_UI_PORT=1003 REGISTRY=local ENV=test-feat-todo-steering-workflow-core`
+        - `make test-ui SCOPE=tests/utils/todo-api.test.ts API_PORT=8703 UI_PORT=5103 MAILDEV_UI_PORT=1003 REGISTRY=local ENV=test-feat-todo-steering-workflow-core`
+    - [ ] `L4-S4` DEV - Progression rendering semantics (checked + strike) driven by AI updates.
+      - API files impacted (planned):
+        - `api/src/services/chat-service.ts` (tool result payload includes updated task/todo status map for UI).
+      - UI files impacted (planned):
+        - `ui/src/lib/components/StreamMessage.svelte`
+        - `ui/src/lib/components/ChatPanel.svelte`
+        - `ui/src/locales/en.json`
+        - `ui/src/locales/fr.json`
+      - Scoped make checks (run only after this DEV slice is implemented):
+        - `make typecheck-ui API_PORT=8703 UI_PORT=5103 MAILDEV_UI_PORT=1003 REGISTRY=local ENV=test-feat-todo-steering-workflow-core`
+        - `make lint-ui API_PORT=8703 UI_PORT=5103 MAILDEV_UI_PORT=1003 REGISTRY=local ENV=test-feat-todo-steering-workflow-core`
+        - `make test-ui SCOPE=tests/utils/todo-chat-rendering.test.ts API_PORT=8703 UI_PORT=5103 MAILDEV_UI_PORT=1003 REGISTRY=local ENV=test-feat-todo-steering-workflow-core`
+  - [ ] **TEST slices (execute only after DEV slices are complete)**
+    - [ ] `L4-S5` TEST - API scoped validation for progression + session rule.
+      - API files impacted (planned):
+        - `api/tests/api/chat-tools.test.ts`
+        - `api/tests/api/todos.test.ts`
+        - `api/tests/api/tasks.test.ts`
+        - `api/tests/api/chat.test.ts`
+      - UI files impacted (planned): none.
+      - Scoped make commands:
+        - `make test-api-endpoints SCOPE=tests/api/chat-tools.test.ts API_PORT=8703 UI_PORT=5103 MAILDEV_UI_PORT=1003 REGISTRY=local ENV=test-feat-todo-steering-workflow-core`
+        - `make test-api-endpoints SCOPE=tests/api/todos.test.ts API_PORT=8703 UI_PORT=5103 MAILDEV_UI_PORT=1003 REGISTRY=local ENV=test-feat-todo-steering-workflow-core`
+        - `make test-api-endpoints SCOPE=tests/api/tasks.test.ts API_PORT=8703 UI_PORT=5103 MAILDEV_UI_PORT=1003 REGISTRY=local ENV=test-feat-todo-steering-workflow-core`
+        - `make test-api-endpoints SCOPE=tests/api/chat.test.ts API_PORT=8703 UI_PORT=5103 MAILDEV_UI_PORT=1003 REGISTRY=local ENV=test-feat-todo-steering-workflow-core`
+    - [ ] `L4-S6` TEST - UI scoped validation for panel state + rendering.
+      - API files impacted (planned): none.
+      - UI files impacted (planned):
+        - `ui/tests/utils/todo-api.test.ts`
+        - `ui/tests/utils/todo-chat-rendering.test.ts`
+        - `ui/tests/utils/api.test.ts`
+        - `ui/tests/stores/todo-runtime.test.ts`
+      - Scoped make commands:
+        - `make test-ui SCOPE=tests/utils/todo-api.test.ts API_PORT=8703 UI_PORT=5103 MAILDEV_UI_PORT=1003 REGISTRY=local ENV=test-feat-todo-steering-workflow-core`
+        - `make test-ui SCOPE=tests/utils/todo-chat-rendering.test.ts API_PORT=8703 UI_PORT=5103 MAILDEV_UI_PORT=1003 REGISTRY=local ENV=test-feat-todo-steering-workflow-core`
+        - `make test-ui SCOPE=tests/utils/api.test.ts API_PORT=8703 UI_PORT=5103 MAILDEV_UI_PORT=1003 REGISTRY=local ENV=test-feat-todo-steering-workflow-core`
+        - `make test-ui SCOPE=tests/stores/todo-runtime.test.ts API_PORT=8703 UI_PORT=5103 MAILDEV_UI_PORT=1003 REGISTRY=local ENV=test-feat-todo-steering-workflow-core`
+    - [ ] `L4-S7` TEST - E2E scoped validation for session runtime behavior (no global campaign).
+      - API files impacted (planned): none.
+      - UI files impacted (planned): none.
+      - E2E files impacted (planned):
+        - `e2e/tests/03-chat.spec.ts`
+        - `e2e/tests/09-todo-steering-core.spec.ts`
+      - Scoped make commands:
+        - `make build-api build-ui-image API_PORT=8703 UI_PORT=5103 MAILDEV_UI_PORT=1003 REGISTRY=local ENV=e2e-feat-todo-steering-workflow-core`
+        - `make test-e2e E2E_SPEC=tests/09-todo-steering-core.spec.ts API_PORT=8703 UI_PORT=5103 MAILDEV_UI_PORT=1003 REGISTRY=local WORKERS=1 ENV=e2e-feat-todo-steering-workflow-core`
+        - `make test-e2e E2E_SPEC=tests/03-chat.spec.ts API_PORT=8703 UI_PORT=5103 MAILDEV_UI_PORT=1003 REGISTRY=local WORKERS=1 ENV=e2e-feat-todo-steering-workflow-core`
+  - [ ] **Lot 4 UAT checklist (web app only, operator runbook)**
+    - [ ] Setup:
+      - [ ] Use root workspace `~/src/top-ai-ideas-fullstack` on `ENV=dev` and open `/folders`.
+      - [ ] Open chat widget in a fresh session with TODO tooling enabled.
+    - [ ] Scenario UAT-1: one TODO max per session.
+      - [ ] Ask AI to create a first TODO with at least 3 tasks; verify creation success.
+      - [ ] In the same session, ask AI to create a second TODO; verify deterministic conflict behavior (no second active TODO created, conflict message references current active TODO).
+    - [ ] Scenario UAT-2: sticky bottom panel UX.
+      - [ ] Verify TODO panel is sticky at bottom of conversation and spans full available width.
+      - [ ] Verify panel can collapse/expand and keeps state during ongoing chat interaction.
+      - [ ] Verify max-height constraint and internal scroll when task list exceeds visible space.
+    - [ ] Scenario UAT-3: progression via AI.
+      - [ ] Ask AI to mark one task as done, then another task in progress, then TODO done when all tasks are complete.
+      - [ ] Verify runtime progression is reflected in statuses (`todo -> planned -> in_progress -> done`, plus blocked/deferred/cancelled paths when explicitly requested).
+    - [ ] Scenario UAT-4: checked + strike rendering.
+      - [ ] Verify each completed task is rendered checked and struck-through in chat TODO panel.
+      - [ ] Verify non-completed tasks remain unstruck and visually distinct.
+    - [ ] Scenario UAT-5: session persistence.
+      - [ ] Close and reopen chat widget in same session; verify TODO panel state and task statuses persist.
+      - [ ] Switch to another session then back; verify the original session TODO panel is restored with identical progression state.
+      - [ ] Reload page and reopen same chat session; verify persisted state is rehydrated.
   - [ ] To-be docs (deferred):
-    - [ ] Record multi-user/multi-AI collaborative TODO ergonomics as deferred evolution (actor markers/avatar-style visualization).
+    - [!] Record multi-user/multi-AI collaborative TODO ergonomics as deferred evolution (actor markers/avatar-style visualization and concurrent editing UX).
 
 - [ ] **Lot N-2 — UAT**
   - [ ] Web app
