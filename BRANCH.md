@@ -163,6 +163,20 @@ Open decision items for BR-03 restart:
   - `Product-vs-test conclusion`: provisional `test/infra` (lane port collision) + `test bug/flaky` candidate on `07_comment_assistant:117`; no BR-03 product regression signature isolated yet.
   - `Decision needed`: stabilize `07_comment_assistant` deterministic readiness/assertion path and rerun scoped AI-flaky gate on clean lane.
   - `Blocker threshold`: non-blocking for BR-03 scoped progression; blocking for final AI-flaky completion.
+- `ID`: `BR03-FL09`
+  - `Branch`: `BR-03`
+  - `Owner`: product + conductor
+  - `Severity`: high
+  - `Status`: `attention`
+  - `Repro steps`:
+    - In UAT on `uat/br03-local`, open chat with TODO toggle enabled.
+    - Ask progression question like "tu as coche la todo ?".
+  - `Expected`: AI can manage TODO progression (mark tasks/todo done) and report actionable plan status from runtime tooling.
+  - `Actual`: AI reports that `todo_create` can create plan/TODO/tasks but cannot mark existing tasks/TODO as done.
+  - `Evidence`: user screenshot (2026-02-27) with assistant response: no tool available to "cocher / marquer comme fait" existing TODO/task.
+  - `Product-vs-test conclusion`: `product gap` (missing tool/runtime capability), not a test bug.
+  - `Decision`: create and prioritize Lot 4 for session-bound TODO progression runtime + sticky UI behavior.
+  - `Blocker threshold`: blocking for BR03 TODO-runtime functional intent completion.
 
 ## AI Flaky tests
 - Acceptance rule:
@@ -329,6 +343,7 @@ Open decision items for BR-03 restart:
 - [x] **Lot 3 — Minimal UI surfaces (chat TODO + agent/workflow config)** (Closed on 2026-02-27 after passing UI typecheck/lint, UI tests, and grouped E2E gate `A38` for `03 06 09`.)
   - [x] Implement in-chat TODO rendering when AI creates/uses TODO (chat card/list surface only). (Implementation evidence 2026-02-26: `ui/src/lib/components/StreamMessage.svelte` now parses `tool_call_result` for `todo_create` and renders inline TODO cards with plan/todo/task summary in chat messages.)
   - [x] Implement chat-driven TODO creation flow using BR-03 APIs. (Implementation evidence 2026-02-26: `ui/src/lib/components/ChatPanel.svelte` now exposes `todo_create` tool toggle in chat tool orchestration using existing `/api/v1/chat/messages` flow.)
+  - [x] Wire server-side `todo_create` tool in chat runtime (UAT gap fix, 2026-02-27). (Implementation evidence: `api/src/services/tools.ts` + `api/src/services/chat-service.ts` now expose and execute `todo_create` through `todoOrchestrationService.createTodoFromChat`; validation: `make typecheck-api API_PORT=8793 UI_PORT=5193 MAILDEV_UI_PORT=1093 ENV=test-feat-todo-steering-workflow-core` => pass and `make test-api-unit SCOPE=tests/unit/chat-service-tools.test.ts API_PORT=8793 UI_PORT=5193 MAILDEV_UI_PORT=1093 ENV=test-feat-todo-steering-workflow-core` => pass with new `todo_create` unit coverage.)
   - [x] Add basic `Agent Configuration` and `Workflow Configuration` sections in `/settings` with fork/detach/inheritance indicators. (Implementation evidence 2026-02-26: new `ui/src/lib/components/TodoRuntimeConfigPanel.svelte` integrated in `ui/src/routes/settings/+page.svelte`; supports list/edit/fork/detach and drift indicator based on parent sync timestamps.)
   - [x] Implement placeholder extraction behavior (`{{object_name}}`) into workflow metadata save/update flow. (Implementation evidence 2026-02-26: `TodoRuntimeConfigPanel` computes per-section placeholder tokens and persists `config.placeholderMetadata` on workflow save via `PUT /workflow-config`.)
   - [x] Keep explicit BR-03 UX boundary. (Implementation evidence 2026-02-26: `ui/src/lib/components/TodoRuntimeConfigPanel.svelte` now shows an explicit BR-03 scope-boundary notice stating that full `Plan/Comments/Chat/Jobs` operations and visual workflow designer UX are deferred.)
@@ -383,6 +398,24 @@ Open decision items for BR-03 restart:
       - [x] A38 final grouped gate rerun (2026-02-27): `make clean test-e2e API_PORT=8703 UI_PORT=5103 MAILDEV_UI_PORT=1003 E2E_GROUPS="03 06 09" WORKERS=1 ENV=e2e-feat-todo-steering-workflow-core` => runner confirmed `▶ Running Playwright by groups: 03 06 09`; group `03`: `17 passed (37.6s)`; group `06`: `23 passed, 3 skipped (25.0s)`; group `09`: `1 passed (8.7s)`; command exit `0`. Classification: pass, no residual flaky signature on targeted BR03 groups in this run.
       - [x] AI flaky tests run (non-blocking only under acceptance rule): scoped `E2E_SPEC` runs executed and signatures recorded in `BRANCH.md` (latest reruns include 2026-02-26): `tests/00-ai-generation.spec.ts` => pass (`2` passed, `1.3m`); `tests/03-chat.spec.ts` => pass (`11` passed, `28.7s`) on latest rerun after selector/state alignment; `tests/03-chat-chrome-extension.spec.ts` => pass (`2` passed, `11.7s`); `tests/07_comment_assistant.spec.ts` => fail signature `Test timeout of 180000ms exceeded` at `tests/07_comment_assistant.spec.ts:47` (`button[aria-label=\"Choisir une conversation\"]` not visible across retries), classification `test bug/flaky` candidate.
       - [x] Verify no timeout inflation in updated E2E specs (`test.setTimeout` unchanged). (2026-02-27: no `test.setTimeout(...)` additions/changes found in diff for `e2e/tests/03-chat.spec.ts`, `e2e/tests/06-settings.spec.ts`, `e2e/tests/09-todo-steering-core.spec.ts`, `e2e/tests/07_comment_assistant.spec.ts`; existing `180_000` declarations were pre-existing.)
+
+- [ ] **Lot 4 — Session-bound TODO progression runtime (new product intent, 2026-02-27)**
+  - [ ] API/tooling progression capabilities:
+    - [ ] Add chat tool contract for progression updates (`todo_update` and/or `task_update`) so AI can mark task/todo completion and adjust progression.
+    - [ ] Enforce one active TODO max per chat session for BR03 (clear conflict behavior if a second create is requested).
+    - [x] Confirm completion timestamp model exists (`tasks.completedAt`, `todos.closedAt`) and reuse it (no new migration required unless new hard requirement appears).
+    - [ ] Add/extend scoped API tests for progression tool path (creation + status updates + permission enforcement).
+  - [ ] UI/UX TODO panel behavior in chat:
+    - [ ] Make TODO panel sticky at the bottom of conversation.
+    - [ ] Full-width panel layout with collapsible state.
+    - [ ] Max-height + internal scroll, aligned with existing component style.
+    - [ ] Render completed tasks as checked + struck-through.
+    - [ ] Keep scope non-collaborative for now (no manual collaborative edit in BR03).
+  - [ ] Session semantics:
+    - [ ] Attach TODO lifecycle to chat session and restore state on session reopen.
+    - [ ] Allow user prompts that ask AI to modify plan/progression and verify tool usage path in stream events.
+  - [ ] To-be docs (deferred):
+    - [ ] Record multi-user/multi-AI collaborative TODO ergonomics as deferred evolution (actor markers/avatar-style visualization).
 
 - [ ] **Lot N-2 — UAT**
   - [ ] Web app

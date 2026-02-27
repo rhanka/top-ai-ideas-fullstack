@@ -146,7 +146,19 @@ Context rule:
 
 ### 9.1 In-chat TODO display and creation
 - If AI decides to create/use a TODO, chat renders a TODO card/list inline.
-- Chat/agent can create TODO and tasks via `plan` tool APIs.
+- Chat/agent can create TODO and tasks via `todo_create` chat tool orchestration.
+
+### 9.1.1 Session-bound TODO runtime follow-up (Lot 4 target)
+- A TODO created from chat is attached to the chat session.
+- v1.1 UI behavior:
+  - sticky container at the bottom of the conversation,
+  - full-width layout,
+  - collapsible panel,
+  - max-height with internal scroll (consistent with existing chat components).
+- At most one active TODO per chat session in BR-03 v1.1.
+- The user can ask the AI to update plan progression (task/todo status updates) from chat.
+- Collaborative manual edition of TODO content is out of scope for BR-03 and deferred.
+- Completed tasks must be rendered as checked + struck-through in chat surfaces.
 
 ### 9.2 Basic Agent Configuration section
 - Configure generation agents (currently prompt-backed).
@@ -240,6 +252,10 @@ Configuration APIs:
 - `POST /api/v1/workflow-config/:id/fork`
 - `POST /api/v1/workflow-config/:id/detach`
 
+Chat tool contract (BR-03):
+- `todo_create` is required for AI-created TODO bootstrap from chat.
+- TODO progression updates from chat (task/todo status mutation) are required in Lot 4 (`todo_update` / `task_update` contract to finalize in branch plan).
+
 ## 13) Branch Dependencies and Sequencing
 
 - BR-03 provides core runtime contracts.
@@ -297,3 +313,8 @@ This spec iteration is ready to instantiate BR-03 only when:
 - API surface v1 is accepted,
 - migration scope v1 is accepted,
 - BR-03/BR-04/BR-05/BR-14 boundaries are accepted.
+
+## 18) Future To-Be (outside BR-03)
+
+- Collaborative TODO boards (multi-user + multi-AI) are deferred.
+- Future UX should expose actor identity in TODO/task history and assignment surfaces (e.g., avatar/logo markers per actor).
