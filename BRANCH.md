@@ -398,6 +398,36 @@ Open decision items for BR-03 restart:
       - [x] A38 final grouped gate rerun (2026-02-27): `make clean test-e2e API_PORT=8703 UI_PORT=5103 MAILDEV_UI_PORT=1003 E2E_GROUPS="03 06 09" WORKERS=1 ENV=e2e-feat-todo-steering-workflow-core` => runner confirmed `▶ Running Playwright by groups: 03 06 09`; group `03`: `17 passed (37.6s)`; group `06`: `23 passed, 3 skipped (25.0s)`; group `09`: `1 passed (8.7s)`; command exit `0`. Classification: pass, no residual flaky signature on targeted BR03 groups in this run.
       - [x] AI flaky tests run (non-blocking only under acceptance rule): scoped `E2E_SPEC` runs executed and signatures recorded in `BRANCH.md` (latest reruns include 2026-02-26): `tests/00-ai-generation.spec.ts` => pass (`2` passed, `1.3m`); `tests/03-chat.spec.ts` => pass (`11` passed, `28.7s`) on latest rerun after selector/state alignment; `tests/03-chat-chrome-extension.spec.ts` => pass (`2` passed, `11.7s`); `tests/07_comment_assistant.spec.ts` => fail signature `Test timeout of 180000ms exceeded` at `tests/07_comment_assistant.spec.ts:47` (`button[aria-label=\"Choisir une conversation\"]` not visible across retries), classification `test bug/flaky` candidate.
       - [x] Verify no timeout inflation in updated E2E specs (`test.setTimeout` unchanged). (2026-02-27: no `test.setTimeout(...)` additions/changes found in diff for `e2e/tests/03-chat.spec.ts`, `e2e/tests/06-settings.spec.ts`, `e2e/tests/09-todo-steering-core.spec.ts`, `e2e/tests/07_comment_assistant.spec.ts`; existing `180_000` declarations were pre-existing.)
+  - [ ] **Lot 3 UAT checklist (remaining, operator runbook)**
+    - [ ] Web app
+      - [ ] UAT setup:
+        - [x] Push branch from `tmp/feat-todo-steering-workflow-core`. (2026-02-27: `git -C /home/antoinefa/src/top-ai-ideas-fullstack/tmp/feat-todo-steering-workflow-core push --force-with-lease origin feat/todo-steering-workflow-core` => pass; remote updated to `2d09b0a`.)
+        - [x] Switch to root workspace `~/src/top-ai-ideas-fullstack` with `ENV=dev`. (2026-02-27: `make -C /home/antoinefa/src/top-ai-ideas-fullstack ps ENV=dev` => pass; services `dev-api`, `dev-ui`, `dev-postgres`, `dev-maildev`, `dev-minio` up/healthy on standard dev ports.)
+      - [ ] Detailed evol tests:
+        - [ ] Open chat, ask AI to create a TODO with at least 3 tasks; verify inline TODO card renders in chat.
+        - [ ] Open `/settings`, verify Agent Configuration and Workflow Configuration sections (list, edit, fork, detach, inheritance drift indicator).
+        - [ ] In `/settings`, edit one agent config and one workflow config, save, reload, verify persisted values.
+        - [ ] In `/settings`, execute fork then detach once on agent/workflow config and verify lineage indicators remain coherent after reload.
+      - [ ] Detailed non-regression tests:
+        - [ ] Standard chat send/receive still works.
+        - [ ] Existing settings sections (AI settings, prompts, workspace settings) still operate.
+        - [ ] Workspace switching and RBAC behavior remain unchanged.
+    - [ ] Chrome plugin
+      - [ ] UAT setup:
+        - [ ] Launch extension overlay/sidepanel against same backend instance.
+      - [ ] Detailed evol tests:
+        - [ ] In extension chat, trigger TODO creation and confirm inline TODO rendering parity with web app.
+        - [ ] Validate steer-related chat behavior does not break extension session lifecycle.
+      - [ ] Detailed non-regression tests:
+        - [ ] Local tool permissions menu remains functional.
+        - [ ] Existing chat context scoping behavior remains stable.
+    - [ ] VSCode plugin
+      - [ ] UAT setup:
+        - [ ] BR-05 plugin surface not delivered yet; run contract validation only.
+      - [ ] Detailed evol tests:
+        - [ ] Validate BR-03 endpoint contracts manually (plans/todos/tasks/runs/agent-config/workflow-config) for BR-05 handoff payload compatibility.
+      - [ ] Detailed non-regression tests:
+        - [ ] N/A for UI runtime until BR-05 implementation; keep as downstream dependency checkpoint.
 
 - [ ] **Lot 4 — Session-bound TODO progression runtime (planning-only, no implementation in this planning step)**
   - [ ] Order contract (mandatory): finish DEV slices `L4-S1` to `L4-S4` before executing any TEST slice `L4-S5` to `L4-S7`.
@@ -495,8 +525,13 @@ Open decision items for BR-03 restart:
         - `make build-api build-ui-image API_PORT=8703 UI_PORT=5103 MAILDEV_UI_PORT=1003 REGISTRY=local ENV=e2e-feat-todo-steering-workflow-core`
         - `make test-e2e E2E_SPEC=tests/09-todo-steering-core.spec.ts API_PORT=8703 UI_PORT=5103 MAILDEV_UI_PORT=1003 REGISTRY=local WORKERS=1 ENV=e2e-feat-todo-steering-workflow-core`
         - `make test-e2e E2E_SPEC=tests/03-chat.spec.ts API_PORT=8703 UI_PORT=5103 MAILDEV_UI_PORT=1003 REGISTRY=local WORKERS=1 ENV=e2e-feat-todo-steering-workflow-core`
-  - [ ] **Lot 4 UAT checklist (web app only, operator runbook)**
-    - [ ] Setup:
+  - [ ] To-be docs (deferred):
+    - [!] Record multi-user/multi-AI collaborative TODO ergonomics as deferred evolution (actor markers/avatar-style visualization and concurrent editing UX).
+
+- [ ] **Lot N-2 — UAT (post-Lot4 only; single source of truth)**
+  - [ ] Web app
+    - [ ] UAT setup:
+      - [ ] Execute only after `L4-S1` to `L4-S7` are completed.
       - [ ] Use root workspace `~/src/top-ai-ideas-fullstack` on `ENV=dev` and open `/folders`.
       - [ ] Open chat widget in a fresh session with TODO tooling enabled.
     - [ ] Scenario UAT-1: one TODO max per session.
@@ -516,39 +551,6 @@ Open decision items for BR-03 restart:
       - [ ] Close and reopen chat widget in same session; verify TODO panel state and task statuses persist.
       - [ ] Switch to another session then back; verify the original session TODO panel is restored with identical progression state.
       - [ ] Reload page and reopen same chat session; verify persisted state is rehydrated.
-  - [ ] To-be docs (deferred):
-    - [!] Record multi-user/multi-AI collaborative TODO ergonomics as deferred evolution (actor markers/avatar-style visualization and concurrent editing UX).
-
-- [ ] **Lot N-2 — UAT**
-  - [ ] Web app
-    - [ ] UAT setup:
-      - [x] Push branch from `tmp/feat-todo-steering-workflow-core`. (2026-02-27: `git -C /home/antoinefa/src/top-ai-ideas-fullstack/tmp/feat-todo-steering-workflow-core push --force-with-lease origin feat/todo-steering-workflow-core` => pass; remote updated to `2d09b0a`.)
-      - [x] Switch to root workspace `~/src/top-ai-ideas-fullstack` with `ENV=dev`. (2026-02-27: `make -C /home/antoinefa/src/top-ai-ideas-fullstack ps ENV=dev` => pass; services `dev-api`, `dev-ui`, `dev-postgres`, `dev-maildev`, `dev-minio` up/healthy on standard dev ports.)
-    - [ ] Detailed evol tests:
-      - [ ] Open chat, ask AI to create a TODO with at least 3 tasks; verify inline TODO card renders in chat.
-      - [ ] Open `/settings`, verify Agent Configuration and Workflow Configuration sections (list, edit, fork, detach, inheritance drift indicator).
-      - [ ] In `/settings`, edit one agent config and one workflow config, save, reload, verify persisted values.
-      - [ ] In `/settings`, execute fork then detach once on agent/workflow config and verify lineage indicators remain coherent after reload.
-    - [ ] Detailed non-regression tests:
-      - [ ] Standard chat send/receive still works.
-      - [ ] Existing settings sections (AI settings, prompts, workspace settings) still operate.
-      - [ ] Workspace switching and RBAC behavior remain unchanged.
-  - [ ] Chrome plugin
-    - [ ] UAT setup:
-      - [ ] Launch extension overlay/sidepanel against same backend instance.
-    - [ ] Detailed evol tests:
-      - [ ] In extension chat, trigger TODO creation and confirm inline TODO rendering parity with web app.
-      - [ ] Validate steer-related chat behavior does not break extension session lifecycle.
-    - [ ] Detailed non-regression tests:
-      - [ ] Local tool permissions menu remains functional.
-      - [ ] Existing chat context scoping behavior remains stable.
-  - [ ] VSCode plugin
-    - [ ] UAT setup:
-      - [ ] BR-05 plugin surface not delivered yet; run contract validation only.
-    - [ ] Detailed evol tests:
-      - [ ] Validate BR-03 endpoint contracts manually (plans/todos/tasks/runs/agent-config/workflow-config) for BR-05 handoff payload compatibility.
-    - [ ] Detailed non-regression tests:
-      - [ ] N/A for UI runtime until BR-05 implementation; keep as downstream dependency checkpoint.
 
 - [ ] **Lot N-1 — Docs consolidation**
   - [ ] Apply `BR03-EX1` if docs paths are touched.
