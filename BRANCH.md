@@ -526,11 +526,9 @@ Open decision items for BR-03 restart:
       - [x] Switch to root workspace `~/src/top-ai-ideas-fullstack` with `ENV=dev`. (2026-02-27: `make -C /home/antoinefa/src/top-ai-ideas-fullstack ps ENV=dev` => pass; services `dev-api`, `dev-ui`, `dev-postgres`, `dev-maildev`, `dev-minio` up/healthy on standard dev ports.)
     - [ ] Detailed evol tests:
       - [ ] Open chat, ask AI to create a TODO with at least 3 tasks; verify inline TODO card renders in chat.
-      - [ ] Verify TODO/task statuses follow v1 transitions (`todo -> planned -> in_progress -> done` and blocked/deferred/cancelled paths).
-      - [ ] Reassign TODO owner and one task assignee; verify permission checks and audit/event trace.
-      - [ ] Start a task, send steer message during execution, verify run event stream and status progression.
-      - [ ] Trigger a guardrail requiring approval; verify transition is prevented until approval path is satisfied.
       - [ ] Open `/settings`, verify Agent Configuration and Workflow Configuration sections (list, edit, fork, detach, inheritance drift indicator).
+      - [ ] In `/settings`, edit one agent config and one workflow config, save, reload, verify persisted values.
+      - [ ] In `/settings`, execute fork then detach once on agent/workflow config and verify lineage indicators remain coherent after reload.
     - [ ] Detailed non-regression tests:
       - [ ] Standard chat send/receive still works.
       - [ ] Existing settings sections (AI settings, prompts, workspace settings) still operate.
