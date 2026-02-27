@@ -4,6 +4,15 @@ import { createId } from '../utils/id';
 import { sql, eq, and, gt } from 'drizzle-orm';
 import type { StreamEventType } from './openai';
 
+const isMissingChatMessageForeignKey = (error: unknown): boolean => {
+  if (!error || typeof error !== 'object') return false;
+  const candidate = error as { code?: unknown; constraint?: unknown; message?: unknown };
+  if (candidate.code !== '23503') return false;
+  if (candidate.constraint === 'chat_stream_events_message_id_chat_messages_id_fk') return true;
+  return typeof candidate.message === 'string'
+    && candidate.message.includes('chat_stream_events_message_id_chat_messages_id_fk');
+};
+
 /**
  * Génère un stream_id unique
  * - Pour générations classiques : `prompt_id` + timestamp (ou `job_id` si disponible)
@@ -40,16 +49,31 @@ export async function writeStreamEvent(
   messageId?: string | null
 ): Promise<void> {
   const eventId = createId();
-
-  // Écrire l'événement dans chat_stream_events
-  await db.insert(chatStreamEvents).values({
+  const requestedMessageId = messageId || null;
+  const baseValues = {
     id: eventId,
-    messageId: messageId || null,
     streamId,
     eventType,
     data,
     sequence
-  });
+  };
+
+  try {
+    // Primary path: keep message linkage when available.
+    await db.insert(chatStreamEvents).values({
+      ...baseValues,
+      messageId: requestedMessageId
+    });
+  } catch (error) {
+    // Race-safe fallback: message can be deleted while a stream is still flushing events.
+    if (!requestedMessageId || !isMissingChatMessageForeignKey(error)) {
+      throw error;
+    }
+    await db.insert(chatStreamEvents).values({
+      ...baseValues,
+      messageId: null
+    });
+  }
 
   // Envoyer un NOTIFY PostgreSQL pour temps réel
   // Payload minimal : stream_id, sequence, event_type (pour éviter dépassement 8k)
@@ -152,4 +176,3 @@ export async function listActiveStreamIds(options?: { sinceMinutes?: number; lim
 
   return rows.map(r => r.streamId).filter(Boolean);
 }
-

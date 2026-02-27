@@ -106,6 +106,17 @@ const asRecord = (value: unknown): Record<string, unknown> | null => {
 
 const isValidToolName = (value: string): boolean => /^[a-zA-Z0-9_-]{1,64}$/.test(value);
 
+const W1_LOCAL_TOOL_ALLOWLIST = new Set<string>([
+  'tab_read',
+  'tab_action',
+  'tab_info',
+  'tab_read_dom',
+  'tab_screenshot',
+  'tab_click',
+  'tab_type',
+  'tab_scroll',
+]);
+
 export class ChatService {
   private normalizeMessageContexts(
     input: Pick<CreateChatMessageInput, 'contexts' | 'primaryContextType' | 'primaryContextId'>
@@ -175,6 +186,7 @@ export class ChatService {
     for (const item of definitions ?? []) {
       const name = typeof item?.name === 'string' ? item.name.trim() : '';
       if (!name || !isValidToolName(name) || seen.has(name)) continue;
+      if (!W1_LOCAL_TOOL_ALLOWLIST.has(name)) continue;
 
       const description =
         typeof item?.description === 'string' && item.description.trim()
@@ -599,9 +611,23 @@ export class ChatService {
     const selectedModel = resolvedSelection.model_id;
     const selectedProviderId = resolvedSelection.provider_id;
 
+    const staleMessageRows = await db
+      .select({ id: chatMessages.id })
+      .from(chatMessages)
+      .where(and(eq(chatMessages.sessionId, msg.sessionId), gt(chatMessages.sequence, msg.sequence)));
+    const staleMessageIds = staleMessageRows.map((row) => row.id).filter(Boolean);
+
     await db
       .delete(chatMessages)
       .where(and(eq(chatMessages.sessionId, msg.sessionId), gt(chatMessages.sequence, msg.sequence)));
+
+    if (staleMessageIds.length > 0) {
+      // Retry can delete assistant rows while stream flush is still in-flight.
+      // Cleanup by stream_id avoids orphan events when message_id fallback was used.
+      await db
+        .delete(chatStreamEvents)
+        .where(inArray(chatStreamEvents.streamId, staleMessageIds));
+    }
 
     const assistantMessageId = createId();
     const assistantSeq = msg.sequence + 1;
