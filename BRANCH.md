@@ -293,6 +293,7 @@ Deliver W1 of `SPEC_EVOL_CHROME_UPSTREAM`: upstream control protocol + single-ta
   - [ ] UAT preparation:
     - [ ] Push branch and confirm commit-identical SHA for UAT worktree.
       - Evidence (2026-02-26 D42): local worktree branch `feat/chrome-upstream-v1` at `ecc519f527e2d8c1fe37cdd77ad70a42c6cbb512`; root workspace currently at `6534c58de95b40309c3067cc4b81fa8585af048d`; push + SHA alignment still pending.
+      - Evidence (2026-02-26 D43 post-rebase): local worktree branch `feat/chrome-upstream-v1` now at `0b9b94c89af637ccb7eeb1eca0a2eca28c874c93`; root workspace remains at `6534c58de95b40309c3067cc4b81fa8585af048d`; push + commit-identical UAT alignment still pending.
     - [ ] Start user UAT in root workspace (`ENV=dev` only).
   - [ ] Web app UAT checklist:
     - [ ] Open `/folders` then open chat panel; verify chat is usable without extension runtime.
