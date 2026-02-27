@@ -313,7 +313,22 @@ describe('Chat API Endpoints', () => {
       );
       const created = await create.json();
 
-      const before = await db.select({ id: jobQueue.id }).from(jobQueue);
+      const listJobsForAssistantMessage = async () => {
+        const jobs = await db
+          .select({ id: jobQueue.id, data: jobQueue.data })
+          .from(jobQueue);
+
+        return jobs.filter((job) => {
+          const rawData = job.data as unknown;
+          const data =
+            typeof rawData === 'string'
+              ? (JSON.parse(rawData) as Record<string, unknown>)
+              : (rawData as Record<string, unknown>);
+          return data?.assistantMessageId === created.assistantMessageId;
+        });
+      };
+
+      const before = await listJobsForAssistantMessage();
 
       const acceptSpy = vi
         .spyOn(chatService, 'acceptLocalToolResult')
@@ -338,8 +353,8 @@ describe('Chat API Endpoints', () => {
         expect(body.resumed).toBe(false);
         expect(body.waitingForToolCallIds).toEqual(['call_local_2']);
 
-        const after = await db.select({ id: jobQueue.id }).from(jobQueue);
-        expect(after.length).toBe(before.length);
+        const after = await listJobsForAssistantMessage();
+        expect(after).toHaveLength(before.length);
       } finally {
         acceptSpy.mockRestore();
       }

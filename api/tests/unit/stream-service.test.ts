@@ -135,6 +135,32 @@ describe('Stream Service', () => {
       await db.delete(chatMessages).where(eq(chatMessages.id, messageId));
     });
 
+    it('should fallback to null messageId when referenced message was deleted', async () => {
+      const deletedMessageId = createId();
+      await db.insert(chatMessages).values({
+        id: deletedMessageId,
+        sessionId: testSessionId,
+        role: 'assistant',
+        content: 'Will be deleted',
+        sequence: 1,
+        createdAt: new Date()
+      });
+      await db.delete(chatMessages).where(eq(chatMessages.id, deletedMessageId));
+
+      await expect(
+        writeStreamEvent(testStreamId, 'status', { state: 'started' }, 1, deletedMessageId)
+      ).resolves.not.toThrow();
+
+      const events = await db
+        .select()
+        .from(chatStreamEvents)
+        .where(eq(chatStreamEvents.streamId, testStreamId));
+
+      expect(events.length).toBe(1);
+      expect(events[0].messageId).toBeNull();
+      expect(events[0].eventType).toBe('status');
+    });
+
     it('should write multiple events with different sequences', async () => {
       await writeStreamEvent(testStreamId, 'reasoning_delta', { delta: 'Step 1' }, 1);
       await writeStreamEvent(testStreamId, 'reasoning_delta', { delta: 'Step 2' }, 2);
@@ -326,4 +352,3 @@ describe('Stream Service', () => {
     });
   });
 });
-
