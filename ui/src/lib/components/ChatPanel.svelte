@@ -926,6 +926,59 @@
     handleLocalToolCallDelta(event);
   };
 
+  const setAssistantLocalStatusForStream = (
+    streamId: string,
+    status: 'processing' | 'failed',
+  ) => {
+    messages = messages.map((message) => {
+      if (message.role !== 'assistant') return message;
+      const messageStreamId = message._streamId ?? message.id;
+      if (messageStreamId !== streamId) return message;
+      if (status === 'processing' && message._localStatus === 'completed') {
+        return message;
+      }
+      return {
+        ...message,
+        _localStatus: status,
+      };
+    });
+  };
+
+  const handleUpstreamProtocolEvent = (event: StreamHubEvent) => {
+    if (
+      event.type !== 'upstream_session_state' &&
+      event.type !== 'upstream_command_ack'
+    ) {
+      return;
+    }
+    const streamId = String((event as any)?.streamId ?? '').trim();
+    if (!streamId) return;
+    const data = ((event as any)?.data ?? {}) as Record<string, unknown>;
+
+    if (event.type === 'upstream_session_state') {
+      const lifecycleState = String(data.lifecycle_state ?? '').trim();
+      if (lifecycleState === 'error' || lifecycleState === 'closed') {
+        setAssistantLocalStatusForStream(streamId, 'failed');
+        const reason = String(data.reason ?? '').trim();
+        if (reason) errorMsg = reason;
+      }
+      return;
+    }
+
+    const ackStatus = String(data.status ?? '').trim();
+    if (ackStatus === 'accepted' || ackStatus === 'completed') {
+      setAssistantLocalStatusForStream(streamId, 'processing');
+      return;
+    }
+    if (ackStatus === 'failed' || ackStatus === 'rejected') {
+      setAssistantLocalStatusForStream(streamId, 'failed');
+      const reason = String(
+        (data.error as { message?: unknown } | undefined)?.message ?? '',
+      ).trim();
+      if (reason) errorMsg = reason;
+    }
+  };
+
   $: commentPlaceholder = !$workspaceCanComment
     ? $_('chat.comments.placeholder.disabledViewer')
     : commentThreadResolved
@@ -2763,6 +2816,7 @@
     localToolsHubKey = `chat-local-tools:${Math.random().toString(36).slice(2)}`;
     streamHub.set(localToolsHubKey, (event: StreamHubEvent) => {
       handleLocalToolStreamEvent(event);
+      handleUpstreamProtocolEvent(event);
     });
     if (mode !== 'ai') return;
     sessionDocsSseKey = `chat-documents:${Math.random().toString(36).slice(2)}`;

@@ -1,4 +1,8 @@
 import { writable } from 'svelte/store';
+import {
+  detectW1ScopeViolation,
+  getW1ScopeViolationMessage,
+} from '$lib/utils/chat-tool-scope';
 
 export type LocalToolName =
   | 'tab_read'
@@ -266,6 +270,19 @@ export async function executeLocalTool(
   });
 
   try {
+    const violation = detectW1ScopeViolation(args);
+    const violationMessage = getW1ScopeViolationMessage(violation);
+    if (violationMessage) {
+      upsertExecution(toolCallId, {
+        name,
+        args,
+        streamId: options?.streamId,
+        status: 'failed',
+        error: violationMessage,
+      });
+      throw new Error(violationMessage);
+    }
+
     const response = await sendMessage({
       type: 'tool_execute',
       toolCallId,

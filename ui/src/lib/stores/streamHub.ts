@@ -59,6 +59,9 @@ const EVENT_TYPES = [
   'content_delta',
   'error',
   'done',
+  // chrome upstream protocol observability
+  'upstream_session_state',
+  'upstream_command_ack',
   // keepalive
   'ping'
 ] as const;

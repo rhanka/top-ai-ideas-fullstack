@@ -88,10 +88,48 @@ const findFallbackTargetTab = async (
     return null;
 };
 
+const getW1ScopeRejectionReason = (
+    args: Record<string, unknown>,
+): string | null => {
+    const tabIds = Array.isArray(args.tabIds)
+        ? args.tabIds.filter(
+            (value) => typeof value === 'number' && Number.isFinite(value),
+        )
+        : [];
+    if (tabIds.length > 1) {
+        return 'W1 single-tab mode rejects multi-tab commands (tabIds > 1).';
+    }
+
+    const targetTabs = Array.isArray(args.target_tabs)
+        ? args.target_tabs.filter(
+            (value) => value && typeof value === 'object',
+        )
+        : [];
+    if (targetTabs.length > 1) {
+        return 'W1 single-tab mode rejects multi-tab commands (target_tabs > 1).';
+    }
+
+    const voiceRequested =
+        args.voice === true ||
+        args.audio === true ||
+        typeof args.voiceCommand === 'string' ||
+        String(args.mode ?? '').trim().toLowerCase() === 'voice';
+    if (voiceRequested) {
+        return 'W1 scope excludes voice automation commands.';
+    }
+
+    return null;
+};
+
 const resolveTargetTab = async (
     args: Record<string, unknown>,
     context: ToolExecutionContext,
 ): Promise<chrome.tabs.Tab> => {
+    const w1ScopeRejection = getW1ScopeRejectionReason(args);
+    if (w1ScopeRejection) {
+        throw new Error(w1ScopeRejection);
+    }
+
     const tabIdFromArgs =
         typeof args.tabId === 'number' && Number.isFinite(args.tabId)
             ? args.tabId

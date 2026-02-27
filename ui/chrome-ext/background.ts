@@ -24,8 +24,10 @@ import {
     upsertToolPermissionPolicy,
     deleteToolPermissionPolicy,
 } from './tool-permissions';
+import { ChromeUpstreamSessionClient } from './upstream-session';
 
 const toolExecutors = createToolExecutors();
+const upstreamSessionClient = new ChromeUpstreamSessionClient();
 
 const ALLOWED_PROXY_HOSTS = new Set([
     'localhost',
@@ -55,6 +57,23 @@ type ExtensionConfigPayload = {
     apiBaseUrl?: string;
     appBaseUrl?: string;
     wsBaseUrl?: string;
+};
+
+type UpstreamTerminalErrorCode =
+    | 'session_not_found'
+    | 'session_scope_denied'
+    | 'sequence_conflict'
+    | 'single_tab_violation'
+    | 'unsupported_command'
+    | 'permission_scope_invalid'
+    | 'non_injectable_target'
+    | 'command_not_found'
+    | 'invalid_transition'
+    | 'invalid_ack';
+
+type UpstreamCommandContext = {
+    commandId: string;
+    sequence: number;
 };
 
 const canInjectTabUrl = (url: string | undefined | null): boolean => {
@@ -117,6 +136,177 @@ const resolveTargetTabForPermission = async (
     }
 
     return null;
+};
+
+const toUpstreamTargetTab = (tab: chrome.tabs.Tab): {
+    tab_id: number;
+    url?: string | null;
+    origin?: string | null;
+    title?: string | null;
+} | null => {
+    if (typeof tab.id !== 'number') return null;
+    return {
+        tab_id: tab.id,
+        url: tab.url ?? null,
+        origin: normalizeRuntimePermissionOrigin(tab.url ?? '') ?? null,
+        title: tab.title ?? null,
+    };
+};
+
+const mapExecutionErrorToUpstreamCode = (
+    reason: string,
+): UpstreamTerminalErrorCode => {
+    if (/unsupported tab url/i.test(reason)) return 'non_injectable_target';
+    if (/no active injectable tab/i.test(reason)) return 'session_scope_denied';
+    if (/single-tab/i.test(reason)) return 'single_tab_violation';
+    return 'invalid_ack';
+};
+
+const isUpstreamScopeError = (reason: string): boolean =>
+    /single-tab|multi-tab|voice|non-injectable/i.test(
+        reason,
+    );
+
+const getW1ScopeRejectionReason = (
+    args: Record<string, unknown>,
+): string | null => {
+    const tabIds = Array.isArray(args.tabIds)
+        ? args.tabIds.filter(
+            (value) => typeof value === 'number' && Number.isFinite(value),
+        )
+        : [];
+    if (tabIds.length > 1) {
+        return 'W1 single-tab mode rejects multi-tab commands (tabIds > 1).';
+    }
+
+    const targetTabs = Array.isArray(args.target_tabs)
+        ? args.target_tabs.filter(
+            (value) => value && typeof value === 'object',
+        )
+        : [];
+    if (targetTabs.length > 1) {
+        return 'W1 single-tab mode rejects multi-tab commands (target_tabs > 1).';
+    }
+
+    const voiceRequested =
+        args.voice === true ||
+        args.audio === true ||
+        typeof args.voiceCommand === 'string' ||
+        String(args.mode ?? '').trim().toLowerCase() === 'voice';
+    if (voiceRequested) {
+        return 'W1 scope excludes voice automation commands.';
+    }
+
+    return null;
+};
+
+const ensureUpstreamSession = async (
+    targetTab: chrome.tabs.Tab,
+): Promise<boolean> => {
+    const currentState = upstreamSessionClient.getState();
+    if (
+        currentState.session &&
+        currentState.lifecycle_state !== 'idle' &&
+        currentState.lifecycle_state !== 'closed' &&
+        currentState.lifecycle_state !== 'error'
+    ) {
+        return true;
+    }
+
+    const target = toUpstreamTargetTab(targetTab);
+    if (!target) return false;
+
+    const config = await loadExtensionConfig();
+    const sessionUrl = `${config.apiBaseUrl.replace(/\/$/, '')}/chrome-extension/upstream/session`;
+    if (!isAllowedProxyUrl(sessionUrl)) return false;
+
+    const token = await getValidAccessToken(config, {
+        allowRefresh: true,
+    });
+    if (!token) return false;
+
+    const state = await upstreamSessionClient.openSession({
+        api_base_url: config.apiBaseUrl,
+        access_token: token,
+        extension_runtime_id: chrome.runtime.id ?? 'unknown-extension-runtime',
+        ws_base_url: config.wsBaseUrl,
+        target_tab: target,
+    });
+
+    return Boolean(state.session) && state.lifecycle_state !== 'error';
+};
+
+const dispatchUpstreamCommandForToolExecution = async (input: {
+    toolName: string;
+    args: Record<string, unknown>;
+    targetTab: chrome.tabs.Tab;
+}): Promise<UpstreamCommandContext | null> => {
+    const target = toUpstreamTargetTab(input.targetTab);
+    if (!target) return null;
+
+    const upstreamReady = await ensureUpstreamSession(input.targetTab);
+    if (!upstreamReady) return null;
+
+    try {
+        const ack = await upstreamSessionClient.sendCommand({
+            tool_name: input.toolName,
+            arguments: input.args,
+            target_tab: target,
+        });
+        if (ack.status !== 'accepted') {
+            const rejectionCode = String(ack.error?.code ?? '').trim();
+            const isW1ScopeReject =
+                rejectionCode === 'single_tab_violation' ||
+                rejectionCode === 'unsupported_command' ||
+                rejectionCode === 'non_injectable_target';
+            if (isW1ScopeReject) {
+                throw new Error(
+                    ack.error?.message ??
+                        `Upstream command rejected with status ${ack.status}.`,
+                );
+            }
+            console.warn(
+                `Upstream rejected command (${rejectionCode || ack.status}); fallback to local execution.`,
+            );
+            return null;
+        }
+        return {
+            commandId: ack.command_id,
+            sequence: ack.sequence,
+        };
+    } catch (error) {
+        const reason = error instanceof Error ? error.message : String(error);
+        if (isUpstreamScopeError(reason)) {
+            throw error;
+        }
+        console.warn(
+            `Upstream dispatch unavailable, fallback to local execution: ${reason}`,
+        );
+        return null;
+    }
+};
+
+const reportUpstreamTerminalAck = async (input: {
+    command: UpstreamCommandContext | null;
+    status: 'completed' | 'failed' | 'rejected';
+    reason?: string;
+}): Promise<void> => {
+    if (!input.command) return;
+
+    await upstreamSessionClient.reportCommandAck({
+        command_id: input.command.commandId,
+        sequence: input.command.sequence,
+        status: input.status,
+        error:
+            input.status === 'completed'
+                ? undefined
+                : {
+                    code: mapExecutionErrorToUpstreamCode(
+                        input.reason ?? 'Local tool execution failed.',
+                    ),
+                    message: input.reason ?? 'Local tool execution failed.',
+                },
+    });
 };
 
 const derivePermissionToolName = (
@@ -524,6 +714,278 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         return true;
     }
 
+    if (message?.type === 'upstream_session_open') {
+        void (async () => {
+            try {
+                const config = await loadExtensionConfig();
+                const sessionUrl = `${config.apiBaseUrl.replace(/\/$/, '')}/chrome-extension/upstream/session`;
+                if (!isAllowedProxyUrl(sessionUrl)) {
+                    sendResponse({
+                        ok: false,
+                        error: `Blocked upstream session URL: ${sessionUrl}`,
+                    });
+                    return;
+                }
+
+                const token = await getValidAccessToken(config, {
+                    allowRefresh: true,
+                });
+                if (!token) {
+                    sendResponse({
+                        ok: false,
+                        error:
+                            'Extension is not authenticated. Use Connect in extension settings.',
+                    });
+                    return;
+                }
+
+                const payload = (message?.payload ?? {}) as Record<string, unknown>;
+                let targetTab:
+                    | {
+                        tab_id: number;
+                        url?: string | null;
+                        origin?: string | null;
+                        title?: string | null;
+                    }
+                    | undefined;
+
+                const rawTarget = payload.target_tab as Record<string, unknown> | undefined;
+                if (
+                    rawTarget &&
+                    typeof rawTarget.tab_id === 'number' &&
+                    Number.isFinite(rawTarget.tab_id)
+                ) {
+                    targetTab = {
+                        tab_id: rawTarget.tab_id,
+                        url:
+                            typeof rawTarget.url === 'string'
+                                ? rawTarget.url
+                                : null,
+                        origin:
+                            typeof rawTarget.origin === 'string'
+                                ? rawTarget.origin
+                                : null,
+                        title:
+                            typeof rawTarget.title === 'string'
+                                ? rawTarget.title
+                                : null,
+                    };
+                } else {
+                    const resolvedTab = await resolveTargetTabForPermission(
+                        payload,
+                        sender,
+                    );
+                    const normalized = resolvedTab
+                        ? toUpstreamTargetTab(resolvedTab)
+                        : null;
+                    if (normalized) targetTab = normalized;
+                }
+
+                const state = await upstreamSessionClient.openSession({
+                    api_base_url: config.apiBaseUrl,
+                    access_token: token,
+                    extension_runtime_id: chrome.runtime.id ?? 'unknown-extension-runtime',
+                    ws_base_url: config.wsBaseUrl,
+                    target_tab: targetTab,
+                });
+
+                sendResponse({
+                    ok: state.lifecycle_state !== 'error',
+                    state,
+                    error: state.last_error ?? undefined,
+                });
+            } catch (error) {
+                sendResponse({
+                    ok: false,
+                    error: error instanceof Error ? error.message : String(error),
+                });
+            }
+        })();
+        return true;
+    }
+
+    if (message?.type === 'upstream_session_state_get') {
+        sendResponse({
+            ok: true,
+            state: upstreamSessionClient.getState(),
+        });
+        return true;
+    }
+
+    if (message?.type === 'upstream_session_command') {
+        void (async () => {
+            try {
+                const payload = (message?.payload ?? {}) as Record<string, unknown>;
+                const commandId =
+                    typeof payload.command_id === 'string'
+                        ? payload.command_id.trim()
+                        : '';
+                const toolName =
+                    typeof payload.tool_name === 'string'
+                        ? payload.tool_name.trim()
+                        : '';
+                if (!toolName) {
+                    sendResponse({
+                        ok: false,
+                        error: 'tool_name is required for upstream command.',
+                    });
+                    return;
+                }
+
+                let targetTab:
+                    | {
+                        tab_id: number;
+                        url?: string | null;
+                        origin?: string | null;
+                        title?: string | null;
+                    }
+                    | null = null;
+                const rawTarget = payload.target_tab as Record<string, unknown> | undefined;
+                if (
+                    rawTarget &&
+                    typeof rawTarget.tab_id === 'number' &&
+                    Number.isFinite(rawTarget.tab_id)
+                ) {
+                    targetTab = {
+                        tab_id: rawTarget.tab_id,
+                        url:
+                            typeof rawTarget.url === 'string'
+                                ? rawTarget.url
+                                : null,
+                        origin:
+                            typeof rawTarget.origin === 'string'
+                                ? rawTarget.origin
+                                : null,
+                        title:
+                            typeof rawTarget.title === 'string'
+                                ? rawTarget.title
+                                : null,
+                    };
+                } else {
+                    const resolvedTab = await resolveTargetTabForPermission(
+                        payload,
+                        sender,
+                    );
+                    targetTab = resolvedTab ? toUpstreamTargetTab(resolvedTab) : null;
+                }
+
+                if (!targetTab) {
+                    sendResponse({
+                        ok: false,
+                        error:
+                            'No active injectable tab found for upstream command.',
+                    });
+                    return;
+                }
+
+                const args =
+                    payload.arguments &&
+                    typeof payload.arguments === 'object' &&
+                    !Array.isArray(payload.arguments)
+                        ? (payload.arguments as Record<string, unknown>)
+                        : {};
+
+                const ack = await upstreamSessionClient.sendCommand({
+                    command_id: commandId || undefined,
+                    tool_name: toolName,
+                    arguments: args,
+                    target_tab: targetTab,
+                });
+
+                sendResponse({
+                    ok: ack.status === 'accepted',
+                    ack,
+                });
+            } catch (error) {
+                sendResponse({
+                    ok: false,
+                    error: error instanceof Error ? error.message : String(error),
+                });
+            }
+        })();
+        return true;
+    }
+
+    if (message?.type === 'upstream_session_ack') {
+        void (async () => {
+            try {
+                const payload = (message?.payload ?? {}) as Record<string, unknown>;
+                const commandId =
+                    typeof payload.command_id === 'string'
+                        ? payload.command_id.trim()
+                        : '';
+                const sequence =
+                    typeof payload.sequence === 'number' &&
+                    Number.isFinite(payload.sequence)
+                        ? payload.sequence
+                        : Number.NaN;
+                const status =
+                    payload.status === 'completed' ||
+                    payload.status === 'failed' ||
+                    payload.status === 'rejected'
+                        ? payload.status
+                        : null;
+                if (!commandId || !Number.isFinite(sequence) || !status) {
+                    sendResponse({
+                        ok: false,
+                        error:
+                            'command_id, sequence and status (completed|failed|rejected) are required.',
+                    });
+                    return;
+                }
+
+                const errorPayload =
+                    payload.error &&
+                    typeof payload.error === 'object' &&
+                    !Array.isArray(payload.error)
+                        ? (payload.error as {
+                            code: string;
+                            message: string;
+                            details?: Record<string, unknown>;
+                        })
+                        : undefined;
+
+                const ack = await upstreamSessionClient.reportCommandAck({
+                    command_id: commandId,
+                    sequence,
+                    status,
+                    error: errorPayload,
+                });
+
+                sendResponse({
+                    ok: true,
+                    ack,
+                });
+            } catch (error) {
+                sendResponse({
+                    ok: false,
+                    error: error instanceof Error ? error.message : String(error),
+                });
+            }
+        })();
+        return true;
+    }
+
+    if (message?.type === 'upstream_session_close') {
+        void (async () => {
+            try {
+                const payload = (message?.payload ?? {}) as Record<string, unknown>;
+                const reason =
+                    typeof payload.reason === 'string' ? payload.reason : undefined;
+                await upstreamSessionClient.closeSession(reason);
+                sendResponse({
+                    ok: true,
+                });
+            } catch (error) {
+                sendResponse({
+                    ok: false,
+                    error: error instanceof Error ? error.message : String(error),
+                });
+            }
+        })();
+        return true;
+    }
+
     if (message?.type === 'extension_tool_permissions_list') {
         void (async () => {
             try {
@@ -882,8 +1344,17 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         }
 
         void (async () => {
+            let upstreamCommand: UpstreamCommandContext | null = null;
             try {
                 const args = (message?.args ?? {}) as Record<string, unknown>;
+                const w1ScopeRejection = getW1ScopeRejectionReason(args);
+                if (w1ScopeRejection) {
+                    sendResponse({
+                        ok: false,
+                        error: w1ScopeRejection,
+                    });
+                    return;
+                }
                 const targetTab = await resolveTargetTabForPermission(args, sender);
                 if (!targetTab?.url || typeof targetTab.id !== 'number') {
                     sendResponse({
@@ -949,6 +1420,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                     senderTabId: sender.tab?.id,
                     senderWindowId: sender.tab?.windowId,
                 };
+                upstreamCommand = await dispatchUpstreamCommandForToolExecution({
+                    toolName,
+                    args,
+                    targetTab,
+                });
                 const result = await executor(
                     {
                         ...args,
@@ -959,11 +1435,35 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                     },
                     context,
                 );
+                try {
+                    await reportUpstreamTerminalAck({
+                        command: upstreamCommand,
+                        status: 'completed',
+                    });
+                } catch (ackError) {
+                    const reason =
+                        ackError instanceof Error
+                            ? ackError.message
+                            : String(ackError);
+                    console.warn(
+                        `Failed to report upstream completion ack: ${reason}`,
+                    );
+                }
                 sendResponse({ ok: true, result });
             } catch (err) {
+                const reason = err instanceof Error ? err.message : String(err);
+                try {
+                    await reportUpstreamTerminalAck({
+                        command: upstreamCommand,
+                        status: 'failed',
+                        reason,
+                    });
+                } catch {
+                    // noop: keep local error as primary response path.
+                }
                 sendResponse({
                     ok: false,
-                    error: err instanceof Error ? err.message : String(err),
+                    error: reason,
                 });
             }
         })();
