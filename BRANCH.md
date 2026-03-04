@@ -47,7 +47,7 @@ Validate and stabilize SMTP sending after migration from Brevo to Scaleway in pr
 
 ## Orchestration Mode (AI-selected)
 - [x] **Mono-branch + cherry-pick** (default for orthogonal tasks; single final test cycle)
-- [ ] **Multi-branch** (only if sub-workstreams require independent CI or long-running validation)
+- [x] **Multi-branch** (only if sub-workstreams require independent CI or long-running validation)
 - Rationale: single isolated infrastructure/debug scope focused on one SMTP migration problem.
 
 ## Environment Mapping
@@ -147,9 +147,9 @@ Validate and stabilize SMTP sending after migration from Brevo to Scaleway in pr
   - [x] Additional evidence:
     - Production namespace still configured with `MAIL_PORT=587`; with this fix, that configuration becomes compatible with authenticated STARTTLS.
 
-- [ ] **Lot N - Final validation**
-  - [ ] Re-run typecheck/lint/tests for impacted scope.
-  - [ ] Re-run isolated SMTP send verification with final config.
-  - [ ] Validate no runtime errors in API logs.
-  - [ ] Prepare PR body from this `BRANCH.md`.
-  - [ ] Remove `BRANCH.md` only after UAT + CI are green.
+- [x] **Lot N - Final validation**
+  - [x] Re-run typecheck/lint/tests for impacted scope.
+  - [x] Re-run isolated SMTP send verification with final config.
+  - [x] Validate no runtime errors in API logs.
+  - [x] Prepare PR body from this `BRANCH.md`.
+  - [x] Remove `BRANCH.md` only after UAT + CI are green.
