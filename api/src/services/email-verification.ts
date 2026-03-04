@@ -52,6 +52,12 @@ function getMailTransporter(): nodemailer.Transporter | null {
   }
 
   try {
+    const hasAuth = Boolean(env.MAIL_USERNAME && env.MAIL_PASSWORD);
+    // For authenticated SMTP on non-implicit TLS ports (e.g. 587), keep STARTTLS enabled.
+    const requireTLS = env.MAIL_SECURE || hasAuth;
+    // Keep plaintext SMTP only for local/no-auth setups such as MailDev.
+    const ignoreTLS = !env.MAIL_SECURE && !hasAuth;
+
     const transporterConfig: {
       host: string;
       port: number;
@@ -63,9 +69,9 @@ function getMailTransporter(): nodemailer.Transporter | null {
     } = {
       host: env.MAIL_HOST,
       port: env.MAIL_PORT,
-      secure: env.MAIL_SECURE, // Use env var (false for maildev, true for production)
-      requireTLS: env.MAIL_SECURE, // Require TLS in production
-      ignoreTLS: !env.MAIL_SECURE, // Ignore TLS for maildev/dev
+      secure: env.MAIL_SECURE, // Use env var (false for STARTTLS/MAILDEV, true for implicit TLS)
+      requireTLS,
+      ignoreTLS,
     };
 
     // Add TLS options if secure is enabled
@@ -90,8 +96,8 @@ function getMailTransporter(): nodemailer.Transporter | null {
       host: env.MAIL_HOST, 
       port: env.MAIL_PORT,
       secure: env.MAIL_SECURE,
-      requireTLS: env.MAIL_SECURE,
-      ignoreTLS: !env.MAIL_SECURE
+      requireTLS,
+      ignoreTLS
     }, 'Mail transporter configured');
 
     return mailTransporter;
@@ -344,4 +350,3 @@ export async function verifyValidationToken(
     return { valid: false };
   }
 }
-
