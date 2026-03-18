@@ -82,10 +82,12 @@
     ChevronDown,
     Terminal,
     Search,
-    GitBranch
+    GitBranch,
+    Bookmark,
   } from '@lucide/svelte';
   import { downloadCompletedDocxJob } from '$lib/utils/docx';
   import { renderMarkdownWithRefs } from '$lib/utils/markdown';
+  import { generateInjectedScript } from '$lib/upstream/injected-script';
   import { postChatSteer } from '$lib/utils/chat-steer';
   import {
     filterPermissionPromptsForPendingStream,
@@ -1365,6 +1367,9 @@
   let sessionDocsReloadTimer: ReturnType<typeof setTimeout> | null = null;
   let showComposerMenu = false;
   let composerMenuButtonRef: HTMLButtonElement | null = null;
+  let composerMenuContextsMaxH = '';
+  let composerMenuToolsMaxH = '';
+  let composerMenuFixedStyle = '';
   // eslint-disable-next-line no-unused-vars
   let handleDocumentClick: ((_: MouseEvent) => void) | null = null;
   // eslint-disable-next-line no-unused-vars
@@ -2907,6 +2912,53 @@
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       sessionDocsError = msg;
+    }
+  };
+
+  const copyBookmarklet = async () => {
+    showComposerMenu = false;
+    try {
+      const origin = window.location.origin;
+      // Fetch a nonce for the bridge handshake
+      let nonce = '';
+      try {
+        const nonceRes = await apiGet<{ nonce: string }>('/bookmarklet/nonce');
+        nonce = nonceRes.nonce || '';
+      } catch {
+        // Non-blocking: proceed without nonce
+      }
+      const bridgeUrl = origin + '/bookmarklet-bridge' + (nonce ? '?nonce=' + encodeURIComponent(nonce) : '');
+      const scriptContent = generateInjectedScript(origin);
+
+      // Build the bookmarklet bootstrap
+      const bootstrap =
+        'javascript:void(' +
+        '(function(){' +
+        // Re-entrant guard check
+        'if(window.__TOPAI_ACTIVE){return;}' +
+        // TrustedTypes support
+        'var tp=null;' +
+        'if(typeof trustedTypes!=="undefined"&&trustedTypes.createPolicy){' +
+        'try{tp=trustedTypes.createPolicy("topai",{createHTML:function(s){return s;},createScriptURL:function(s){return s;},createScript:function(s){return s;}});}catch(e){}' +
+        '}' +
+        // Create hidden bridge iframe
+        'var f=document.createElement("iframe");' +
+        'f.id="__topai_bridge";' +
+        'f.style.cssText="display:none;width:0;height:0;border:none;position:absolute;";' +
+        'var bridgeUrl=' + JSON.stringify(bridgeUrl) + ';' +
+        'if(tp){f.src=tp.createScriptURL(bridgeUrl);}else{f.src=bridgeUrl;}' +
+        'document.body.appendChild(f);' +
+        // Inject the tool executor script
+        'var s=document.createElement("script");' +
+        'var code=' + JSON.stringify(scriptContent) + ';' +
+        'if(tp){s.textContent=tp.createScript(code);}else{s.textContent=code;}' +
+        'document.head.appendChild(s);' +
+        '})()' +
+        ')';
+
+      await navigator.clipboard.writeText(bootstrap);
+    } catch (e) {
+      console.error('[ChatPanel] Failed to copy bookmarklet:', e);
     }
   };
 
@@ -4663,6 +4715,15 @@
 
   $: if (mode === 'ai' && showComposerMenu) {
     void loadExtensionActiveTabContext();
+    // Compute dynamic max-heights for context/tool sections
+    if (panelEl && composerMenuButtonRef) {
+      const panelTop = panelEl.getBoundingClientRect().top;
+      const btnTop = composerMenuButtonRef.getBoundingClientRect().top;
+      const availableH = btnTop - panelTop - 160; // leave room for header, file input, padding
+      const halfH = Math.max(60, Math.floor(availableH / 2));
+      composerMenuContextsMaxH = 'max-height:' + halfH + 'px';
+      composerMenuToolsMaxH = 'max-height:' + halfH + 'px';
+    }
   }
 
   $: if (mode === 'ai' && $workspaceScopeHydrated) {
@@ -5703,6 +5764,7 @@
             align="left"
             widthClass="w-80"
             menuClass="p-3 space-y-3"
+            strategy="fixed"
             bind:open={showComposerMenu}
             bind:triggerRef={composerMenuButtonRef}
           >
@@ -5744,7 +5806,7 @@
                   {$_('chat.contexts.none')}
                 </div>
               {:else}
-                <div class="space-y-1 max-h-40 overflow-auto slim-scroll">
+                <div class="space-y-1 overflow-auto slim-scroll" style={composerMenuContextsMaxH || 'max-height:10rem'}>
                   {#if extensionActiveTabContext}
                     <div
                       class="flex w-full items-center gap-2 rounded px-1 py-1 text-[11px] text-slate-700 bg-slate-50"
@@ -5784,7 +5846,7 @@
                 <div class="text-xs font-semibold text-slate-600 mb-1">
                   {$_('chat.tools.title')}
                 </div>
-                <div class="space-y-1 max-h-48 overflow-auto slim-scroll">
+                <div class="space-y-1 overflow-auto slim-scroll" style={composerMenuToolsMaxH || 'max-height:12rem'}>
                   {#each getVisibleToolToggles() as t (t.id)}
                     <button
                       class="flex w-full items-center gap-2 rounded px-1 py-1 text-[11px] text-slate-700 hover:bg-slate-50"
@@ -5819,6 +5881,17 @@
                     </div>
                   {/if}
                 </div>
+              </div>
+
+              <div class="border-t border-slate-100 pt-2">
+                <button
+                  class="flex w-full items-center gap-2 rounded px-1 py-1 text-[11px] text-slate-700 hover:bg-slate-50"
+                  type="button"
+                  on:click={copyBookmarklet}
+                >
+                  <Bookmark class="w-4 h-4" />
+                  <span>Copy bookmarklet</span>
+                </button>
               </div>
             </svelte:fragment>
           </MenuPopover>
