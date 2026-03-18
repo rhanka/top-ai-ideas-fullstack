@@ -13,6 +13,7 @@ import {
     getValidAccessToken,
     logoutExtensionAuth,
 } from './extension-auth';
+import { generateInjectedScript } from '$lib/upstream/injected-script';
 
 const ALLOWED_PROXY_HOSTS = new Set([
     'localhost',
@@ -571,6 +572,135 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
         return true;
     }
+});
+
+// ---------------------------------------------------------------------------
+// Script injection: inject shared injected script on active pages
+// ---------------------------------------------------------------------------
+
+const injectSharedScript = async (tabId: number): Promise<void> => {
+    try {
+        const tab = await chrome.tabs.get(tabId).catch(() => null);
+        if (!tab || !canInjectTabUrl(tab.url)) return;
+
+        const config = await loadExtensionConfig();
+        const webappOrigin = config.appBaseUrl.replace(/\/$/, '');
+        if (!webappOrigin) return;
+
+        const scriptCode = generateInjectedScript(webappOrigin);
+
+        await chrome.scripting.executeScript({
+            target: { tabId },
+            func: (code: string) => {
+                new Function(code)();
+            },
+            args: [scriptCode],
+        });
+    } catch (error) {
+        // Silently ignore injection failures (e.g. restricted pages).
+        console.debug('Script injection skipped for tab', tabId, error);
+    }
+};
+
+// ---------------------------------------------------------------------------
+// Tab registration: register/keepalive/unregister with API tab registry
+// ---------------------------------------------------------------------------
+
+const TAB_KEEPALIVE_INTERVAL_MS = 15_000;
+const registeredTabs = new Map<number, ReturnType<typeof setInterval>>();
+
+const apiTabFetch = async (
+    path: string,
+    body: Record<string, unknown>,
+): Promise<boolean> => {
+    try {
+        const config = await loadExtensionConfig();
+        const token = await getValidAccessToken(config, { allowRefresh: true });
+        if (!token) return false;
+        const apiBase = config.apiBaseUrl.replace(/\/$/, '');
+        const response = await fetch(`${apiBase}/api/v1/chrome-extension${path}`, {
+            method: path.startsWith('/tabs/') && !path.includes('keepalive')
+                ? (body._method as string ?? 'POST')
+                : 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`,
+            },
+            credentials: 'omit',
+            body: JSON.stringify(body),
+        });
+        return response.ok;
+    } catch {
+        return false;
+    }
+};
+
+const registerTabOnServer = async (
+    tabId: number,
+    url: string,
+    title: string,
+): Promise<void> => {
+    const tabIdStr = String(tabId);
+    await apiTabFetch('/tabs/register', {
+        tab_id: tabIdStr,
+        url,
+        title,
+        source: 'chrome_plugin',
+    });
+
+    // Set up keepalive if not already running
+    if (!registeredTabs.has(tabId)) {
+        const intervalId = setInterval(() => {
+            void apiTabFetch('/tabs/keepalive', { tab_id: tabIdStr });
+        }, TAB_KEEPALIVE_INTERVAL_MS);
+        registeredTabs.set(tabId, intervalId);
+    }
+};
+
+const unregisterTabOnServer = async (tabId: number): Promise<void> => {
+    const intervalId = registeredTabs.get(tabId);
+    if (intervalId) {
+        clearInterval(intervalId);
+        registeredTabs.delete(tabId);
+    }
+    try {
+        const config = await loadExtensionConfig();
+        const token = await getValidAccessToken(config, { allowRefresh: true });
+        if (!token) return;
+        const apiBase = config.apiBaseUrl.replace(/\/$/, '');
+        await fetch(`${apiBase}/api/v1/chrome-extension/tabs/${tabId}`, {
+            method: 'DELETE',
+            headers: { Authorization: `Bearer ${token}` },
+            credentials: 'omit',
+        });
+    } catch {
+        // Best effort
+    }
+};
+
+// Inject + register on tab activation
+chrome.tabs.onActivated.addListener((activeInfo) => {
+    void (async () => {
+        const tab = await chrome.tabs.get(activeInfo.tabId).catch(() => null);
+        if (!tab || !canInjectTabUrl(tab.url)) return;
+        await injectSharedScript(activeInfo.tabId);
+        await registerTabOnServer(activeInfo.tabId, tab.url ?? '', tab.title ?? '');
+    })();
+});
+
+// Re-inject + re-register on navigation complete
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+    if (changeInfo.status !== 'complete') return;
+    if (!canInjectTabUrl(tab.url)) return;
+    void (async () => {
+        await injectSharedScript(tabId);
+        await registerTabOnServer(tabId, tab.url ?? '', tab.title ?? '');
+    })();
+});
+
+// Unregister on tab close
+chrome.tabs.onRemoved.addListener((tabId) => {
+    void unregisterTabOnServer(tabId);
 });
 
 // ---------------------------------------------------------------------------
