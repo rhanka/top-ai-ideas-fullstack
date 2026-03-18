@@ -40,11 +40,13 @@ This eliminates: server-generated runtime.js, SSE/ack/register/keepalive API end
 ### 4.2 Chrome plugin simplification
 
 The chrome extension becomes a thin launcher:
-- Opens the side panel (loads webapp URL).
+- Side panel loads the **webapp URL directly** (replaces `sidepanel.html`). The side panel content is an iframe to the webapp — same-origin, session auth via cookie, no need for SSE/API proxy in background.ts.
+- `sidepanel.html` becomes a minimal shell that loads the webapp URL in an iframe (or is replaced entirely by setting the panel URL to the webapp).
+- **SSE proxy and API proxy in background.ts are removed** — the webapp iframe handles its own API calls directly.
 - Injects the **same script** as the bookmarklet onto the active page via `chrome.scripting.executeScript`.
 - Re-injects automatically on navigation (`chrome.tabs.onUpdated`).
 - Optionally uses `chrome.tabs.captureVisibleTab` for higher-quality screenshots (no user prompt).
-- `background.ts` reduced to ~50 lines (inject + panel management + tab registration).
+- `background.ts` reduced to minimal: inject script + tab registration + panel management. No SSE/API proxy.
 
 ### 4.3 Bookmarklet
 
