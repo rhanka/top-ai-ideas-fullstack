@@ -1,31 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Top AI Ideas - Side Panel</title>
-    <style>
-        html,
-        body {
-            margin: 0;
-            padding: 0;
-            height: 100vh;
-            overflow: hidden;
-        }
-
-        #sidepanel-root {
-            height: 100vh;
-            min-height: 0;
-            display: flex;
-            flex-direction: column;
-        }
-    </style>
-</head>
-
-<body>
-    <div id="sidepanel-root"></div>
-    <script type="module" src="./sidepanel.ts"></script>
-</body>
-
-</html>
+<html>
+<head><style>body,html{margin:0;padding:0;height:100%;overflow:hidden}iframe{width:100%;height:100%;border:none}</style></head>
+<body><iframe id="app"></iframe>
+<script>
+  chrome.storage.local.get(['apiBaseUrl'], (result) => {
+    const base = result.apiBaseUrl || 'http://localhost:5173';
+    // Remove /api/v1 suffix to get webapp URL
+    const webappUrl = base.replace(/\/api\/v1$/, '').replace(/\/api$/, '');
+    document.getElementById('app').src = webappUrl + '?chrome_extension=true';
+  });
+</script></body></html>
