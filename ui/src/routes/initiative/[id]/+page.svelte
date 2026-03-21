@@ -558,7 +558,7 @@
 
   {#if useCase}
   {#if useCase.status === 'generating' || useCase.status === 'detailing'}
-    <StreamMessage streamId={`usecase_${useCase.id}`} status={useCase.status} maxHistory={10} />
+    <StreamMessage streamId={`initiative_${useCase.id}`} status={useCase.status} maxHistory={10} />
   {/if}
     <InitiativeDetail
       {useCase}
