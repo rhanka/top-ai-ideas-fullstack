@@ -367,7 +367,7 @@ test.describe.serial('Chat', () => {
     await expect(composer).toBeVisible({ timeout: 1000 });
     await menuButton.click();
     const menu = page
-      .locator('div.absolute')
+      .locator('div.fixed.shadow-lg, div.absolute.shadow-lg')
       .filter({ hasText: /Contexte\(s\)|Context\(s\)/i })
       .first();
     await expect(menu.locator('button', { hasText: orgName })).toBeVisible({ timeout: 1000 });
@@ -386,7 +386,7 @@ test.describe.serial('Chat', () => {
     await expect(composer).toBeVisible({ timeout: 1000 });
     await menuButton.click();
     const menu2 = page
-      .locator('div.absolute')
+      .locator('div.fixed.shadow-lg, div.absolute.shadow-lg')
       .filter({ hasText: /Contexte\(s\)|Context\(s\)/i })
       .first();
     await expect(menu2.locator('button', { hasText: orgName })).toHaveCount(0);
@@ -412,7 +412,7 @@ test.describe.serial('Chat', () => {
     await expect(composer).toBeVisible({ timeout: 1000 });
     await menuButton.click();
     const menu3 = page
-      .locator('div.absolute')
+      .locator('div.fixed.shadow-lg, div.absolute.shadow-lg')
       .filter({ hasText: /Contexte\(s\)|Context\(s\)/i })
       .first();
     await expect(menu3.locator('button', { hasText: orgName })).toBeVisible({ timeout: 1000 });
