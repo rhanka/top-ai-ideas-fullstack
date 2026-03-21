@@ -229,7 +229,7 @@ describe('AI Workflow - Complete Integration Test', () => {
 
     // Vérifier que les événements sont écrits dans chat_stream_events pour au moins un initiative-detail
     const initiativeId = firstCompleted.id;
-    const initiativeStreamId = `initiative_${initiativeId}`;
+    const initiativeStreamId = `usecase_${initiativeId}`; // TODO BR-04B Lot 1: rename to initiative_
     const initiativeStreamEvents = await db
       .select()
       .from(chatStreamEvents)
