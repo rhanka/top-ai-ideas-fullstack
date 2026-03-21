@@ -332,7 +332,7 @@ test.describe('Détail des cas d\'usage', () => {
     await expect(exportAction).toBeVisible();
     await exportAction.click();
 
-    const exportDialog = page.locator('h3:has-text("Exporter le cas d\'usage")');
+    const exportDialog = page.locator('h3:has-text("Exporter l\'initiative")');
     await expect(exportDialog).toBeVisible({ timeout: 10_000 });
 
     const [download] = await Promise.all([
