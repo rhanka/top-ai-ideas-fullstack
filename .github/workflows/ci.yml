@@ -129,6 +129,23 @@ jobs:
           - suite: unit
           - suite: queue
           - suite: ai
+            ai_spec: "chat-sync"
+          - suite: ai
+            ai_spec: "chat-tools"
+          - suite: ai
+            ai_spec: "comment-assistant"
+          - suite: ai
+            ai_spec: "company-enrichment-sync"
+          - suite: ai
+            ai_spec: "documents-tool"
+          - suite: ai
+            ai_spec: "executive-summary-auto"
+          - suite: ai
+            ai_spec: "executive-summary-sync"
+          - suite: ai
+            ai_spec: "initiative-generation-async"
+          - suite: ai
+            ai_spec: "initiative-generation-sync"
           - suite: security
           - suite: limit
           - suite: endpoints
@@ -163,6 +180,8 @@ jobs:
         run: |
           if [ "${{ matrix.suite }}" = "endpoints" ]; then
             make exec-api CMD="TEST_CLEANUP_SCOPE=tracked VITEST_MAX_WORKERS=4 npm run test:endpoints -- --shard=${{ matrix.endpoints_shard }}/4"
+          elif [ "${{ matrix.suite }}" = "ai" ] && [ -n "${{ matrix.ai_spec }}" ]; then
+            make exec-api CMD="npx vitest run tests/ai/${{ matrix.ai_spec }}.test.ts --reporter=verbose"
           else
             make test-api-${{ matrix.suite }}
           fi
