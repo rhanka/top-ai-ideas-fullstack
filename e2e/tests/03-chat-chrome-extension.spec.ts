@@ -193,7 +193,7 @@ test.describe.serial('Chat extension evolutions', () => {
     await expect(menuButton).toBeVisible({ timeout: 10_000 });
     await menuButton.click();
 
-    const menu = page.locator('div.absolute').filter({ hasText: 'Contexte(s)' }).first();
+    const menu = page.locator('div.fixed.shadow-lg, div.absolute.shadow-lg').filter({ hasText: 'Contexte(s)' }).first();
     await expect(menu).toBeVisible({ timeout: 10_000 });
     await expect(menu).toContainText('Onglet actif:');
     await expect(menu.locator('button', { hasText: 'Web search' })).toBeVisible({ timeout: 10_000 });
@@ -237,7 +237,7 @@ test.describe.serial('Chat extension evolutions', () => {
     expect(firstNames).toEqual(['tab_action', 'tab_read']);
 
     await menuButton.click();
-    const menu = page.locator('div.absolute').filter({ hasText: 'Contexte(s)' }).first();
+    const menu = page.locator('div.fixed.shadow-lg, div.absolute.shadow-lg').filter({ hasText: 'Contexte(s)' }).first();
     const tabActionToggle = menu.locator('button', { hasText: 'Onglet (actions)' }).first();
     await expect(tabActionToggle).toBeVisible({ timeout: 10_000 });
     await tabActionToggle.click();
