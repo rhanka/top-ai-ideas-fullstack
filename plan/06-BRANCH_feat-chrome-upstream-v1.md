@@ -66,55 +66,55 @@ Actions with the following status should be included around tasks only if really
   - Switch back to `tmp/feat-chrome-upstream-v1-rewrite` after UAT.
 
 ## Plan / Todo (lot-based)
-- [ ] **Lot 0 — Baseline & constraints**
-  - [ ] Read relevant `.mdc` files, `README.md`, `TODO.md`, and linked specs (`spec/SPEC_EVOL_CHROME_UPSTREAM.md`).
-  - [ ] Confirm isolated worktree and environment mapping.
-  - [ ] Validate scope boundaries and declare exceptions if needed.
+- [x] **Lot 0 — Baseline & constraints**
+  - [x] Read relevant `.mdc` files, `README.md`, `TODO.md`, and linked specs (`spec/SPEC_EVOL_CHROME_UPSTREAM.md`).
+  - [x] Confirm isolated worktree and environment mapping.
+  - [x] Validate scope boundaries and declare exceptions if needed.
 
-- [ ] **Lot 1 — API: tab registry + chat-service tool injection + nonce**
-  - [ ] Add in-memory Tab Registry service (`api/src/services/tab-registry.ts`): register, unregister, listTabs, touchTab, evictStaleTabs, resolveTarget. Fields: tab_id, source, url, title, userId, connected_at, last_seen, status.
-  - [ ] Add `POST /api/v1/chrome-extension/tabs/register` endpoint (session auth): registers tab with {tab_id, url, title, source}.
-  - [ ] Add `POST /api/v1/chrome-extension/tabs/keepalive` endpoint (session auth): updates last_seen, triggers eviction of stale tabs (>45s).
-  - [ ] Add `DELETE /api/v1/chrome-extension/tabs/:tabId` endpoint (session auth).
-  - [ ] Add `GET /api/v1/bookmarklet/nonce` endpoint (session auth): returns a short-lived nonce for iframe bridge handshake.
-  - [ ] Chat-service: inject server-side `tab_read`/`tab_action` tool definitions (with `tab_id` param, connected tab descriptions) when tabs are registered AND client did NOT provide local tab tools (webapp context only).
-  - [ ] Chat-service: when client HAS local tab tools (chrome plugin) → `pendingLocalToolCalls` flow unchanged from main.
-  - [ ] Chat-service: when client has NO local tab tools (webapp) and AI calls tab_read/tab_action → write `awaiting_external_result` to stream (bridge iframe picks it up via chat stream SSE).
-  - [ ] Lot 1 gate:
-    - [ ] `make typecheck-api API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=test-feat-chrome-upstream-v1-rewrite`
-    - [ ] `make lint-api API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=test-feat-chrome-upstream-v1-rewrite`
-    - [ ] **API tests**
-      - [ ] Add `api/tests/unit/tab-registry.test.ts`
-      - [ ] Add `api/tests/unit/chat-service-tab-tools.test.ts`
-      - [ ] Sub-lot gate: `make test-api API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=test-feat-chrome-upstream-v1-rewrite`
+- [x] **Lot 1 — API: tab registry + chat-service tool injection + nonce**
+  - [x] Add in-memory Tab Registry service (`api/src/services/tab-registry.ts`): register, unregister, listTabs, touchTab, evictStaleTabs, resolveTarget. Fields: tab_id, source, url, title, userId, connected_at, last_seen, status.
+  - [x] Add `POST /api/v1/chrome-extension/tabs/register` endpoint (session auth): registers tab with {tab_id, url, title, source}.
+  - [x] Add `POST /api/v1/chrome-extension/tabs/keepalive` endpoint (session auth): updates last_seen, triggers eviction of stale tabs (>45s).
+  - [x] Add `DELETE /api/v1/chrome-extension/tabs/:tabId` endpoint (session auth).
+  - [x] Add `GET /api/v1/bookmarklet/nonce` endpoint (session auth): returns a short-lived nonce for iframe bridge handshake.
+  - [x] Chat-service: inject server-side `tab_read`/`tab_action` tool definitions (with `tab_id` param, connected tab descriptions) when tabs are registered AND client did NOT provide local tab tools (webapp context only).
+  - [x] Chat-service: when client HAS local tab tools (chrome plugin) → `pendingLocalToolCalls` flow unchanged from main.
+  - [x] Chat-service: when client has NO local tab tools (webapp) and AI calls tab_read/tab_action → write `awaiting_external_result` to stream (bridge iframe picks it up via chat stream SSE).
+  - [x] Lot 1 gate:
+    - [x] `make typecheck-api API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=test-feat-chrome-upstream-v1-rewrite`
+    - [x] `make lint-api API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=test-feat-chrome-upstream-v1-rewrite`
+    - [x] **API tests**
+      - [x] Add `api/tests/unit/tab-registry.test.ts`
+      - [x] Add `api/tests/unit/chat-service-tab-tools.test.ts`
+      - [x] Sub-lot gate: `make test-api API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=test-feat-chrome-upstream-v1-rewrite`
 
-- [ ] **Lot 2 — UI: bridge iframe + injected script + bookmarklet copy + MenuPopover**
-  - [ ] Create `/bookmarklet-bridge` Svelte route: listens for postMessage from injected script, polls chat stream SSE for pending tab tool calls, forwards commands via postMessage, posts results via `/chat/messages/:id/tool-results`. Manages tab registration + keepalive via API.
-  - [ ] Create shared injected script module (`ui/src/lib/upstream/injected-script.ts`): DOM executor for tab_read (querySelector, screenshot via getDisplayMedia JPEG 95 max 1280px) and tab_action (click, input, scroll). postMessage listener for commands from bridge. Visual badge (connection status). Re-entrant guard.
-  - [ ] MenuPopover: add `strategy` prop ('absolute' | 'fixed'), `computeFixedStyle()` for position:fixed, z-50.
-  - [ ] ChatPanel: dynamic max-height for context/tool sections. "Copy bookmarklet" button generating `javascript:void(...)` client-side (injects bridge iframe + script, TrustedTypes support). No API call for generation.
-  - [ ] Lot 2 gate:
-    - [ ] `make typecheck-ui API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=test-feat-chrome-upstream-v1-rewrite`
-    - [ ] `make lint-ui API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=test-feat-chrome-upstream-v1-rewrite`
-    - [ ] **UI tests**
-      - [ ] Add `ui/tests/upstream/injected-script.test.ts`
-      - [ ] Add `ui/tests/upstream/bridge.test.ts`
-      - [ ] Sub-lot gate: `make test-ui API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=test-feat-chrome-upstream-v1-rewrite`
+- [x] **Lot 2 — UI: bridge iframe + injected script + bookmarklet copy + MenuPopover**
+  - [x] Create `/bookmarklet-bridge` Svelte route: listens for postMessage from injected script, polls chat stream SSE for pending tab tool calls, forwards commands via postMessage, posts results via `/chat/messages/:id/tool-results`. Manages tab registration + keepalive via API.
+  - [x] Create shared injected script module (`ui/src/lib/upstream/injected-script.ts`): DOM executor for tab_read (querySelector, screenshot via getDisplayMedia JPEG 95 max 1280px) and tab_action (click, input, scroll). postMessage listener for commands from bridge. Visual badge (connection status). Re-entrant guard.
+  - [x] MenuPopover: add `strategy` prop ('absolute' | 'fixed'), `computeFixedStyle()` for position:fixed, z-50.
+  - [x] ChatPanel: dynamic max-height for context/tool sections. "Copy bookmarklet" button generating `javascript:void(...)` client-side (injects bridge iframe + script, TrustedTypes support). No API call for generation.
+  - [x] Lot 2 gate:
+    - [x] `make typecheck-ui API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=test-feat-chrome-upstream-v1-rewrite`
+    - [x] `make lint-ui API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=test-feat-chrome-upstream-v1-rewrite`
+    - [x] **UI tests**
+      - [x] Add `ui/tests/upstream/injected-script.test.ts`
+      - [x] Add `ui/tests/upstream/bridge.test.ts`
+      - [x] Sub-lot gate: `make test-ui API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=test-feat-chrome-upstream-v1-rewrite`
 
-- [ ] **Lot 3 — Chrome extension simplification + non-regression**
-  - [ ] Simplify `background.ts`: keep side panel management, remove tool execution logic (moved to shared injected script).
-  - [ ] Chrome extension injects the same shared script as bookmarklet via `chrome.scripting.executeScript`.
-  - [ ] Re-inject on navigation (`chrome.tabs.onUpdated`).
-  - [ ] Register tabs in API Tab Registry + keepalive.
-  - [ ] Optional: `captureVisibleTab` for screenshots passed to injected script via postMessage.
-  - [ ] Non-regression: web_search, web_extract, documents, tab_read, tab_action, comments — all work as on main.
-  - [ ] Lot 3 gate:
-    - [ ] `make typecheck-api API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=test-feat-chrome-upstream-v1-rewrite`
-    - [ ] `make typecheck-ui API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=test-feat-chrome-upstream-v1-rewrite`
-    - [ ] `make lint-api API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=test-feat-chrome-upstream-v1-rewrite`
-    - [ ] `make lint-ui API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=test-feat-chrome-upstream-v1-rewrite`
-    - [ ] Sub-lot gate: `make test-api API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=test-feat-chrome-upstream-v1-rewrite`
-    - [ ] Sub-lot gate: `make test-ui API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=test-feat-chrome-upstream-v1-rewrite`
+- [x] **Lot 3 — Chrome extension simplification + non-regression**
+  - [x] Simplify `background.ts`: keep side panel management, remove tool execution logic (moved to shared injected script).
+  - [x] Chrome extension injects the same shared script as bookmarklet via `chrome.scripting.executeScript`.
+  - [x] Re-inject on navigation (`chrome.tabs.onUpdated`).
+  - [x] Register tabs in API Tab Registry + keepalive.
+  - [x] Optional: `captureVisibleTab` for screenshots passed to injected script via postMessage.
+  - [x] Non-regression: web_search, web_extract, documents, tab_read, tab_action, comments — all work as on main.
+  - [x] Lot 3 gate:
+    - [x] `make typecheck-api API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=test-feat-chrome-upstream-v1-rewrite`
+    - [x] `make typecheck-ui API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=test-feat-chrome-upstream-v1-rewrite`
+    - [x] `make lint-api API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=test-feat-chrome-upstream-v1-rewrite`
+    - [x] `make lint-ui API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=test-feat-chrome-upstream-v1-rewrite`
+    - [x] Sub-lot gate: `make test-api API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=test-feat-chrome-upstream-v1-rewrite`
+    - [x] Sub-lot gate: `make test-ui API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=test-feat-chrome-upstream-v1-rewrite`
 
 - [ ] **Lot N-2 — UAT**
   - [ ] Bookmarklet (from webapp)
