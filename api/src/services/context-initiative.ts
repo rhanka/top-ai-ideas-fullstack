@@ -1,9 +1,41 @@
 import { executeWithToolsStream } from './tools';
 import { getReasoningParamsForModel } from './model-catalog';
-import { defaultPrompts } from '../config/default-prompts';
+import { AI_IDEAS_AGENTS } from '../config/default-agents-ai-ideas';
 import type { MatrixConfig } from '../types/matrix';
 
-export interface UseCaseListItem {
+const getAgentPromptTemplate = (promptId: string): string => {
+  for (const agent of AI_IDEAS_AGENTS) {
+    if (agent.config.promptId === promptId) {
+      return typeof agent.config.promptTemplate === 'string' ? agent.config.promptTemplate : '';
+    }
+  }
+  return '';
+};
+
+const STRUCTURED_JSON_REPAIR_PROMPT = `You are a strict JSON repair engine.
+
+Your task:
+- Repair the malformed JSON response so it becomes one valid JSON object.
+- Keep the original semantic intent and values as much as possible.
+- Respect the target schema.
+- Do not add commentary.
+
+Target schema name:
+{{schema_name}}
+
+Target schema JSON:
+{{schema_json}}
+
+Malformed JSON response:
+{{malformed_json}}
+
+Rules:
+- Return ONLY one valid JSON object.
+- No markdown fences.
+- No extra text before or after JSON.
+- If a field is missing, infer the safest schema-compliant value from context.`;
+
+export interface InitiativeListItem {
   titre: string;
   description: string; // 30-60 caractères (description courte)
   problem?: string; // 40-80 caractères (nouveau champ)
@@ -11,12 +43,12 @@ export interface UseCaseListItem {
   ref: string;
 }
 
-export interface UseCaseList {
+export interface InitiativeList {
   dossier: string;
-  useCases: UseCaseListItem[];
+  initiatives: InitiativeListItem[];
 }
 
-export interface UseCaseDetail {
+export interface InitiativeDetail {
   name: string;
   description: string; // 30-60 caractères (description courte)
   problem?: string; // 40-80 caractères (nouveau champ)
@@ -51,7 +83,7 @@ export interface UseCaseDetail {
 }
 
 // UI (/dossier/new) default is 10; keep backend consistent.
-const defaultUseCaseCount = 10;
+const defaultInitiativeCount = 10;
 
 const UNICODE_BULLETS = '[\\u2022\\u2023\\u25e6\\u25aa\\u25ab\\u2023\\u25cf\\u25e6]'; // • ▣ ◦ ▪ ▫ ‣ ● ◦
 const BULLET_PREFIX_RE = new RegExp(`^\\s*(?:[-*+]|(?:\\d+\\.)|${UNICODE_BULLETS})\\s+`);
@@ -183,12 +215,13 @@ type StructuredOutputConfig = {
   schema: Record<string, unknown>;
 };
 
+/** @deprecated Fallback only — schema now comes from agent config.outputSchema */
 const USE_CASE_LIST_STRUCTURED_SCHEMA: Record<string, unknown> = {
   type: 'object',
   additionalProperties: false,
   properties: {
     dossier: { type: 'string' },
-    useCases: {
+    initiatives: {
       type: 'array',
       items: {
         type: 'object',
@@ -202,9 +235,10 @@ const USE_CASE_LIST_STRUCTURED_SCHEMA: Record<string, unknown> = {
       },
     },
   },
-  required: ['dossier', 'useCases'],
+  required: ['dossier', 'initiatives'],
 };
 
+/** @deprecated Fallback only — schema now comes from agent config.outputSchema */
 const USE_CASE_DETAIL_STRUCTURED_SCHEMA: Record<string, unknown> = {
   type: 'object',
   additionalProperties: false,
@@ -227,8 +261,6 @@ const USE_CASE_DETAIL_STRUCTURED_SCHEMA: Record<string, unknown> = {
       items: { type: 'string', minLength: 3 },
     },
     nextSteps: { type: 'array', items: { type: 'string' } },
-    dataSources: { type: 'array', items: { type: 'string' } },
-    dataObjects: { type: 'array', items: { type: 'string' } },
     references: {
       type: 'array',
       items: {
@@ -284,8 +316,6 @@ const USE_CASE_DETAIL_STRUCTURED_SCHEMA: Record<string, unknown> = {
     'risks',
     'constraints',
     'nextSteps',
-    'dataSources',
-    'dataObjects',
     'references',
     'valueScores',
     'complexityScores',
@@ -309,7 +339,7 @@ const executeStructuredGenerationWithGeminiFallback = async (params: {
   prompt: string;
   model?: string;
   useDocuments: boolean;
-  documentsContexts?: Array<{ workspaceId: string; contextType: 'organization' | 'folder' | 'usecase'; contextId: string }>;
+  documentsContexts?: Array<{ workspaceId: string; contextType: 'organization' | 'folder' | 'initiative'; contextId: string }>;
   structuredOutput: StructuredOutputConfig;
   promptId: string;
   streamId: string;
@@ -355,8 +385,7 @@ const parseStructuredJsonWithSingleRepair = async <T>(params: {
   try {
     return parseJsonLenient<T>(params.rawContent);
   } catch {
-    const repairPromptTemplate =
-      defaultPrompts.find((p) => p.id === 'structured_json_repair')?.content || '';
+    const repairPromptTemplate = STRUCTURED_JSON_REPAIR_PROMPT;
     if (!repairPromptTemplate) {
       throw new Error('Prompt structured_json_repair non trouvé');
     }
@@ -383,13 +412,13 @@ const parseStructuredJsonWithSingleRepair = async <T>(params: {
 /**
  * Générer une liste de cas d'usage
  */
-export const generateUseCaseList = async (
+export const generateInitiativeList = async (
   input: string, 
   organizationInfo?: string, 
   model?: string,
-  useCaseCount?: number,
+  initiativeCount?: number,
   folderName?: string,
-  documentsContexts?: Array<{ workspaceId: string; contextType: 'organization' | 'folder' | 'usecase'; contextId: string }>,
+  documentsContexts?: Array<{ workspaceId: string; contextType: 'organization' | 'folder' | 'initiative'; contextId: string }>,
   documentsContextJson?: string,
   signal?: AbortSignal,
   streamId?: string,
@@ -397,22 +426,23 @@ export const generateUseCaseList = async (
     promptTemplate?: string;
     promptId?: string;
   },
-): Promise<UseCaseList> => {
-  const useCaseListPrompt =
+  outputSchema?: Record<string, unknown>,
+): Promise<InitiativeList> => {
+  const initiativeListPrompt =
     (typeof runtimePrompt?.promptTemplate === 'string' &&
     runtimePrompt.promptTemplate.trim().length > 0
       ? runtimePrompt.promptTemplate
-      : defaultPrompts.find(p => p.id === 'use_case_list')?.content) || '';
+      : getAgentPromptTemplate('use_case_list')) || '';
   
-  if (!useCaseListPrompt) {
+  if (!initiativeListPrompt) {
     throw new Error('Prompt use_case_list non trouvé');
   }
 
-  const basePrompt = useCaseListPrompt
+  const basePrompt = initiativeListPrompt
     .replace('{{user_input}}', input)
     .replace('{{folder_name}}', folderName || '')
     .replace('{{organization_info}}', organizationInfo || 'Aucune information d\'organisation disponible')
-    .replace('{{use_case_count}}', String(useCaseCount ?? defaultUseCaseCount));
+    .replace('{{use_case_count}}', String(initiativeCount ?? defaultInitiativeCount));
 
   const docsDirective =
     documentsContexts && documentsContexts.length > 0
@@ -435,6 +465,8 @@ export const generateUseCaseList = async (
       ? runtimePrompt.promptId.trim()
       : 'use_case_list';
   
+  const resolvedListSchema = outputSchema ?? USE_CASE_LIST_STRUCTURED_SCHEMA;
+
   const content = await executeStructuredGenerationWithGeminiFallback({
     prompt,
     model,
@@ -443,22 +475,22 @@ export const generateUseCaseList = async (
     structuredOutput: {
       name: 'use_case_list',
       strict: true,
-      schema: USE_CASE_LIST_STRUCTURED_SCHEMA,
+      schema: resolvedListSchema,
     },
     ...getReasoningParamsForModel(model, 'high', 'detailed'),
     promptId: runtimePromptId,
     streamId: finalStreamId,
     signal,
   });
-  
+
   if (!content) throw new Error('Aucune réponse reçue pour la liste de cas d\'usage');
-  
+
   try {
-    return await parseStructuredJsonWithSingleRepair<UseCaseList>({
+    return await parseStructuredJsonWithSingleRepair<InitiativeList>({
       rawContent: content,
       model,
       schemaName: 'use_case_list',
-      schema: USE_CASE_LIST_STRUCTURED_SCHEMA,
+      schema: resolvedListSchema,
       signal,
     });
   } catch (e) {
@@ -471,13 +503,13 @@ export const generateUseCaseList = async (
 /**
  * Générer le détail d'un cas d'usage
  */
-export const generateUseCaseDetail = async (
-  useCase: string,
+export const generateInitiativeDetail = async (
+  initiative: string,
   context: string,
   matrix: MatrixConfig,
   organizationInfo?: string,
   model?: string,
-  documentsContexts?: Array<{ workspaceId: string; contextType: 'organization' | 'folder' | 'usecase'; contextId: string }>,
+  documentsContexts?: Array<{ workspaceId: string; contextType: 'organization' | 'folder' | 'initiative'; contextId: string }>,
   documentsContextJson?: string,
   signal?: AbortSignal,
   streamId?: string,
@@ -485,19 +517,23 @@ export const generateUseCaseDetail = async (
     promptTemplate?: string;
     promptId?: string;
   },
-): Promise<UseCaseDetail> => {
-  const useCaseDetailPrompt =
+  options?: {
+    excludeFields?: string[];
+  },
+  outputSchema?: Record<string, unknown>,
+): Promise<InitiativeDetail> => {
+  const initiativeDetailPrompt =
     (typeof runtimePrompt?.promptTemplate === 'string' &&
     runtimePrompt.promptTemplate.trim().length > 0
       ? runtimePrompt.promptTemplate
-      : defaultPrompts.find(p => p.id === 'use_case_detail')?.content) || '';
+      : getAgentPromptTemplate('use_case_detail')) || '';
   
-  if (!useCaseDetailPrompt) {
+  if (!initiativeDetailPrompt) {
     throw new Error('Prompt use_case_detail non trouvé');
   }
 
-  const basePrompt = useCaseDetailPrompt
-    .replace(/\{\{use_case\}\}/g, useCase)
+  const basePrompt = initiativeDetailPrompt
+    .replace(/\{\{use_case\}\}/g, initiative)
     .replace('{{user_input}}', context)
     .replace('{{organization_info}}', organizationInfo || 'Aucune information d\'organisation disponible')
     .replace('{{matrix}}', JSON.stringify(matrix));
@@ -523,6 +559,8 @@ export const generateUseCaseDetail = async (
       ? runtimePrompt.promptId.trim()
       : 'use_case_detail';
   
+  const resolvedDetailSchema = outputSchema ?? USE_CASE_DETAIL_STRUCTURED_SCHEMA;
+
   const content = await executeStructuredGenerationWithGeminiFallback({
     prompt,
     model,
@@ -531,22 +569,22 @@ export const generateUseCaseDetail = async (
     structuredOutput: {
       name: 'use_case_detail',
       strict: true,
-      schema: USE_CASE_DETAIL_STRUCTURED_SCHEMA,
+      schema: resolvedDetailSchema,
     },
     ...getReasoningParamsForModel(model, 'high', 'detailed'),
     promptId: runtimePromptId,
     streamId: finalStreamId,
     signal,
   });
-  
-  if (!content) throw new Error(`Aucune réponse reçue pour le cas d'usage: ${useCase}`);
-  
+
+  if (!content) throw new Error(`Aucune réponse reçue pour le cas d'usage: ${initiative}`);
+
   try {
-    const detail = await parseStructuredJsonWithSingleRepair<UseCaseDetail>({
+    const detail = await parseStructuredJsonWithSingleRepair<InitiativeDetail>({
       rawContent: content,
       model,
       schemaName: 'use_case_detail',
-      schema: USE_CASE_DETAIL_STRUCTURED_SCHEMA,
+      schema: resolvedDetailSchema,
       signal,
     });
     // Normalize list fields to avoid marker-only entries and nested bullet formatting.
@@ -558,8 +596,8 @@ export const generateUseCaseDetail = async (
       risks: normalizeStringListField(detail?.risks),
       constraints: normalizeStringListField(detail?.constraints),
       nextSteps: normalizeStringListField(detail?.nextSteps),
-      dataSources: normalizeStringListField(detail?.dataSources),
-      dataObjects: normalizeStringListField(detail?.dataObjects),
+      ...(detail?.dataSources != null ? { dataSources: normalizeStringListField(detail.dataSources) } : {}),
+      ...(detail?.dataObjects != null ? { dataObjects: normalizeStringListField(detail.dataObjects) } : {}),
     };
 
     // Safety net: constraints are mandatory for the product workflow.
@@ -579,6 +617,6 @@ export const generateUseCaseDetail = async (
     console.error('Contenu reçu (derniers 500 chars):', content.substring(Math.max(0, content.length - 500)));
     console.error('Longueur du contenu:', content.length);
     console.error('Type de contenu:', typeof content);
-    throw new Error(`Erreur lors du parsing de la réponse de l'IA pour le détail: ${useCase}`);
+    throw new Error(`Erreur lors du parsing de la réponse de l'IA pour le détail: ${initiative}`);
   }
 };

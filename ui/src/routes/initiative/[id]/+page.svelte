@@ -3,13 +3,13 @@
   import { page } from '$app/stores';
   import { get } from 'svelte/store';
   import { _ } from 'svelte-i18n';
-  import { useCasesStore, openUseCaseExport, closeUseCaseExport, useCaseExportState } from '$lib/stores/useCases';
-  import { deleteUseCase } from '$lib/stores/useCases';
+  import { initiativesStore, openInitiativeExport, closeInitiativeExport, initiativeExportState } from '$lib/stores/initiatives';
+  import { deleteInitiative } from '$lib/stores/initiatives';
   import { addToast } from '$lib/stores/toast';
   import { apiGet } from '$lib/utils/api';
   import { generateDocxAndDownload } from '$lib/utils/docx';
   import { goto } from '$app/navigation';
-  import UseCaseDetail from '$lib/components/UseCaseDetail.svelte';
+  import InitiativeDetail from '$lib/components/InitiativeDetail.svelte';
   import { calculateUseCaseScores } from '$lib/utils/scoring';
   import type { MatrixConfig } from '$lib/types/matrix';
   import { streamHub } from '$lib/stores/streamHub';
@@ -160,7 +160,7 @@
       if (data?.deleted) return;
       if (data?.useCase) {
         useCase = { ...(useCase || {}), ...data.useCase };
-        useCasesStore.update(items => items.map(uc => uc.id === currentId ? useCase : uc));
+        initiativesStore.update(items => items.map(uc => uc.id === currentId ? useCase : uc));
         recalculateScoresFromCurrentUseCase();
         if (!matrix) {
           void loadMatrixAndCalculateScores();
@@ -183,7 +183,7 @@
       return;
     }
     if (evt?.type === 'comment_update') {
-      if (evt.contextType !== 'usecase' || evt.contextId !== currentId) return;
+      if (evt.contextType !== 'initiative' || evt.contextId !== currentId) return;
       scheduleCommentReload();
     }
   };
@@ -199,7 +199,7 @@
     if (hubKey) streamHub.delete(hubKey);
     if (lockHubKey) streamHub.delete(lockHubKey);
     if (lockRefreshTimer) clearInterval(lockRefreshTimer);
-    if (lockTargetId) void leavePresence('usecase', lockTargetId);
+    if (lockTargetId) void leavePresence('initiative', lockTargetId);
     void releaseCurrentLock();
     document.removeEventListener('visibilitychange', handleVisibility);
     window.removeEventListener('pagehide', handleLeave);
@@ -214,10 +214,10 @@
 
   const subscribeLock = (targetId: string) => {
     if (lockHubKey) streamHub.delete(lockHubKey);
-    lockHubKey = `lock:usecase:${targetId}`;
+    lockHubKey = `lock:initiative:${targetId}`;
     streamHub.set(lockHubKey, (evt: any) => {
       if (evt?.type === 'lock_update') {
-        if (evt.objectType !== 'usecase') return;
+        if (evt.objectType !== 'initiative') return;
         if (evt.objectId !== targetId) return;
         lock = evt?.data?.lock ?? null;
         if (!lock && !$workspaceReadOnlyScope) {
@@ -230,7 +230,7 @@
         return;
       }
       if (evt?.type === 'presence_update') {
-        if (evt.objectType !== 'usecase') return;
+        if (evt.objectType !== 'initiative') return;
         if (evt.objectId !== targetId) return;
         presenceTotal = Number(evt?.data?.total ?? 0);
         presenceUsers = Array.isArray(evt?.data?.users)
@@ -250,9 +250,9 @@
     lockError = null;
     try {
       if ($workspaceReadOnlyScope) {
-        lock = await fetchLock('usecase', lockTargetId);
+        lock = await fetchLock('initiative', lockTargetId);
       } else {
-        const res = await acquireLock('usecase', lockTargetId);
+        const res = await acquireLock('initiative', lockTargetId);
         lock = res.lock;
       }
       scheduleLockRefresh();
@@ -279,7 +279,7 @@
     if (!lockTargetId || !$session.user) return;
     if (!isLockedByMe) return;
     try {
-      const res = await acquireLock('usecase', lockTargetId);
+      const res = await acquireLock('initiative', lockTargetId);
       lock = res.lock;
     } catch {
       // ignore refresh errors
@@ -289,7 +289,7 @@
   const releaseCurrentLock = async () => {
     if (!lockTargetId || !isLockedByMe) return;
     try {
-      await releaseLock('usecase', lockTargetId);
+      await releaseLock('initiative', lockTargetId);
     } catch {
       // ignore release errors
     }
@@ -298,7 +298,7 @@
   const handleRequestUnlock = async () => {
     if (!lockTargetId) return;
     try {
-      const res = await requestUnlock('usecase', lockTargetId);
+      const res = await requestUnlock('initiative', lockTargetId);
       lock = res.lock;
       addToast({ type: 'success', message: get(_)('locks.unlockRequestSent') });
     } catch (e: any) {
@@ -309,7 +309,7 @@
   const handleForceUnlock = async () => {
     if (!lockTargetId) return;
     try {
-      await forceUnlock('usecase', lockTargetId);
+      await forceUnlock('initiative', lockTargetId);
       addToast({ type: 'success', message: get(_)('locks.lockForced') });
     } catch (e: any) {
       addToast({ type: 'error', message: e?.message ?? get(_)('locks.lockForceError') });
@@ -320,7 +320,7 @@
     if (!lockTargetId) return;
     if (lock?.unlockRequestedByUserId) {
       suppressAutoLock = true;
-      await acceptUnlock('usecase', lockTargetId);
+      await acceptUnlock('initiative', lockTargetId);
       return;
     }
     suppressAutoLock = true;
@@ -330,7 +330,7 @@
   const hydratePresence = async () => {
     if (!lockTargetId) return;
     try {
-      const res = await fetchPresence('usecase', lockTargetId);
+      const res = await fetchPresence('initiative', lockTargetId);
       presenceTotal = res.total;
       presenceUsers = res.users.filter((u) => u.userId !== $session.user?.id);
     } catch {
@@ -341,7 +341,7 @@
   const updatePresence = async () => {
     if (!lockTargetId) return;
     try {
-      const res = await sendPresence('usecase', lockTargetId);
+      const res = await sendPresence('initiative', lockTargetId);
       presenceTotal = res.total;
       presenceUsers = res.users.filter((u) => u.userId !== $session.user?.id);
     } catch {
@@ -352,7 +352,7 @@
   const handleVisibility = () => {
     if (!lockTargetId) return;
     if (document.hidden) {
-      void leavePresence('usecase', lockTargetId);
+      void leavePresence('initiative', lockTargetId);
     } else {
       void updatePresence();
     }
@@ -360,13 +360,13 @@
 
   const handleLeave = () => {
     if (!lockTargetId) return;
-    void leavePresence('usecase', lockTargetId);
+    void leavePresence('initiative', lockTargetId);
   };
 
 
   $: if (useCaseId && useCaseId !== lockTargetId) {
     if (lockTargetId) {
-      void leavePresence('usecase', lockTargetId);
+      void leavePresence('initiative', lockTargetId);
       void releaseCurrentLock();
     }
     lock = null;
@@ -390,12 +390,18 @@
   }
 
   const loadUseCase = async () => {
+    if (!get(workspaceScopeHydrated)) {
+      await new Promise<void>((resolve) => {
+        const unsub = workspaceScopeHydrated.subscribe((ready) => {
+          if (ready) { unsub(); resolve(); }
+        });
+      });
+    }
     try {
-      // Charger depuis l'API pour avoir les données les plus récentes
-      useCase = await apiGet(`/use-cases/${useCaseId}`);
+      useCase = await apiGet(`/initiatives/${useCaseId}`);
       
       // Mettre à jour le store avec les données fraîches
-      useCasesStore.update(items => 
+      initiativesStore.update(items => 
         items.map(uc => uc.id === useCaseId ? useCase : uc)
       );
       
@@ -406,7 +412,7 @@
     } catch (err) {
       console.error('Failed to fetch use case:', err);
       // Fallback sur le store local en cas d'erreur
-      const useCases = $useCasesStore;
+      const useCases = $initiativesStore;
       useCase = useCases.find(uc => uc.id === useCaseId);
       
       if (!useCase) {
@@ -431,8 +437,8 @@
     if (!confirm(get(_)('usecase.confirmDelete'))) return;
 
     try {
-      await deleteUseCase(useCase.id);
-      useCasesStore.update(items => items.filter(uc => uc.id !== useCase?.id));
+      await deleteInitiative(useCase.id);
+      initiativesStore.update(items => items.filter(uc => uc.id !== useCase?.id));
       addToast({ type: 'success', message: get(_)('usecase.toast.deleted') });
       if (useCase.folderId) {
         goto(`/folders/${useCase.folderId}`);
@@ -458,7 +464,7 @@
       await generateDocxAndDownload(
         {
           templateId: 'usecase-onepage',
-          entityType: 'usecase',
+          entityType: 'initiative',
           entityId: useCase.id,
           provided: {},
           controls: {},
@@ -507,7 +513,7 @@
     if (commentCountsLoading) return;
     commentCountsLoading = true;
     try {
-      const res = await listComments({ contextType: 'usecase', contextId: useCaseId });
+      const res = await listComments({ contextType: 'initiative', contextId: useCaseId });
       commentCounts = buildOpenCommentCounts(res.items || []);
       commentCountsRetryAttempts = 0;
     } catch {
@@ -536,7 +542,7 @@
   };
 
   const openCommentsFor = (sectionKey: string) => {
-    const detail = { contextType: 'usecase', contextId: useCaseId, sectionKey };
+    const detail = { contextType: 'initiative', contextId: useCaseId, sectionKey };
     window.dispatchEvent(new CustomEvent('topai:open-comments', { detail }));
   };
 
@@ -552,9 +558,9 @@
 
   {#if useCase}
   {#if useCase.status === 'generating' || useCase.status === 'detailing'}
-    <StreamMessage streamId={`usecase_${useCase.id}`} status={useCase.status} maxHistory={10} />
+    <StreamMessage streamId={`initiative_${useCase.id}`} status={useCase.status} maxHistory={10} />
   {/if}
-    <UseCaseDetail
+    <InitiativeDetail
       {useCase}
       {matrix}
       {calculatedScores}
@@ -592,7 +598,7 @@
               showDelete={!isReadOnly}
               disabledImport={isReadOnly}
               disabledExport={isReadOnly}
-              onExport={() => openUseCaseExport(useCaseId)}
+              onExport={() => openInitiativeExport(useCaseId)}
               onDownloadDocx={handleDownloadDocx}
               onPrint={() => window.print()}
               onDelete={handleDelete}
@@ -611,11 +617,11 @@
               </button>
             {/if}
       </svelte:fragment>
-    </UseCaseDetail>
+    </InitiativeDetail>
 
     <div class="print-hidden">
       <DocumentsBlock
-        contextType="usecase"
+        contextType="initiative"
         contextId={useCase.id}
         on:state={(event) => {
           hasDocuments = (event.detail?.items || []).length > 0;
@@ -631,11 +637,11 @@
 
 {#if useCase}
   <ImportExportDialog
-    bind:open={$useCaseExportState.open}
+    bind:open={$initiativeExportState.open}
     mode="export"
     title={$_('usecase.export.title')}
-    scope="usecase"
-    scopeId={$useCaseExportState.useCaseId ?? useCase.id}
+    scope="initiative"
+    scopeId={$initiativeExportState.initiativeId ?? useCase.id}
     allowScopeSelect={false}
     allowScopeIdEdit={false}
     workspaceName={workspaceName}
@@ -652,6 +658,6 @@
     includeDependencies={{ matrix: ['folders'] }}
     includeAffectsComments={['folders', 'matrix', 'organization']}
     includeAffectsDocuments={['folders', 'matrix', 'organization']}
-    on:close={closeUseCaseExport}
+    on:close={closeInitiativeExport}
   />
 {/if}

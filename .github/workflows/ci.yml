@@ -227,9 +227,11 @@ jobs:
           - group: group-b
             e2e_groups: "01 04"
           - group: group-c
-            e2e_groups: "03 05 07"
+            e2e_groups: "03"
           - group: group-d
             e2e_groups: "08"
+          - group: group-e
+            e2e_groups: "05 07"
     env:
       DOCKER_USERNAME: nologin
       DOCKER_PASSWORD: ${{ secrets.SCW_SECRET_KEY }}

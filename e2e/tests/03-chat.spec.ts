@@ -320,8 +320,8 @@ test.describe.serial('Chat', () => {
       expect(r2b.requestBody?.primaryContextId).toBe(organizationId);
     }
 
-    // 3) /usecase/[id] → usecase + id from URL
-    await page.goto('/usecase');
+    // 3) /initiative/[id] → initiative + id from URL
+    await page.goto('/initiative');
     await page.waitForLoadState('domcontentloaded');
     const useCaseCards = page.locator('article.rounded.border.border-slate-200');
     if ((await useCaseCards.count()) === 0) {
@@ -333,14 +333,14 @@ test.describe.serial('Chat', () => {
     if (isGenerating) return;
     await firstCard.click();
     await page.waitForLoadState('domcontentloaded');
-    const match = page.url().match(/\/usecase\/([^/?#]+)/);
+    const match = page.url().match(/\/initiative\/([^/?#]+)/);
     const useCaseId = match ? match[1] : '';
     expect(useCaseId).toBeTruthy();
     await expect(chatButton).toBeVisible({ timeout: 1000 });
     await chatButton.click();
     await expect(composer).toBeVisible({ timeout: 1000 });
-    const r3 = await sendMessageAndWaitApi(page, composer, 'Test context usecase detail');
-    expect(r3.requestBody?.primaryContextType).toBe('usecase');
+    const r3 = await sendMessageAndWaitApi(page, composer, 'Test context initiative detail');
+    expect(r3.requestBody?.primaryContextType).toBe('initiative');
     expect(r3.requestBody?.primaryContextId).toBe(useCaseId);
   });
 
@@ -367,7 +367,7 @@ test.describe.serial('Chat', () => {
     await expect(composer).toBeVisible({ timeout: 1000 });
     await menuButton.click();
     const menu = page
-      .locator('div.absolute')
+      .locator('div.fixed.shadow-lg, div.absolute.shadow-lg')
       .filter({ hasText: /Contexte\(s\)|Context\(s\)/i })
       .first();
     await expect(menu.locator('button', { hasText: orgName })).toBeVisible({ timeout: 1000 });
@@ -386,7 +386,7 @@ test.describe.serial('Chat', () => {
     await expect(composer).toBeVisible({ timeout: 1000 });
     await menuButton.click();
     const menu2 = page
-      .locator('div.absolute')
+      .locator('div.fixed.shadow-lg, div.absolute.shadow-lg')
       .filter({ hasText: /Contexte\(s\)|Context\(s\)/i })
       .first();
     await expect(menu2.locator('button', { hasText: orgName })).toHaveCount(0);
@@ -412,7 +412,7 @@ test.describe.serial('Chat', () => {
     await expect(composer).toBeVisible({ timeout: 1000 });
     await menuButton.click();
     const menu3 = page
-      .locator('div.absolute')
+      .locator('div.fixed.shadow-lg, div.absolute.shadow-lg')
       .filter({ hasText: /Contexte\(s\)|Context\(s\)/i })
       .first();
     await expect(menu3.locator('button', { hasText: orgName })).toBeVisible({ timeout: 1000 });
