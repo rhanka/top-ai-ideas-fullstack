@@ -1,7 +1,12 @@
 /**
  * Generates a self-contained IIFE string (ES5-compatible) to be injected
  * into an external page. The script handles tab_read/tab_action commands
- * from the bridge iframe via postMessage.
+ * from the bridge iframe via postMessage, or via JSONP polling fallback.
+ *
+ * Context detection (in order):
+ * 1. chrome.runtime available -> extension mode (not used here, extension injects differently)
+ * 2. document.getElementById('__topai_bridge')?.contentWindow -> iframe bridge mode
+ * 3. window.__TOPAI_JSONP_MODE -> JSONP/img polling mode
  *
  * @param bridgeOrigin - The origin of the bridge iframe (e.g. "https://app.topai.com")
  * @returns A string containing the full IIFE source code
@@ -20,15 +25,29 @@ export function generateInjectedScript(bridgeOrigin: string): string {
     // Bridge origin
     'var BRIDGE_ORIGIN = ' + JSON.stringify(bridgeOrigin) + ';' +
 
+    // --- Context detection ---
+    'var MODE = "unknown";' +
+    'var bridgeIframe = document.getElementById("__topai_bridge");' +
+    'if (typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.sendMessage) {' +
+    '  MODE = "extension";' +
+    '} else if (bridgeIframe && bridgeIframe.contentWindow) {' +
+    '  MODE = "iframe";' +
+    '} else if (window.__TOPAI_JSONP_MODE) {' +
+    '  MODE = "jsonp";' +
+    '} else {' +
+    // Re-check after a short delay (iframe may not be ready yet)
+    '  MODE = "iframe";' + // default to iframe, will check bridge element in sendResult
+    '}' +
+
     // --- Badge ---
-    'var badge = document.createElement("div");' +
+    'var badge = document.getElementById("__topai_badge") || document.createElement("div");' +
     'badge.id = "__topai_badge";' +
     'badge.style.cssText = "position:fixed;bottom:16px;right:16px;z-index:2147483647;' +
     'padding:6px 14px;border-radius:20px;font-family:system-ui,sans-serif;font-size:13px;' +
     'font-weight:600;color:#fff;background:#6366f1;box-shadow:0 2px 8px rgba(0,0,0,.25);' +
     'cursor:default;user-select:none;transition:background .3s,opacity .3s;opacity:0.9;";' +
     'badge.textContent = "Connecting...";' +
-    'document.body.appendChild(badge);' +
+    'if (!badge.parentNode) document.body.appendChild(badge);' +
 
     'function setBadgeState(state) {' +
     '  if (state === "connected") {' +
@@ -146,8 +165,12 @@ export function generateInjectedScript(bridgeOrigin: string): string {
     '  }' +
     '}' +
 
-    // --- Send result back to bridge ---
+    // --- Send result: routes through the active channel ---
     'function sendResult(callId, result) {' +
+    '  if (MODE === "jsonp") {' +
+    '    sendResultViaImg(callId, result);' +
+    '    return;' +
+    '  }' +
     '  var bridge = document.getElementById("__topai_bridge");' +
     '  if (!bridge || !bridge.contentWindow) return;' +
     '  bridge.contentWindow.postMessage({' +
@@ -158,6 +181,10 @@ export function generateInjectedScript(bridgeOrigin: string): string {
     '}' +
 
     'function sendScreenshotResult(callId, dataUrl) {' +
+    '  if (MODE === "jsonp") {' +
+    '    sendResultViaImg(callId, { dataUrl: dataUrl });' +
+    '    return;' +
+    '  }' +
     '  var bridge = document.getElementById("__topai_bridge");' +
     '  if (!bridge || !bridge.contentWindow) return;' +
     '  bridge.contentWindow.postMessage({' +
@@ -165,6 +192,42 @@ export function generateInjectedScript(bridgeOrigin: string): string {
     '    callId: callId,' +
     '    dataUrl: dataUrl' +
     '  }, BRIDGE_ORIGIN);' +
+    '}' +
+
+    // --- JSONP/img fallback channel ---
+    'var jsonpToken = null;' +
+    'var jsonpTabId = null;' +
+
+    'function sendResultViaImg(callId, result) {' +
+    '  if (!jsonpToken || !window.__TOPAI_API_ORIGIN) return;' +
+    '  var data = encodeURIComponent(JSON.stringify({ callId: callId, result: result }));' +
+    '  var img = new Image();' +
+    '  img.src = window.__TOPAI_API_ORIGIN + "/api/v1/bookmarklet/result?token=" + jsonpToken + "&data=" + data;' +
+    '}' +
+
+    // JSONP command handler (called by poll response)
+    'window.__TOPAI_CMD = function(cmd) {' +
+    '  if (!cmd) return;' +
+    '  var callId = cmd.callId;' +
+    '  var toolName = cmd.toolName;' +
+    '  var args = cmd.args || {};' +
+    '  if (toolName === "tab_read") {' +
+    '    handleTabRead(callId, args);' +
+    '  } else if (toolName === "tab_action") {' +
+    '    handleTabAction(callId, args);' +
+    '  }' +
+    '};' +
+
+    'function startJsonpPolling() {' +
+    '  if (MODE !== "jsonp" || !window.__TOPAI_API_ORIGIN) return;' +
+    '  setInterval(function() {' +
+    '    if (!jsonpToken) return;' +
+    '    var s = document.createElement("script");' +
+    '    s.src = window.__TOPAI_API_ORIGIN + "/api/v1/bookmarklet/poll?tab_id=" + jsonpTabId + "&token=" + jsonpToken;' +
+    '    s.onload = function() { s.remove(); };' +
+    '    s.onerror = function() { s.remove(); };' +
+    '    document.head.appendChild(s);' +
+    '  }, 2000);' +
     '}' +
 
     // --- PostMessage listener for commands from bridge ---
@@ -196,20 +259,36 @@ export function generateInjectedScript(bridgeOrigin: string): string {
     '});' +
 
     // --- Register with bridge on init ---
-    'var bridgeIframe = document.getElementById("__topai_bridge");' +
     'function tryRegister() {' +
-    '  if (!bridgeIframe || !bridgeIframe.contentWindow) return;' +
-    '  bridgeIframe.contentWindow.postMessage({' +
+    '  var bi = document.getElementById("__topai_bridge");' +
+    '  if (!bi || !bi.contentWindow) return;' +
+    '  bi.contentWindow.postMessage({' +
     '    type: "register",' +
     '    url: location.href,' +
     '    title: document.title' +
     '  }, BRIDGE_ORIGIN);' +
     '}' +
-    // Bridge iframe load event: try register after load
-    'if (bridgeIframe) {' +
-    '  bridgeIframe.addEventListener("load", function() { tryRegister(); });' +
-    // Also try immediately in case it's already loaded
-    '  tryRegister();' +
+
+    // iframe bridge mode: register via postMessage
+    'if (MODE === "iframe") {' +
+    '  var bi = document.getElementById("__topai_bridge");' +
+    '  if (bi) {' +
+    '    bi.addEventListener("load", function() { tryRegister(); });' +
+    '    tryRegister();' +
+    '  }' +
+    '}' +
+
+    // JSONP mode: register via img.src, then start polling
+    'if (MODE === "jsonp" && window.__TOPAI_API_ORIGIN) {' +
+    '  var regImg = new Image();' +
+    '  window.__TOPAI_REG_CB = function(resp) {' +
+    '    if (resp && resp.token) { jsonpToken = resp.token; jsonpTabId = resp.tab_id; setBadgeState("connected"); startJsonpPolling(); }' +
+    '  };' +
+    '  var regScript = document.createElement("script");' +
+    '  regScript.src = window.__TOPAI_API_ORIGIN + "/api/v1/bookmarklet/register?url=" + encodeURIComponent(location.href) + "&title=" + encodeURIComponent(document.title) + "&callback=__TOPAI_REG_CB";' +
+    '  regScript.onload = function() { regScript.remove(); };' +
+    '  regScript.onerror = function() { regScript.remove(); };' +
+    '  document.head.appendChild(regScript);' +
     '}' +
 
     '})();'

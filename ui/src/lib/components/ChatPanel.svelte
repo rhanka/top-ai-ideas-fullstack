@@ -88,6 +88,7 @@
   import { downloadCompletedDocxJob } from '$lib/utils/docx';
   import { renderMarkdownWithRefs } from '$lib/utils/markdown';
   import { generateInjectedScript } from '$lib/upstream/injected-script';
+  import { generateBookmarkletBootstrap } from '$lib/upstream/bookmarklet-bootstrap';
   import { postChatSteer } from '$lib/utils/chat-steer';
   import {
     filterPermissionPromptsForPendingStream,
@@ -2929,32 +2930,7 @@
       }
       const bridgeUrl = origin + '/bookmarklet-bridge' + (nonce ? '?nonce=' + encodeURIComponent(nonce) : '');
       const scriptContent = generateInjectedScript(origin);
-
-      // Build the bookmarklet bootstrap
-      const bootstrap =
-        'javascript:void(' +
-        '(function(){' +
-        // Re-entrant guard check
-        'if(window.__TOPAI_ACTIVE){return;}' +
-        // TrustedTypes support
-        'var tp=null;' +
-        'if(typeof trustedTypes!=="undefined"&&trustedTypes.createPolicy){' +
-        'try{tp=trustedTypes.createPolicy("topai",{createHTML:function(s){return s;},createScriptURL:function(s){return s;},createScript:function(s){return s;}});}catch(e){}' +
-        '}' +
-        // Create hidden bridge iframe
-        'var f=document.createElement("iframe");' +
-        'f.id="__topai_bridge";' +
-        'f.style.cssText="display:none;width:0;height:0;border:none;position:absolute;";' +
-        'var bridgeUrl=' + JSON.stringify(bridgeUrl) + ';' +
-        'if(tp){f.src=tp.createScriptURL(bridgeUrl);}else{f.src=bridgeUrl;}' +
-        'document.body.appendChild(f);' +
-        // Inject the tool executor script
-        'var s=document.createElement("script");' +
-        'var code=' + JSON.stringify(scriptContent) + ';' +
-        'if(tp){s.textContent=tp.createScript(code);}else{s.textContent=code;}' +
-        'document.head.appendChild(s);' +
-        '})()' +
-        ')';
+      const bootstrap = generateBookmarkletBootstrap(bridgeUrl, scriptContent, origin);
 
       await navigator.clipboard.writeText(bootstrap);
     } catch (e) {
