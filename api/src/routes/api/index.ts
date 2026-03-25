@@ -28,7 +28,7 @@ import { commentsRouter } from './comments';
 import { exportsRouter, importsRouter } from './import-export';
 import { docxRouter } from './docx';
 import { chromeExtensionRouter } from './chrome-extension';
-import { bookmarkletRouter } from './bookmarklet';
+import { bookmarkletRouter, bookmarkletPublicRouter } from './bookmarklet';
 import { vscodeExtensionRouter } from './vscode-extension';
 import { solutionsRouter } from './solutions';
 import { productsRouter } from './products';
@@ -42,6 +42,7 @@ export const apiRouter = new Hono();
 
 // Public routes (no authentication required)
 apiRouter.route('/health', healthRouter);
+apiRouter.route('/bookmarklet', bookmarkletPublicRouter);
 
 // Editor routes (require editor role or higher)
 apiRouter.use('/organizations/*', requireAuth);
