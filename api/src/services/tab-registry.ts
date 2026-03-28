@@ -1,5 +1,5 @@
 /**
- * In-memory Tab Registry for connected browser tabs (chrome plugin + bookmarklet).
+ * In-memory Tab Registry for connected browser tabs.
  *
  * Each tab entry tracks connection metadata, keepalive timestamps, and source.
  * The registry is process-scoped — entries do not survive server restarts.

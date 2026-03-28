@@ -47,8 +47,6 @@
     '/auth/login',
     '/auth/register',
     '/auth/magic-link',
-    '/bookmarklet-bridge-probe',
-    '/bookmarklet-bridge',
   ];
 
   // Routes protégées (nécessitent une authentification)

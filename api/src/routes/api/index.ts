@@ -28,7 +28,6 @@ import { commentsRouter } from './comments';
 import { exportsRouter, importsRouter } from './import-export';
 import { docxRouter } from './docx';
 import { chromeExtensionRouter } from './chrome-extension';
-import { bookmarkletRouter, bookmarkletPublicRouter } from './bookmarklet';
 import { vscodeExtensionRouter } from './vscode-extension';
 import { solutionsRouter } from './solutions';
 import { productsRouter } from './products';
@@ -42,8 +41,6 @@ export const apiRouter = new Hono();
 
 // Public routes (no authentication required)
 apiRouter.route('/health', healthRouter);
-apiRouter.route('/bookmarklet', bookmarkletPublicRouter);
-
 // Editor routes (require editor role or higher)
 apiRouter.use('/organizations/*', requireAuth);
 apiRouter.route('/organizations', organizationsRouter);
@@ -90,10 +87,6 @@ apiRouter.route('/me', meRouter);
 // Chrome extension metadata route for authenticated users.
 apiRouter.use('/chrome-extension/*', requireAuth);
 apiRouter.route('/chrome-extension', chromeExtensionRouter);
-
-// Bookmarklet nonce route for authenticated users.
-apiRouter.use('/bookmarklet/*', requireAuth);
-apiRouter.route('/bookmarklet', bookmarkletRouter);
 
 // VSCode extension metadata route for authenticated users.
 apiRouter.use('/vscode-extension/*', requireAuth);

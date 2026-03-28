@@ -83,13 +83,10 @@
     Terminal,
     Search,
     GitBranch,
-    Bookmark,
   } from '@lucide/svelte';
   import { downloadCompletedDocxJob } from '$lib/utils/docx';
   import { renderMarkdownWithRefs } from '$lib/utils/markdown';
   import { generateInjectedScript } from '$lib/upstream/injected-script';
-  import { generateBookmarkletBootstrap } from '$lib/upstream/bookmarklet-bootstrap';
-  import { API_BASE_URL } from '$lib/config';
   import { postChatSteer } from '$lib/utils/chat-steer';
   import {
     filterPermissionPromptsForPendingStream,
@@ -2914,29 +2911,6 @@
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       sessionDocsError = msg;
-    }
-  };
-
-  const copyBookmarklet = async () => {
-    showComposerMenu = false;
-    try {
-      const origin = window.location.origin;
-      // Fetch a nonce for the bridge handshake
-      let nonce = '';
-      try {
-        const nonceRes = await apiGet<{ nonce: string }>('/bookmarklet/nonce');
-        nonce = nonceRes.nonce || '';
-      } catch {
-        // Non-blocking: proceed without nonce
-      }
-      const bridgeUrl = origin + '/bookmarklet-bridge' + (nonce ? '?nonce=' + encodeURIComponent(nonce) : '');
-      const apiOrigin = new URL(API_BASE_URL).origin;
-      const scriptContent = generateInjectedScript(origin);
-      const bootstrap = generateBookmarkletBootstrap(bridgeUrl, scriptContent, origin, apiOrigin);
-
-      await navigator.clipboard.writeText(bootstrap);
-    } catch (e) {
-      console.error('[ChatPanel] Failed to copy bookmarklet:', e);
     }
   };
 
@@ -5861,16 +5835,6 @@
                 </div>
               </div>
 
-              <div class="border-t border-slate-100 pt-2">
-                <button
-                  class="flex w-full items-center gap-2 rounded px-1 py-1 text-[11px] text-slate-700 hover:bg-slate-50"
-                  type="button"
-                  on:click={copyBookmarklet}
-                >
-                  <Bookmark class="w-4 h-4" />
-                  <span>Copy bookmarklet</span>
-                </button>
-              </div>
             </svelte:fragment>
           </MenuPopover>
           <select

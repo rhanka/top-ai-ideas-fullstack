@@ -10,18 +10,6 @@ import { logger } from './logger';
 export const app = new Hono();
 const httpLogEnabled = env.HTTP_LOG !== 'false' && env.HTTP_LOG !== '0';
 
-// CORP override for public bookmarklet endpoints (must be cross-origin loadable).
-// Registered BEFORE secureHeaders so it wraps it — its "after" phase runs AFTER
-// secureHeaders, overriding CORP from 'same-origin' to 'cross-origin'.
-app.use('/api/v1/bookmarklet/injected-script.js', async (c, next) => {
-  await next();
-  c.res.headers.set('Cross-Origin-Resource-Policy', 'cross-origin');
-});
-app.use('/api/v1/bookmarklet/probe.js', async (c, next) => {
-  await next();
-  c.res.headers.set('Cross-Origin-Resource-Policy', 'cross-origin');
-});
-
 // Parse allowed origins from environment variable
 const allowedOrigins = parseAllowedOrigins(env.CORS_ALLOWED_ORIGINS);
 
