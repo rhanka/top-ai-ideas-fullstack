@@ -80,33 +80,33 @@ Deliver upstream remote control for browser tabs via bookmarklet and chrome exte
     - **LinkedIn**: EXPECTED FAIL - strategy=blocked, inline=false, iframe=false, TT=found. Badge "Installez l'extension Chrome pour ce site". Both inline script and iframe are blocked by LinkedIn CSP.
   - [x] Documented: LinkedIn requires Chrome extension in DEV (strict CSP blocks both inline and iframe from localhost).
 
-- [ ] **Lot 8 — CSP-hostile mode: bookmarklet-as-executor (LinkedIn support)**
-  - [ ] Implement `bookmarklet-executor` mode in bootstrap: when both inline script and external script are blocked by CSP, but iframe injection works, the bookmarklet bootstrap code itself acts as the DOM executor.
-    - [ ] The bookmarklet `javascript:` URI has full DOM access (proven via CDP test on LinkedIn).
-    - [ ] The bookmarklet injects an iframe to `/bookmarklet-bridge` (proven working on LinkedIn).
-    - [ ] The bookmarklet code listens for postMessage commands from the iframe bridge.
-    - [ ] On `tab_read` command: bookmarklet reads DOM (querySelector, innerText) and sends result via postMessage to iframe.
-    - [ ] On `tab_action` command: bookmarklet executes DOM action (click, input, scroll) and sends result via postMessage to iframe.
-    - [ ] Badge: bookmarklet creates a `<div>` badge (DOM manipulation works on LinkedIn, no script injection needed).
-  - [ ] Update strategy selection in `bookmarklet-bootstrap.ts`:
-    - [ ] Current: inline+iframe, external+iframe, jsonp, blocked.
-    - [ ] New: inline+iframe, external+iframe, **executor+iframe** (new), jsonp, blocked.
-    - [ ] `executor+iframe` = bookmarklet code IS the executor + iframe bridge for API communication.
-    - [ ] Fallback chain: inline → external → executor → jsonp → blocked.
-  - [ ] Update iframe bridge to support `executor` mode:
-    - [ ] Bridge sends commands via postMessage to parent window (the bookmarklet code).
-    - [ ] Bridge receives results via postMessage from parent window.
-    - [ ] Tab registration via iframe fetch (same-origin, no CSP issue).
-  - [ ] Size constraint: bookmarklet URI must stay under ~10KB (browser limit). The executor code (DOM read + DOM action + postMessage listener + badge) should fit.
-  - [ ] Lot gate:
-    - [ ] `make typecheck-ui API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=test-feat-chrome-upstream-v1-rewrite`
-    - [ ] `make typecheck-api API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=test-feat-chrome-upstream-v1-rewrite`
-    - [ ] `make lint-ui API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=test-feat-chrome-upstream-v1-rewrite`
-    - [ ] **UI tests**
-      - [ ] Update `ui/tests/upstream/bookmarklet-bootstrap.test.ts`: test executor+iframe strategy selection
-      - [ ] Add `ui/tests/upstream/bookmarklet-executor.test.ts`: postMessage command handling, DOM read/action, badge creation
-      - [ ] Sub-lot gate: `make test-ui API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=test-feat-chrome-upstream-v1-rewrite`
-    - [ ] **E2E proof**: Playwright CDP test on LinkedIn — verify executor mode, badge, DOM read via postMessage
+- [x] **Lot 8 — CSP-hostile mode: bookmarklet-as-executor (LinkedIn support)**
+  - [x] Implement `bookmarklet-executor` mode in bootstrap: when both inline script and external script are blocked by CSP, but iframe injection works, the bookmarklet bootstrap code itself acts as the DOM executor.
+    - [x] The bookmarklet `javascript:` URI has full DOM access (proven via CDP test on LinkedIn).
+    - [x] The bookmarklet injects an iframe to `/bookmarklet-bridge` (proven working on LinkedIn).
+    - [x] The bookmarklet code listens for postMessage commands from the iframe bridge.
+    - [x] On `tab_read` command: bookmarklet reads DOM (querySelector, innerText) and sends result via postMessage to iframe.
+    - [x] On `tab_action` command: bookmarklet executes DOM action (click, input, scroll) and sends result via postMessage to iframe.
+    - [x] Badge: bookmarklet creates a `<div>` badge (DOM manipulation works on LinkedIn, no script injection needed).
+  - [x] Update strategy selection in `bookmarklet-bootstrap.ts`:
+    - [x] Current: inline+iframe, external+iframe, jsonp, blocked.
+    - [x] New: inline+iframe, external+iframe, **executor+iframe** (new), jsonp, blocked.
+    - [x] `executor+iframe` = bookmarklet code IS the executor + iframe bridge for API communication.
+    - [x] Fallback chain: inline → external → executor → jsonp → blocked.
+  - [x] Update iframe bridge to support `executor` mode:
+    - [x] Bridge sends commands via postMessage to parent window (the bookmarklet code).
+    - [x] Bridge receives results via postMessage from parent window.
+    - [x] Tab registration via iframe fetch (same-origin, no CSP issue).
+  - [x] Size constraint: bookmarklet URI must stay under ~10KB (browser limit). The executor code (DOM read + DOM action + postMessage listener + badge) should fit.
+  - [x] Lot gate:
+    - [x] `make typecheck-ui API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=test-feat-chrome-upstream-v1-rewrite`
+    - [x] `make typecheck-api API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=test-feat-chrome-upstream-v1-rewrite`
+    - [x] `make lint-ui API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=test-feat-chrome-upstream-v1-rewrite`
+    - [x] **UI tests**
+      - [x] Update `ui/tests/upstream/bookmarklet-bootstrap.test.ts`: test executor+iframe strategy selection
+      - [x] Add `ui/tests/upstream/bookmarklet-executor.test.ts`: postMessage command handling, DOM read/action, badge creation
+      - [x] Sub-lot gate: `make test-ui API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=test-feat-chrome-upstream-v1-rewrite`
+    - [x] **E2E proof**: Playwright CDP test on LinkedIn — verify executor mode, badge, DOM read via postMessage
 
 - [ ] **Lot N-2 — UAT (testable in DEV)**
   - [ ] Web app — bookmarklet
@@ -138,4 +138,4 @@ Deliver upstream remote control for browser tabs via bookmarklet and chrome exte
 ## Deferred
 
 - JSONP viability in PROD (script-src on Gmail for sent-tech.ca domain) — to verify at deployment.
-- PROD UAT on sent-tech.ca (Outlook, Gmail, LinkedIn, Google News) — after deployment.
+- PROD UAT on sent-tech.ca (Outlook, Gmail, Google News) — after deployment.
