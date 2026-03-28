@@ -287,7 +287,7 @@ export function generateInjectedScript(bridgeOrigin: string): string {
     '  var regScript = document.createElement("script");' +
     '  regScript.src = window.__TOPAI_API_ORIGIN + "/api/v1/bookmarklet/register?url=" + encodeURIComponent(location.href) + "&title=" + encodeURIComponent(document.title) + "&callback=__TOPAI_REG_CB";' +
     '  regScript.onload = function() { regScript.remove(); };' +
-    '  regScript.onerror = function() { regScript.remove(); };' +
+    '  regScript.onerror = function() { regScript.remove(); setBadgeState("disconnected"); badge.textContent="Installez l\\u0027extension Chrome"; };' +
     '  document.head.appendChild(regScript);' +
     '}' +
 
