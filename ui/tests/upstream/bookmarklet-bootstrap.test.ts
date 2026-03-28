@@ -93,14 +93,95 @@ describe('generateBookmarkletBootstrap', () => {
     expect(bootstrap).toContain('f.id="__topai_bridge"');
   });
 
-  it('strategy: iframe + external -> loads script via src', () => {
-    expect(bootstrap).toContain('if(iframeOk&&!inlineOk)');
+  it('strategy: iframe + external -> loads script via src when external probe succeeds', () => {
+    expect(bootstrap).toContain('if(iframeOk&&externalOk)');
     expect(bootstrap).toContain('/api/v1/bookmarklet/injected-script.js');
     expect(bootstrap).toContain('data-bridge-origin');
   });
 
+  // --- External script probe ---
+
+  it('performs external script probe via script onload/onerror', () => {
+    expect(bootstrap).toContain('/api/v1/bookmarklet/probe.js');
+    expect(bootstrap).toContain('externalOk=true');
+    expect(bootstrap).toContain('eps.onload');
+    expect(bootstrap).toContain('eps.onerror');
+  });
+
+  it('external probe uses TT policy for script src if available', () => {
+    expect(bootstrap).toContain('tp?tp.createScriptURL(extProbeUrl):extProbeUrl');
+  });
+
+  // --- Executor+iframe strategy ---
+
+  it('strategy: executor+iframe when iframe OK but both inline and external blocked', () => {
+    // The condition is simply iframeOk (after inline+iframe and external+iframe)
+    expect(bootstrap).toContain('}else if(iframeOk){');
+  });
+
+  it('executor+iframe sets __TOPAI_ACTIVE guard', () => {
+    expect(bootstrap).toContain('window.__TOPAI_ACTIVE=true');
+  });
+
+  it('executor+iframe creates bridge iframe', () => {
+    // The executor branch also creates the bridge iframe
+    expect(bootstrap).toContain('f.id="__topai_bridge"');
+  });
+
+  it('executor+iframe creates a badge with Connecting state', () => {
+    expect(bootstrap).toContain('badge.id="__topai_badge"');
+    expect(bootstrap).toContain('badge.textContent="Connecting..."');
+  });
+
+  it('executor+iframe includes truncate utility', () => {
+    expect(bootstrap).toContain('function truncate(str,maxLen)');
+  });
+
+  it('executor+iframe includes tab_read handler with DOM read', () => {
+    expect(bootstrap).toContain('function handleTabRead(callId,args)');
+    expect(bootstrap).toContain('document.querySelector(selector)');
+    expect(bootstrap).toContain('el.outerHTML');
+    expect(bootstrap).toContain('el.textContent');
+  });
+
+  it('executor+iframe includes tab_action handler with click/input/scroll', () => {
+    expect(bootstrap).toContain('function handleTabAction(callId,args)');
+    expect(bootstrap).toContain('el.click()');
+    expect(bootstrap).toContain('action==="input"');
+    expect(bootstrap).toContain('action==="scroll"');
+  });
+
+  it('executor+iframe sends results via postMessage to bridge', () => {
+    expect(bootstrap).toContain('function sendResult(callId,result)');
+    expect(bootstrap).toContain('type:"tool_result"');
+  });
+
+  it('executor+iframe listens for commands via postMessage from bridge', () => {
+    expect(bootstrap).toContain('d.type==="command"');
+    expect(bootstrap).toContain('d.type==="connected"');
+  });
+
+  it('executor+iframe registers with bridge on iframe load', () => {
+    expect(bootstrap).toContain('type:"register"');
+    expect(bootstrap).toContain('url:location.href');
+    expect(bootstrap).toContain('title:document.title');
+  });
+
+  it('executor+iframe shows badge connected state on "connected" message', () => {
+    expect(bootstrap).toContain('Top AI \\u2713');
+    expect(bootstrap).toContain('#22c55e');
+  });
+
+  it('executor+iframe handles beforeunload with disconnected badge', () => {
+    expect(bootstrap).toContain('badge.textContent="Disconnected"');
+  });
+
+  it('executor+iframe verifies message origin', () => {
+    expect(bootstrap).toContain('ev.origin!==BRIDGE_ORIGIN');
+  });
+
   it('strategy: JSONP fallback when iframe blocked but inline works', () => {
-    expect(bootstrap).toContain('if(!iframeOk&&inlineOk)');
+    expect(bootstrap).toContain('}else if(inlineOk){');
     expect(bootstrap).toContain('__TOPAI_JSONP_MODE');
     expect(bootstrap).toContain('__TOPAI_API_ORIGIN');
   });
@@ -108,6 +189,28 @@ describe('generateBookmarkletBootstrap', () => {
   it('strategy: all blocked -> shows extension install badge', () => {
     expect(bootstrap).toContain('Installez l');
     expect(bootstrap).toContain('extension Chrome');
+  });
+
+  // --- Strategy fallback order ---
+
+  it('strategy fallback order: inline+iframe > external+iframe > executor+iframe > jsonp > blocked', () => {
+    const inlineIdx = bootstrap.indexOf('if(iframeOk&&inlineOk)');
+    const externalIdx = bootstrap.indexOf('if(iframeOk&&externalOk)');
+    const executorIdx = bootstrap.indexOf('}else if(iframeOk){');
+    const jsonpIdx = bootstrap.indexOf('}else if(inlineOk){');
+    const blockedIdx = bootstrap.indexOf('}else{', jsonpIdx);
+    // Ensure all strategies are present and in order
+    expect(inlineIdx).toBeGreaterThan(-1);
+    expect(externalIdx).toBeGreaterThan(inlineIdx);
+    expect(executorIdx).toBeGreaterThan(externalIdx);
+    expect(jsonpIdx).toBeGreaterThan(executorIdx);
+    expect(blockedIdx).toBeGreaterThan(jsonpIdx);
+  });
+
+  // --- Probes wait for all results ---
+
+  it('waits for both external and iframe probes via Promise.all', () => {
+    expect(bootstrap).toContain('Promise.all([extProbePromise,Promise.race([probePromise,timeout])');
   });
 
   // --- No popup/window.open ---
