@@ -80,13 +80,47 @@ Deliver upstream remote control for browser tabs via bookmarklet and chrome exte
     - **LinkedIn**: EXPECTED FAIL - strategy=blocked, inline=false, iframe=false, TT=found. Badge "Installez l'extension Chrome pour ce site". Both inline script and iframe are blocked by LinkedIn CSP.
   - [x] Documented: LinkedIn requires Chrome extension in DEV (strict CSP blocks both inline and iframe from localhost).
 
+- [ ] **Lot 8 — CSP-hostile mode: bookmarklet-as-executor (LinkedIn support)**
+  - [ ] Implement `bookmarklet-executor` mode in bootstrap: when both inline script and external script are blocked by CSP, but iframe injection works, the bookmarklet bootstrap code itself acts as the DOM executor.
+    - [ ] The bookmarklet `javascript:` URI has full DOM access (proven via CDP test on LinkedIn).
+    - [ ] The bookmarklet injects an iframe to `/bookmarklet-bridge` (proven working on LinkedIn).
+    - [ ] The bookmarklet code listens for postMessage commands from the iframe bridge.
+    - [ ] On `tab_read` command: bookmarklet reads DOM (querySelector, innerText) and sends result via postMessage to iframe.
+    - [ ] On `tab_action` command: bookmarklet executes DOM action (click, input, scroll) and sends result via postMessage to iframe.
+    - [ ] Badge: bookmarklet creates a `<div>` badge (DOM manipulation works on LinkedIn, no script injection needed).
+  - [ ] Update strategy selection in `bookmarklet-bootstrap.ts`:
+    - [ ] Current: inline+iframe, external+iframe, jsonp, blocked.
+    - [ ] New: inline+iframe, external+iframe, **executor+iframe** (new), jsonp, blocked.
+    - [ ] `executor+iframe` = bookmarklet code IS the executor + iframe bridge for API communication.
+    - [ ] Fallback chain: inline → external → executor → jsonp → blocked.
+  - [ ] Update iframe bridge to support `executor` mode:
+    - [ ] Bridge sends commands via postMessage to parent window (the bookmarklet code).
+    - [ ] Bridge receives results via postMessage from parent window.
+    - [ ] Tab registration via iframe fetch (same-origin, no CSP issue).
+  - [ ] Size constraint: bookmarklet URI must stay under ~10KB (browser limit). The executor code (DOM read + DOM action + postMessage listener + badge) should fit.
+  - [ ] Lot gate:
+    - [ ] `make typecheck-ui API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=test-feat-chrome-upstream-v1-rewrite`
+    - [ ] `make typecheck-api API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=test-feat-chrome-upstream-v1-rewrite`
+    - [ ] `make lint-ui API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=test-feat-chrome-upstream-v1-rewrite`
+    - [ ] **UI tests**
+      - [ ] Update `ui/tests/upstream/bookmarklet-bootstrap.test.ts`: test executor+iframe strategy selection
+      - [ ] Add `ui/tests/upstream/bookmarklet-executor.test.ts`: postMessage command handling, DOM read/action, badge creation
+      - [ ] Sub-lot gate: `make test-ui API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=test-feat-chrome-upstream-v1-rewrite`
+    - [ ] **E2E proof**: Playwright CDP test on LinkedIn — verify executor mode, badge, DOM read via postMessage
+
 - [ ] **Lot N-2 — UAT (testable in DEV)**
-  - [ ] Outlook: paste bookmarklet → badge "Top AI ✓" → tab_read from webapp chat → DOM content returned
-  - [ ] Gmail: paste bookmarklet → badge appears → inline script executes
-  - [ ] matchid.io: paste bookmarklet → badge appears → inline script executes
-  - [ ] Menu "+" → "Copy bookmarklet" → copied to clipboard
-  - [ ] Chat without bookmarklet: no tab_read/tab_action in tool list
-  - [ ] Non-reg: chat documents/comments/web_search → fonctionne
+  - [ ] Web app — bookmarklet
+    - [ ] Menu "+" → "Copy bookmarklet" → copied to clipboard
+    - [ ] Outlook (outlook.office.com): paste bookmarklet → badge "Top AI ✓" → tab_read from webapp chat → DOM content returned
+    - [ ] Gmail (mail.google.com): paste bookmarklet → badge appears → tab_read works (JSONP mode)
+    - [ ] matchid.io (deces.matchid.io): paste bookmarklet → badge appears → tab_read works
+    - [ ] LinkedIn (linkedin.com): paste bookmarklet → badge appears (executor+iframe mode) → tab_read works
+    - [ ] tab_action: ask chat to click a link on target site → action executes
+    - [ ] Reload target site → badge "Disconnected" → re-paste bookmarklet → reconnects
+    - [ ] Chat without bookmarklet: no tab_read/tab_action in tool list
+  - [ ] Web app — non-reg
+    - [ ] Chat: documents/comments/web_search → fonctionne
+    - [ ] Menu "+" → sections scroll, no overflow
 
 - [ ] **Lot N-1 — Docs consolidation**
   - [ ] Update spec with final verified matrix.
@@ -103,5 +137,5 @@ Deliver upstream remote control for browser tabs via bookmarklet and chrome exte
 
 ## Deferred
 
-- JSONP viability in PROD (script-src on Gmail/LinkedIn for sent-tech.ca domain) — to verify at deployment.
-- LinkedIn bookmarklet (no inline script, no iframe — extension Chrome only unless PROD script-src allows).
+- JSONP viability in PROD (script-src on Gmail for sent-tech.ca domain) — to verify at deployment.
+- PROD UAT on sent-tech.ca (Outlook, Gmail, LinkedIn, Google News) — after deployment.
