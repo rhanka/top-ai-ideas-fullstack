@@ -89,6 +89,7 @@
   import { renderMarkdownWithRefs } from '$lib/utils/markdown';
   import { generateInjectedScript } from '$lib/upstream/injected-script';
   import { generateBookmarkletBootstrap } from '$lib/upstream/bookmarklet-bootstrap';
+  import { API_BASE_URL } from '$lib/config';
   import { postChatSteer } from '$lib/utils/chat-steer';
   import {
     filterPermissionPromptsForPendingStream,
@@ -2929,8 +2930,9 @@
         // Non-blocking: proceed without nonce
       }
       const bridgeUrl = origin + '/bookmarklet-bridge' + (nonce ? '?nonce=' + encodeURIComponent(nonce) : '');
+      const apiOrigin = new URL(API_BASE_URL).origin;
       const scriptContent = generateInjectedScript(origin);
-      const bootstrap = generateBookmarkletBootstrap(bridgeUrl, scriptContent, origin);
+      const bootstrap = generateBookmarkletBootstrap(bridgeUrl, scriptContent, origin, apiOrigin);
 
       await navigator.clipboard.writeText(bootstrap);
     } catch (e) {

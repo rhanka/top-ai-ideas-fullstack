@@ -17,11 +17,13 @@
  *
  * @param bridgeUrl - Full URL to the bridge iframe page (e.g. "https://app.example.com/bookmarklet-bridge?nonce=abc")
  * @param scriptContent - The full injected script IIFE string
- * @param apiOrigin - The webapp/API origin (e.g. "https://app.example.com")
+ * @param uiOrigin - The UI/webapp origin for SvelteKit routes (e.g. "http://localhost:5173")
+ * @param apiOrigin - The API origin for backend endpoints (e.g. "http://localhost:8787")
  */
 export function generateBookmarkletBootstrap(
   bridgeUrl: string,
   scriptContent: string,
+  uiOrigin: string,
   apiOrigin: string,
 ): string {
   // The TT policy names to try, in order, if 'topai' fails
@@ -82,7 +84,7 @@ export function generateBookmarkletBootstrap(
 
     // --- Iframe probe via postMessage handshake ---
     'var iframeOk=false;' +
-    'var probeUrl=' + JSON.stringify(apiOrigin + '/bookmarklet-bridge-probe') + ';' +
+    'var probeUrl=' + JSON.stringify(uiOrigin + '/bookmarklet-bridge-probe') + ';' +
     'var probeFrame=document.createElement("iframe");' +
     'probeFrame.style.cssText="display:none;width:0;height:0;border:none;position:absolute;";' +
     'var pSrc=tp?tp.createScriptURL(probeUrl):probeUrl;' +
@@ -131,14 +133,14 @@ export function generateBookmarkletBootstrap(
     'var s=document.createElement("script");' +
     'var extUrl=' + JSON.stringify(apiOrigin + '/api/v1/bookmarklet/injected-script.js') + ';' +
     's.src=tp?tp.createScriptURL(extUrl):extUrl;' +
-    's.setAttribute("data-bridge-origin",' + JSON.stringify(apiOrigin) + ');' +
+    's.setAttribute("data-bridge-origin",' + JSON.stringify(uiOrigin) + ');' +
     'document.head.appendChild(s);' +
 
     '}else if(iframeOk){' +
     // iframe OK, both inline and external blocked: executor+iframe mode
     // The bookmarklet code itself acts as the DOM executor
     'window.__TOPAI_ACTIVE=true;' +
-    'var BRIDGE_ORIGIN=' + JSON.stringify(apiOrigin) + ';' +
+    'var BRIDGE_ORIGIN=' + JSON.stringify(uiOrigin) + ';' +
 
     // Create bridge iframe
     'var f=document.createElement("iframe");' +

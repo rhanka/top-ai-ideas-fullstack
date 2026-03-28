@@ -4,9 +4,10 @@ import { generateBookmarkletBootstrap } from '../../src/lib/upstream/bookmarklet
 describe('generateBookmarkletBootstrap', () => {
   const BRIDGE_URL = 'https://app.topai.com/bookmarklet-bridge?nonce=abc123';
   const SCRIPT_CONTENT = '(function(){console.log("injected")})();';
-  const API_ORIGIN = 'https://app.topai.com';
+  const UI_ORIGIN = 'https://app.topai.com';
+  const API_ORIGIN = 'https://api.topai.com';
 
-  const bootstrap = generateBookmarkletBootstrap(BRIDGE_URL, SCRIPT_CONTENT, API_ORIGIN);
+  const bootstrap = generateBookmarkletBootstrap(BRIDGE_URL, SCRIPT_CONTENT, UI_ORIGIN, API_ORIGIN);
 
   it('returns a javascript: bookmarklet string', () => {
     expect(bootstrap.startsWith('javascript:void(')).toBe(true);
@@ -231,8 +232,13 @@ describe('generateBookmarkletBootstrap', () => {
     expect(bootstrap).toContain(JSON.stringify(SCRIPT_CONTENT));
   });
 
-  it('embeds the API origin', () => {
-    expect(bootstrap).toContain(API_ORIGIN);
+  it('embeds the UI origin for bridge routes', () => {
+    expect(bootstrap).toContain(UI_ORIGIN + '/bookmarklet-bridge-probe');
+  });
+
+  it('embeds the API origin for API endpoints', () => {
+    expect(bootstrap).toContain(API_ORIGIN + '/api/v1/bookmarklet/probe.js');
+    expect(bootstrap).toContain(API_ORIGIN + '/api/v1/bookmarklet/injected-script.js');
   });
 
   // --- Different inputs produce different outputs ---
@@ -242,8 +248,27 @@ describe('generateBookmarkletBootstrap', () => {
       'https://other.com/bridge',
       SCRIPT_CONTENT,
       'https://other.com',
+      'https://api-other.com',
     );
     expect(other).not.toBe(bootstrap);
     expect(other).toContain('https://other.com/bridge');
+  });
+
+  it('uses UI origin for bridge-related URLs and API origin for API endpoints', () => {
+    const b = generateBookmarkletBootstrap(
+      'http://localhost:5173/bookmarklet-bridge?nonce=test',
+      SCRIPT_CONTENT,
+      'http://localhost:5173',
+      'http://localhost:8787',
+    );
+    // Bridge probe uses UI origin
+    expect(b).toContain('http://localhost:5173/bookmarklet-bridge-probe');
+    // API endpoints use API origin
+    expect(b).toContain('http://localhost:8787/api/v1/bookmarklet/probe.js');
+    expect(b).toContain('http://localhost:8787/api/v1/bookmarklet/injected-script.js');
+    // data-bridge-origin uses UI origin (for postMessage)
+    expect(b).toContain(JSON.stringify('http://localhost:5173'));
+    // BRIDGE_ORIGIN in executor mode uses UI origin
+    expect(b).toContain('var BRIDGE_ORIGIN=' + JSON.stringify('http://localhost:5173'));
   });
 });
