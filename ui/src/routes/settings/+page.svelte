@@ -108,8 +108,7 @@
 
   let providerConnectionsError = '';
   let providerConnections: ProviderConnectionState[] = [], openaiTransportMode: 'codex' | 'token' = 'token', geminiTransportMode: 'google' | 'token' = 'token';
-  let googleConnectionAccountLabel = providerConnections.find((provider) => provider.providerId === 'google')?.accountLabel || '';
-      codexConnectionAccountLabel = '';
+  let codexConnectionAccountLabel = '';
   let codexPollingTimer: ReturnType<typeof setTimeout> | null = null;
   
   // Configuration IA
@@ -393,6 +392,9 @@
       providerConnections = Array.isArray(payload.providers) ? payload.providers : [];
       openaiTransportMode = payload.openaiTransportMode === 'codex' ? 'codex' : 'token';
       geminiTransportMode = payload.geminiTransportMode === 'google' ? 'google' : 'token';
+      googleConnectionAccountLabel =
+        providerConnections.find((provider) => provider.providerId === 'google')?.accountLabel ||
+        '';
       codexConnectionAccountLabel =
         providerConnections.find((provider) => provider.providerId === 'codex')
           ?.accountLabel || '';
