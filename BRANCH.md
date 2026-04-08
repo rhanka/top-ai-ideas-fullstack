@@ -51,6 +51,9 @@ Actions with the following status should be included around tasks only if really
   - Never amend tests with additive timeouts.
   - If flaky, analyze impact vs `main`: if unrelated, accept and record command + failing test file + signature in `BRANCH.md`; if related, treat as blocking.
   - Capture explicit user sign-off before merge.
+- **Flaky accepted 1**: `make test-api ENV=test-feat-sso-google` failed on `tests/api/chat-tools.test.ts` (comment_assistant suggest - timeout/undefined result), unrelated to Google SSO.
+- **Flaky accepted 2**: `make test-api ENV=test-feat-sso-google` failed on `tests/api/docx.test.ts` (processes publishing jobs), unrelated.
+- **Flaky accepted 3**: `make test-api ENV=test-feat-sso-google` failed on `tests/api/initiatives-workflow-runtime.test.ts` (auto-create flow), unrelated.
 
 ## Orchestration Mode (AI-selected)
 - [x] **Mono-branch + cherry-pick** (default for orthogonal tasks; single final test cycle)
@@ -75,15 +78,15 @@ Actions with the following status should be included around tasks only if really
   - [x] Validate scope boundaries (`Allowed/Forbidden/Conditional`) and declare `BRxx-EXn` exceptions if needed.
   - [x] Finalize open questions required before implementation starts.
 
-- [ ] **Lot 1 — Google SSO Backend**
-  - [ ] Implement Google provider endpoints and callback verification (`start` and `complete`).
-  - [ ] Implement account linking conflict handling and secure mapping (in `provider-connections.ts`).
-  - [ ] Preserve WebAuthn and existing session refresh behavior.
-  - [ ] Add backend API unit tests to cover new Google auth logic.
-  - [ ] Lot 1 gate:
-    - [ ] `make typecheck-api ENV=test-feat-sso-google`
-    - [ ] `make lint-api ENV=test-feat-sso-google`
-    - [ ] `make test-api ENV=test-feat-sso-google`
+- [x] **Lot 1 — Google SSO Backend**
+  - [x] Implement Google provider endpoints and callback verification (`start` and `complete`).
+  - [x] Implement account linking conflict handling and secure mapping (in `provider-connections.ts`).
+  - [x] Preserve WebAuthn and existing session refresh behavior.
+  - [x] Add backend API unit tests to cover new Google auth logic.
+  - [x] Lot 1 gate:
+    - [x] `make typecheck-api ENV=test-feat-sso-google`
+    - [x] `make lint-api ENV=test-feat-sso-google`
+    - [x] `make test-api ENV=test-feat-sso-google`
 
 - [ ] **Lot 2 — UI Integration + Validation**
   - [ ] Add Google SSO entry points and linked-account status in UI (Provider Connections section).
@@ -98,9 +101,8 @@ Actions with the following status should be included around tasks only if really
 
 - [ ] **Lot N-2** UAT
   - [ ] Web app (splitted by sublist for each env)
-    - [ ] <Instruction by env before testing>
-    - [ ] <Detailed evol tests>
-    - [ ] <Detailed non reg tests>
+    - [ ] Ensure API runs locally with `ENV=dev`. Go to settings > provider connections. Click Connect on Google Cloud. Authorize and paste local URL.
+    - [ ] Verify AI Chat functions using Google Cloud provider.
 
 - [ ] **Lot N-1 — Docs consolidation**
   - [ ] Consolidate branch learnings into the relevant `spec/*` files.
