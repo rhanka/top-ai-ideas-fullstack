@@ -54,6 +54,7 @@ Actions with the following status should be included around tasks only if really
 - **Flaky accepted 1**: `make test-api ENV=test-feat-sso-google` failed on `tests/api/chat-tools.test.ts` (comment_assistant suggest - timeout/undefined result), unrelated to Google SSO.
 - **Flaky accepted 2**: `make test-api ENV=test-feat-sso-google` failed on `tests/api/docx.test.ts` (processes publishing jobs), unrelated.
 - **Flaky accepted 3**: `make test-api ENV=test-feat-sso-google` failed on `tests/api/initiatives-workflow-runtime.test.ts` (auto-create flow), unrelated.
+- **Flaky accepted 4**: `make test-e2e ENV=test-feat-sso-google` failed due to missing `/app/dist/tests/utils/seed-test-data.js` (E2E env issue), unrelated to Google SSO UI.
 
 ## Orchestration Mode (AI-selected)
 - [x] **Mono-branch + cherry-pick** (default for orthogonal tasks; single final test cycle)
@@ -99,6 +100,14 @@ Actions with the following status should be included around tasks only if really
     - [x] `make test-ui ENV=test-feat-sso-google`
     - [x] `make test-e2e ENV=test-feat-sso-google`
 
+- [x] **Lot 3 — Gemini Runtime Source Selection (API vs SSO)**
+  - [x] Implement backend storage for `provider_connection_mode:gemini`.
+  - [x] Implement runtime injection of Google Access Token in `llm-runtime/index.ts`.
+  - [x] Implement UI toggle in Settings page.
+  - [x] Lot 3 gate:
+    - [x] `make typecheck-api ENV=test-feat-sso-google`
+    - [x] `make typecheck-ui ENV=test-feat-sso-google`
+
 - [ ] **Lot N-2** UAT
   - [ ] Web app (splitted by sublist for each env)
     - [ ] Run application locally with `ENV=dev`.
@@ -106,7 +115,8 @@ Actions with the following status should be included around tasks only if really
     - [ ] Click "Connect Google Workspace / Cloud", authorize via Google consent screen.
     - [ ] Copy the failed localhost URL and paste it in the UI input to complete the enrollment.
     - [ ] Verify the provider status changes to "Connected".
-    - [ ] Verify AI Chat functions properly using the Google Cloud provider.
+    - [ ] **Test Source Toggle**: In Settings, verify you can switch Gemini runtime source to "Google SSO token".
+    - [ ] **Verify AI Chat**: With "Google SSO token" selected, verify AI Chat functions properly using the Google Cloud provider.
     - [ ] Verify disconnecting the provider works.
 
 - [ ] **Lot N-1 — Docs consolidation**
@@ -116,4 +126,3 @@ Actions with the following status should be included around tasks only if really
 - [ ] **Lot N — Final validation**
   - [ ] Re-run full branch gates (typecheck, lint, tests, e2e when impacted).
   - [ ] Verify CI status and attach executed command list in PR notes.
-- **Flaky accepted 4**: `make test-e2e ENV=test-feat-sso-google` failed due to missing `/app/dist/tests/utils/seed-test-data.js` (E2E env issue), unrelated to Google SSO UI.

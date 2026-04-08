@@ -22,7 +22,7 @@ Because the Client ID is a "Desktop App", Google only permits redirections to `1
 If the application is deployed in production (e.g., `https://top-ai-ideas.sent-tech.ca`), a direct OAuth redirection will fail.
 
 **The Solution:**
-1. The UI generates an OAuth authorization URL requesting redirection to `http://127.0.0.1:8709/api/v1/settings/provider-connections/google/enrollment/complete`.
+1. The UI generates an OAuth authorization URL requesting redirection to `http://127.0.0.1:8709/callback`.
 2. The user authenticates on Google's consent screen.
 3. Google redirects the browser to `127.0.0.1`.
 4. **UX Intervention:** In a production context (where the user's browser cannot reach a local server on 8709), the connection will fail in the browser. The UI will instruct the user to copy the failed `127.0.0.1` URL and paste it into a dialog.
@@ -32,8 +32,8 @@ If the application is deployed in production (e.g., `https://top-ai-ideas.sent-t
 
 ### 3.1 API (Backend)
 New service: `api/src/services/google-provider-auth.ts`
-- **`startGoogleEnrollment()`**: Generates the OAuth 2.0 authorization URL.
-- **`completeGoogleEnrollment(redirectUrl)`**: Parses the authorization code from the provided URL and exchanges it for tokens using standard HTTP calls to `oauth2.googleapis.com/token`.
+- **`startGoogleDeviceEnrollment()`**: Generates the OAuth 2.0 authorization URL.
+- **`completeGoogleDeviceEnrollment(redirectUrl, pending)`**: Parses the authorization code from the provided URL and exchanges it for tokens using standard HTTP calls to `oauth2.googleapis.com/token`.
 
 Modifications in `api/src/services/provider-connections.ts`:
 - Manage Google connection state alongside Codex.
@@ -50,7 +50,13 @@ Modifications in `api/src/services/provider-connections.ts`:
   - Show a modal dialog asking the user to paste the redirect URL (`http://127.0.0.1:8709/...`).
   - Submit the URL to the completion endpoint and update the provider state.
 
-### 3.3 Security
-- **PKCE (Proof Key for Code Exchange)** will be used to secure the authorization code flow.
-- The `state` parameter will be used to prevent CSRF attacks.
-- Tokens will be stored securely in the user's settings, following the existing `provider_connection_secret` pattern.
+### 3.3 Runtime Source Selection (Transport Toggle)
+Users can choose between using their global Gemini API Key or their linked Google SSO Token.
+- **Setting Key:** `provider_connection_mode:gemini` (values: `token` | `google`).
+- **Backend Resolution:** `api/src/services/llm-runtime/index.ts` intercepts Gemini requests. If the mode is `google`, it resolves the access token via `resolveConnectedGoogleTransport(userId)` and injects it as the credential.
+- **UI Interaction:** A toggle in the Settings page allows switching between modes, only enabled if a Google account is connected.
+
+### 3.4 Security
+- **PKCE (Proof Key for Code Exchange)** is used to secure the authorization code flow.
+- The `state` parameter is used to prevent CSRF attacks.
+- Tokens are stored securely in the user's settings, following the existing `provider_connection_secret` pattern.
