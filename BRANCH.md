@@ -32,8 +32,8 @@ Deliver Google SSO flows for admin and standard users with account linking and s
   - `spec/**`, `PLAN.md`, `TODO.md` (docs consolidation or roadmap sync only)
   - `scripts/**` (only if strictly required by the branch objective)
 - **Exception process**:
-  - Declare exception ID `BRxx-EXn` in this file before touching conditional/forbidden paths.
-  - Include reason, impact, and rollback strategy.
+  - Declare exception ID `BR09-EX1` in this file before touching conditional/forbidden paths.
+    - Reason: Add `spec/SPEC_EVOL_SSO_GOOGLE.md` to document the design decision of using Gemini CLI OAuth Client ID + Loopback mechanism.
   - Mirror the same exception in this file under `## Feedback Loop` (or `## Questions / Notes` if not yet migrated).
 
 ## Feedback Loop
@@ -42,9 +42,7 @@ Actions with the following status should be included around tasks only if really
 - conductor agent or human brings response: `clarification` / `acknowledge` / `refuse`
 
 ## Questions / Notes
-- Reconfirm identity linking policy consistency with the existing auth/account-linking baseline.
-- Define behavior for users with multiple linked providers.
-- Define user-facing error messaging for Google scope/consent failures.
+- **BR09-EX1**: Add `spec/SPEC_EVOL_SSO_GOOGLE.md` to document the design decision of using Gemini CLI OAuth Client ID + Loopback mechanism.
 
 ## AI Flaky tests
 - Acceptance rule:
@@ -69,40 +67,34 @@ Actions with the following status should be included around tasks only if really
   - Switch back to `tmp/feat-<slug>` after UAT.
 
 ## Plan / Todo (lot-based)
-- [ ] **Lot 0 — Baseline & constraints**
+- [x] **Lot 0 — Baseline & constraints**
   - [x] Read relevant `.mdc` files, `README.md`, `TODO.md`, and linked specs.
   - [x] Confirm isolated worktree `tmp/feat-sso-google` and environment mapping (`ENV=feat-sso-google`).
   - [x] Capture Make targets needed for debug/testing and CI parity.
   - [x] Confirm scope and dependency boundaries with upstream branches.
   - [x] Validate scope boundaries (`Allowed/Forbidden/Conditional`) and declare `BRxx-EXn` exceptions if needed.
-  - [ ] Finalize open questions required before implementation starts.
+  - [x] Finalize open questions required before implementation starts.
 
 - [ ] **Lot 1 — Google SSO Backend**
-  - [ ] Implement Google provider endpoints and callback verification.
-    - <feedback loop if required only>
-      - `blocked` / `deferred` / `cancelled` / `attention`: message (requires clarification about ...)
-      - `clarification` / `acknowledge` / `refuse`: explanation
-  - [ ] Implement account linking conflict handling and secure mapping.
+  - [ ] Implement Google provider endpoints and callback verification (`start` and `complete`).
+  - [ ] Implement account linking conflict handling and secure mapping (in `provider-connections.ts`).
   - [ ] Preserve WebAuthn and existing session refresh behavior.
+  - [ ] Add backend API unit tests to cover new Google auth logic.
   - [ ] Lot 1 gate:
     - [ ] `make typecheck-api ENV=test-feat-sso-google`
     - [ ] `make lint-api ENV=test-feat-sso-google`
     - [ ] `make test-api ENV=test-feat-sso-google`
-    - [ ] `make typecheck-ui ENV=test-feat-sso-google`
-    - [ ] `make lint-ui ENV=test-feat-sso-google`
-    - [ ] `make test-ui ENV=test-feat-sso-google`
 
 - [ ] **Lot 2 — UI Integration + Validation**
-  - [ ] Add Google SSO entry points and linked-account status in UI.
+  - [ ] Add Google SSO entry points and linked-account status in UI (Provider Connections section).
+  - [ ] Implement the manual loopback flow (Dialog to paste the `127.0.0.1` redirect URL).
   - [ ] Add unlink/relink flows with explicit confirmations.
-  - [ ] Add integration and E2E validation for auth transitions.
+  - [ ] Add/update E2E tests for the new Google SSO flow.
   - [ ] Lot 2 gate:
-    - [ ] `make typecheck-api ENV=test-feat-sso-google`
-    - [ ] `make lint-api ENV=test-feat-sso-google`
-    - [ ] `make test-api ENV=test-feat-sso-google`
     - [ ] `make typecheck-ui ENV=test-feat-sso-google`
     - [ ] `make lint-ui ENV=test-feat-sso-google`
     - [ ] `make test-ui ENV=test-feat-sso-google`
+    - [ ] `make test-e2e ENV=test-feat-sso-google`
 
 - [ ] **Lot N-2** UAT
   - [ ] Web app (splitted by sublist for each env)
