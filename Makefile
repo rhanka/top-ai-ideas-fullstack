@@ -265,13 +265,11 @@ build-ui: ## Build the SvelteKit UI (static)
 	TARGET=development $(DOCKER_COMPOSE) -f docker-compose.yml -f docker-compose.dev.yml run ui npm run build
 
 .PHONY: build-ext-chrome
-build-ext-chrome: up-ui ## Build Chrome extension to ui/chrome-ext/dist
-	@echo "📦 Syncing UI dependencies in container..."
-	@$(DOCKER_COMPOSE) -f docker-compose.yml -f docker-compose.dev.yml exec -T ui npm install --include=dev
-	@echo "🧩 Building Chrome Extension..."
-	@$(DOCKER_COMPOSE) -f docker-compose.yml -f docker-compose.dev.yml exec -T ui npm run build:ext
-	@$(DOCKER_COMPOSE) -f docker-compose.yml -f docker-compose.dev.yml exec -T -e HOST_UID=$$(id -u) -e HOST_GID=$$(id -g) ui sh -lc 'chown -R "$$HOST_UID:$$HOST_GID" /app/chrome-ext/dist'
-	@$(DOCKER_COMPOSE) -f docker-compose.yml -f docker-compose.dev.yml exec -T ui sh -lc 'test -f /app/chrome-ext/dist/manifest.json && test -f /app/chrome-ext/dist/content.js && test -f /app/chrome-ext/dist/chrome-ext/popup.html && test -f /app/chrome-ext/dist/chrome-ext/sidepanel.html'
+build-ext-chrome: ## Build Chrome extension to ui/chrome-ext/dist
+	@echo "📦 Installing UI dependencies from lockfile..."
+	@$(DOCKER_COMPOSE) -f docker-compose.yml -f docker-compose.dev.yml run --rm --no-deps ui sh -lc 'npm ci && npm exec svelte-kit sync && npm run build:ext'
+	@$(DOCKER_COMPOSE) -f docker-compose.yml -f docker-compose.dev.yml run --rm --no-deps -e HOST_UID=$$(id -u) -e HOST_GID=$$(id -g) ui sh -lc 'chown -R "$$HOST_UID:$$HOST_GID" /app/chrome-ext/dist'
+	@$(DOCKER_COMPOSE) -f docker-compose.yml -f docker-compose.dev.yml run --rm --no-deps ui sh -lc 'test -f /app/chrome-ext/dist/manifest.json && test -f /app/chrome-ext/dist/content.js && test -f /app/chrome-ext/dist/chrome-ext/popup.html && test -f /app/chrome-ext/dist/chrome-ext/sidepanel.html'
 	@echo "✅ Extension built in ui/chrome-ext/dist"
 
 .PHONY: dev-ext
@@ -280,13 +278,11 @@ dev-ext: up-ui ## Watch build Chrome extension
 	@$(DOCKER_COMPOSE) -f docker-compose.yml -f docker-compose.dev.yml exec -T ui npm run dev:ext
 
 .PHONY: build-ext-vscode
-build-ext-vscode: up-ui ## Build VSCode extension package to ui/static/vscode-extension
-	@echo "📦 Syncing UI dependencies in container..."
-	@$(DOCKER_COMPOSE) -f docker-compose.yml -f docker-compose.dev.yml exec -T ui npm install --include=dev
-	@echo "🧩 Building VSCode Extension package..."
-	@$(DOCKER_COMPOSE) -f docker-compose.yml -f docker-compose.dev.yml exec -T ui npm run build:vscode-ext
-	@$(DOCKER_COMPOSE) -f docker-compose.yml -f docker-compose.dev.yml exec -T -e HOST_UID=$$(id -u) -e HOST_GID=$$(id -g) ui sh -lc 'chown -R "$$HOST_UID:$$HOST_GID" /app/static/vscode-extension /app/vscode-ext/dist'
-	@$(DOCKER_COMPOSE) -f docker-compose.yml -f docker-compose.dev.yml exec -T ui sh -lc 'test -f /app/static/vscode-extension/top-ai-ideas-vscode-extension.vsix && test -f /app/vscode-ext/dist/extension.js'
+build-ext-vscode: ## Build VSCode extension package to ui/static/vscode-extension
+	@echo "📦 Installing UI dependencies from lockfile..."
+	@$(DOCKER_COMPOSE) -f docker-compose.yml -f docker-compose.dev.yml run --rm --no-deps ui sh -lc 'npm ci && npm exec svelte-kit sync && npm run build:vscode-ext'
+	@$(DOCKER_COMPOSE) -f docker-compose.yml -f docker-compose.dev.yml run --rm --no-deps -e HOST_UID=$$(id -u) -e HOST_GID=$$(id -g) ui sh -lc 'chown -R "$$HOST_UID:$$HOST_GID" /app/static/vscode-extension /app/vscode-ext/dist'
+	@$(DOCKER_COMPOSE) -f docker-compose.yml -f docker-compose.dev.yml run --rm --no-deps ui sh -lc 'test -f /app/static/vscode-extension/top-ai-ideas-vscode-extension.vsix && test -f /app/vscode-ext/dist/extension.cjs'
 	@echo "✅ VSCode extension package built in ui/static/vscode-extension"
 
 .PHONY: dev-ext-vscode

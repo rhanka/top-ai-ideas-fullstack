@@ -15,6 +15,10 @@ Upstream remote control: the webapp can dispatch tab_read/tab_action to connecte
 - **Conditional Paths**: `api/drizzle/*.sql` (max 1), `.github/workflows/**`
 
 ## Feedback Loop
+- [x] **BR06-EX1 — Align extension build targets with CI**
+  - [x] Reason: local `build-ext-chrome` / `build-ext-vscode` mutated `ui/package-lock.json`, while CI validated extension compilation only indirectly through `make build-ui-image`.
+  - [x] Impact: allow scoped updates in `Makefile` and `.github/workflows/ci.yml` so extension build targets are lockfile-safe and are executed directly in CI.
+  - [x] Rollback: revert the `Makefile` and workflow changes to return to indirect-only validation via `make build-ui-image`.
 
 ## AI Flaky tests
 - Acceptance rule: non-systematic provider/network nondeterminism only. Record command + file + signature.
@@ -69,5 +73,8 @@ Upstream remote control: the webapp can dispatch tab_read/tab_action to connecte
   - [ ] Update PLAN.md.
 
 - [ ] **Lot N — Final validation**
+  - [x] Align extension operator targets and CI path on `make build-ext-chrome` / `make build-ext-vscode`
+  - [x] `make build-ext-chrome API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=test-feat-chrome-upstream-v1-rewrite`
+  - [x] `make build-ext-vscode API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=test-feat-chrome-upstream-v1-rewrite`
   - [ ] typecheck + lint + test-api + test-ui
   - [ ] PR → UAT + CI OK → merge.
