@@ -1,71 +1,119 @@
-# Fix: Resolve npm audit vulnerabilities in API dependencies
+# Feature: SSO Google
 
 ## Objective
-Fix HIGH and moderate npm audit vulnerabilities in API dependencies to unblock Docker build.
+Deliver Google SSO flows for admin and standard users with account linking and session compatibility guarantees.
 
 ## Scope / Guardrails
-- Scope limited to API dependency upgrades.
+- Scope limited to Google auth provider adapter, callback/session handling, UI linking/unlinking.
+- One migration max in `api/drizzle/*.sql` (if applicable).
 - Make-only workflow, no direct Docker commands.
+- Root workspace `~/src/top-ai-ideas-fullstack` is reserved for user dev/UAT (`ENV=dev`) and must remain stable.
+- Branch development must happen in isolated worktree `tmp/feat-<slug>`.
+- Automated test campaigns must run on dedicated environments (`ENV=test-*` / `ENV=e2e-*`), never on root `dev`.
+- UAT qualification branch/worktree must be commit-identical to the branch under qualification (same HEAD SHA; no extra commits before sign-off). If subtree/sync is used, record source and target SHAs in `BRANCH.md`.
+- In every `make` command, `ENV=<env>` must be passed as the last argument.
 - All new text in English.
+- Branch environment mapping: `ENV=feat-sso-google` `API_PORT=8709` `UI_PORT=5109` `MAILDEV_UI_PORT=1009`.
 
 ## Branch Scope Boundaries (MANDATORY)
 - **Allowed Paths (implementation scope)**:
-  - `api/package.json`
-  - `api/package-lock.json`
-  - `api/src/utils/pg-errors.ts`
-  - `api/src/services/stream-service.ts`
-  - `api/src/services/lock-service.ts`
-  - `api/tests/unit/stream-service.test.ts`
-  - `BRANCH.md`
+  - `api/**`
+  - `ui/**`
+  - `e2e/**`
+  - `plan/09-BRANCH_feat-sso-google.md`
 - **Forbidden Paths (must not change in this branch)**:
   - `Makefile`
   - `docker-compose*.yml`
   - `.cursor/rules/**`
-- **Conditional Paths (allowed only with explicit exception)**:
-  - None expected.
+  - `plan/NN-BRANCH_*.md` (except this branch file)
+- **Conditional Paths (allowed only with explicit exception when not already listed in Allowed Paths)**:
+  - `api/drizzle/*.sql` (max 1 file)
+  - `.github/workflows/**`
+  - `spec/**`, `PLAN.md`, `TODO.md` (docs consolidation or roadmap sync only)
+  - `scripts/**` (only if strictly required by the branch objective)
 - **Exception process**:
-  - Declare exception ID `BRxx-EXn` in `## Feedback Loop` before touching any conditional/forbidden path.
+  - Declare exception ID `BRxx-EXn` in this file before touching conditional/forbidden paths.
+  - Include reason, impact, and rollback strategy.
+  - Mirror the same exception in this file under `## Feedback Loop` (or `## Questions / Notes` if not yet migrated).
 
 ## Feedback Loop
-- None.
+Actions with the following status should be included around tasks only if really required (cf. Task 1 feedback loop):
+- subagent or agent requires support or informs: `blocked` / `deferred` / `cancelled` / `attention`
+- conductor agent or human brings response: `clarification` / `acknowledge` / `refuse`
+
+## Questions / Notes
+- Reconfirm identity linking policy consistency with the existing auth/account-linking baseline.
+- Define behavior for users with multiple linked providers.
+- Define user-facing error messaging for Google scope/consent failures.
 
 ## AI Flaky tests
-- Not applicable (dependency-only change).
+- Acceptance rule:
+  - Accept only non-systematic provider/network/model nondeterminism as `flaky accepted`.
+  - Non-systematic means at least one success on the same commit and same command.
+  - Never amend tests with additive timeouts.
+  - If flaky, analyze impact vs `main`: if unrelated, accept and record command + failing test file + signature in `BRANCH.md`; if related, treat as blocking.
+  - Capture explicit user sign-off before merge.
 
 ## Orchestration Mode (AI-selected)
 - [x] **Mono-branch + cherry-pick** (default for orthogonal tasks; single final test cycle)
 - [ ] **Multi-branch** (only if sub-workstreams require independent CI or long-running validation)
-- Rationale: single-scope security fix, no sub-workstreams needed.
+- Rationale: This branch is scoped to one capability and remains independently mergeable.
+
+## UAT Management (in orchestration context)
+- **Mono-branch**: UAT is performed on the integrated branch only (after each lot when UI/plugin surface is impacted).
+- UAT checkpoints must be listed as checkboxes inside each relevant lot.
+- Execution flow (mandatory):
+  - Develop and run tests in `tmp/feat-<slug>`.
+  - Push branch before UAT.
+  - Run user UAT from root workspace (`~/src/top-ai-ideas-fullstack`, `ENV=dev`).
+  - Switch back to `tmp/feat-<slug>` after UAT.
 
 ## Plan / Todo (lot-based)
-- [x] **Lot 0 — Baseline & constraints**
-  - [x] Read rules files (`MASTER.md`, `workflow.md`, `security.md`, `BRANCH_TEMPLATE.md`).
-  - [x] Verify branch and worktree.
-  - [x] Create `BRANCH.md`.
+- [ ] **Lot 0 — Baseline & constraints**
+  - [x] Read relevant `.mdc` files, `README.md`, `TODO.md`, and linked specs.
+  - [x] Confirm isolated worktree `tmp/feat-sso-google` and environment mapping (`ENV=feat-sso-google`).
+  - [x] Capture Make targets needed for debug/testing and CI parity.
+  - [x] Confirm scope and dependency boundaries with upstream branches.
+  - [x] Validate scope boundaries (`Allowed/Forbidden/Conditional`) and declare `BRxx-EXn` exceptions if needed.
+  - [ ] Finalize open questions required before implementation starts.
 
-- [x] **Lot 1 — Fix npm audit vulnerabilities**
-  - [x] Start dev environment and run initial `npm audit --omit=dev`.
-  - [x] Run `npm audit fix` for auto-fixable vulnerabilities (hono, nodemailer, file-type).
-  - [x] Upgrade `drizzle-orm` to `>=0.45.2` for HIGH SQL injection fix (GHSA-gpj5-g38j-94v9).
-  - [x] Upgrade `@hono/node-server` to `>=1.19.13` for moderate serveStatic bypass fix (GHSA-92pp-h63x-v22m).
-  - [x] Run `npm install` to regenerate lock file.
-  - [x] Verify `npm audit --omit=dev` shows 0 vulnerabilities.
-  - [x] Run `npx tsc --noEmit` to verify no type breakage.
-  - [x] Run smoke tests (API health passes; DB tests fail due to unseeded fresh env, not related to upgrade).
-  - [x] Lot gate:
-    - [x] `npm audit --audit-level=high --omit=dev` exits 0 (0 vulnerabilities)
-    - [x] TypeScript compilation passes
+- [ ] **Lot 1 — Google SSO Backend**
+  - [ ] Implement Google provider endpoints and callback verification.
+    - <feedback loop if required only>
+      - `blocked` / `deferred` / `cancelled` / `attention`: message (requires clarification about ...)
+      - `clarification` / `acknowledge` / `refuse`: explanation
+  - [ ] Implement account linking conflict handling and secure mapping.
+  - [ ] Preserve WebAuthn and existing session refresh behavior.
+  - [ ] Lot 1 gate:
+    - [ ] `make typecheck-api ENV=test-feat-sso-google`
+    - [ ] `make lint-api ENV=test-feat-sso-google`
+    - [ ] `make test-api ENV=test-feat-sso-google`
+    - [ ] `make typecheck-ui ENV=test-feat-sso-google`
+    - [ ] `make lint-ui ENV=test-feat-sso-google`
+    - [ ] `make test-ui ENV=test-feat-sso-google`
 
-- [x] **Lot 2 — Fix drizzle-orm 0.45.2 error wrapping breaking pg 23505 detection**
-  - [x] Create `api/src/utils/pg-errors.ts` with `findPgError` helper (recursive `.cause` unwrapping).
-  - [x] Update `api/src/services/stream-service.ts` to use `findPgError` for conflict detection.
-  - [x] Update `api/src/services/lock-service.ts` to use `findPgError` for conflict detection.
-  - [x] Add wrapped-error test case in `api/tests/unit/stream-service.test.ts`.
-  - [x] Typecheck passes (no errors in changed files).
-  - [x] Unit tests pass (23/23 including new DrizzleQueryError-wrapped test).
+- [ ] **Lot 2 — UI Integration + Validation**
+  - [ ] Add Google SSO entry points and linked-account status in UI.
+  - [ ] Add unlink/relink flows with explicit confirmations.
+  - [ ] Add integration and E2E validation for auth transitions.
+  - [ ] Lot 2 gate:
+    - [ ] `make typecheck-api ENV=test-feat-sso-google`
+    - [ ] `make lint-api ENV=test-feat-sso-google`
+    - [ ] `make test-api ENV=test-feat-sso-google`
+    - [ ] `make typecheck-ui ENV=test-feat-sso-google`
+    - [ ] `make lint-ui ENV=test-feat-sso-google`
+    - [ ] `make test-ui ENV=test-feat-sso-google`
 
-- [ ] **Lot 3 — Commit, push, PR**
-  - [ ] Stage changed files and `BRANCH.md`.
-  - [ ] Commit with `make commit`.
-  - [ ] Push branch.
-  - [ ] Create PR targeting main.
+- [ ] **Lot N-2** UAT
+  - [ ] Web app (splitted by sublist for each env)
+    - [ ] <Instruction by env before testing>
+    - [ ] <Detailed evol tests>
+    - [ ] <Detailed non reg tests>
+
+- [ ] **Lot N-1 — Docs consolidation**
+  - [ ] Consolidate branch learnings into the relevant `spec/*` files.
+  - [ ] Update `PLAN.md` status and dependency notes after integration readiness.
+
+- [ ] **Lot N — Final validation**
+  - [ ] Re-run full branch gates (typecheck, lint, tests, e2e when impacted).
+  - [ ] Verify CI status and attach executed command list in PR notes.
