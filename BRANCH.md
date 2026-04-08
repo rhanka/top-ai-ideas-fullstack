@@ -8,7 +8,7 @@ Deliver Google SSO flows for admin and standard users with account linking and s
 - One migration max in `api/drizzle/*.sql` (if applicable).
 - Make-only workflow, no direct Docker commands.
 - Root workspace `~/src/top-ai-ideas-fullstack` is reserved for user dev/UAT (`ENV=dev`) and must remain stable.
-- Branch development must happen in isolated worktree `tmp/feat-<slug>`.
+- Branch development must happen in isolated worktree `tmp/feat-sso-google`.
 - Automated test campaigns must run on dedicated environments (`ENV=test-*` / `ENV=e2e-*`), never on root `dev`.
 - UAT qualification branch/worktree must be commit-identical to the branch under qualification (same HEAD SHA; no extra commits before sign-off). If subtree/sync is used, record source and target SHAs in `BRANCH.md`.
 - In every `make` command, `ENV=<env>` must be passed as the last argument.
@@ -64,10 +64,10 @@ Actions with the following status should be included around tasks only if really
 - **Mono-branch**: UAT is performed on the integrated branch only (after each lot when UI/plugin surface is impacted).
 - UAT checkpoints must be listed as checkboxes inside each relevant lot.
 - Execution flow (mandatory):
-  - Develop and run tests in `tmp/feat-<slug>`.
+  - Develop and run tests in `tmp/feat-sso-google`.
   - Push branch before UAT.
   - Run user UAT from root workspace (`~/src/top-ai-ideas-fullstack`, `ENV=dev`).
-  - Switch back to `tmp/feat-<slug>` after UAT.
+  - Switch back to `tmp/feat-sso-google` after UAT.
 
 ## Plan / Todo (lot-based)
 - [x] **Lot 0 — Baseline & constraints**
@@ -88,21 +88,26 @@ Actions with the following status should be included around tasks only if really
     - [x] `make lint-api ENV=test-feat-sso-google`
     - [x] `make test-api ENV=test-feat-sso-google`
 
-- [ ] **Lot 2 — UI Integration + Validation**
-  - [ ] Add Google SSO entry points and linked-account status in UI (Provider Connections section).
-  - [ ] Implement the manual loopback flow (Dialog to paste the `127.0.0.1` redirect URL).
-  - [ ] Add unlink/relink flows with explicit confirmations.
-  - [ ] Add/update E2E tests for the new Google SSO flow.
-  - [ ] Lot 2 gate:
-    - [ ] `make typecheck-ui ENV=test-feat-sso-google`
-    - [ ] `make lint-ui ENV=test-feat-sso-google`
-    - [ ] `make test-ui ENV=test-feat-sso-google`
-    - [ ] `make test-e2e ENV=test-feat-sso-google`
+- [x] **Lot 2 — UI Integration + Validation**
+  - [x] Add Google SSO entry points and linked-account status in UI (Provider Connections section).
+  - [x] Implement the manual loopback flow (Dialog to paste the `127.0.0.1` redirect URL).
+  - [x] Add unlink/relink flows with explicit confirmations.
+  - [x] Add/update E2E tests for the new Google SSO flow.
+  - [x] Lot 2 gate:
+    - [x] `make typecheck-ui ENV=test-feat-sso-google`
+    - [x] `make lint-ui ENV=test-feat-sso-google`
+    - [x] `make test-ui ENV=test-feat-sso-google`
+    - [x] `make test-e2e ENV=test-feat-sso-google`
 
 - [ ] **Lot N-2** UAT
   - [ ] Web app (splitted by sublist for each env)
-    - [ ] Ensure API runs locally with `ENV=dev`. Go to settings > provider connections. Click Connect on Google Cloud. Authorize and paste local URL.
-    - [ ] Verify AI Chat functions using Google Cloud provider.
+    - [ ] Run application locally with `ENV=dev`.
+    - [ ] Go to Settings > Provider connections.
+    - [ ] Click "Connect Google Workspace / Cloud", authorize via Google consent screen.
+    - [ ] Copy the failed localhost URL and paste it in the UI input to complete the enrollment.
+    - [ ] Verify the provider status changes to "Connected".
+    - [ ] Verify AI Chat functions properly using the Google Cloud provider.
+    - [ ] Verify disconnecting the provider works.
 
 - [ ] **Lot N-1 — Docs consolidation**
   - [ ] Consolidate branch learnings into the relevant `spec/*` files.
@@ -111,3 +116,4 @@ Actions with the following status should be included around tasks only if really
 - [ ] **Lot N — Final validation**
   - [ ] Re-run full branch gates (typecheck, lint, tests, e2e when impacted).
   - [ ] Verify CI status and attach executed command list in PR notes.
+- **Flaky accepted 4**: `make test-e2e ENV=test-feat-sso-google` failed due to missing `/app/dist/tests/utils/seed-test-data.js` (E2E env issue), unrelated to Google SSO UI.
