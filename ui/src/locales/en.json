@@ -44,13 +44,10 @@
     "redirecting": "Redirecting…",
     "user": "User",
     "na": "N/A",
-    "readOnlyDisabled": "Read-only mode: creation/deletion disabled."
-    ,
+    "readOnlyDisabled": "Read-only mode: creation/deletion disabled.",
     "ai": "AI",
-    "references": "References"
-    ,
-    "pointsAbbr": "pts"
-    ,
+    "references": "References",
+    "pointsAbbr": "pts",
     "add": "Add",
     "general": "General",
     "yesterday": "Yesterday",
@@ -59,8 +56,7 @@
     "retry": "Retry",
     "openMenu": "Open menu",
     "saving": "Saving…",
-    "unsavedChanges": "Unsaved changes"
-    ,
+    "unsavedChanges": "Unsaved changes",
     "unspecified": "Unspecified",
     "useMedian": "Use median",
     "actions": "Actions",
@@ -197,8 +193,7 @@
         "invalidEmail": "Please enter a valid email address",
         "sendCode": "Error while sending the code"
       }
-    }
-    ,
+    },
     "webauthn": {
       "errors": {
         "registrationCancelled": "You cancelled the registration",
@@ -254,8 +249,7 @@
     "pleaseSelectFolder": "Please select a folder to view its matrix",
     "folderLoaded": "Folder \"{name}\" evaluation loaded",
     "folderNoMatrix": "Folder \"{name}\" has no matrix configured",
-    "loadError": "Error while loading matrix"
-    ,
+    "loadError": "Error while loading matrix",
     "autoSaveError": "Error while auto-saving configuration",
     "saveSuccess": "Matrix configuration updated",
     "saveError": "Error while saving matrix",
@@ -264,14 +258,14 @@
     "newComplexityAxisName": "New complexity axis",
     "valueAxisAdded": "New value axis added",
     "complexityAxisAdded": "New complexity axis added",
-  "confirmDeleteAxis": "Are you sure you want to delete this axis? This will impact initiative score calculations.",
-  "valueAxisDeleted": "Value axis deleted",
-  "complexityAxisDeleted": "Complexity axis deleted",
-  "weightsRecalcWarning": "Warning: changing weights will automatically recalculate all scores for your existing initiatives.",
-  "levelN": "Level {level}",
-  "selectedFolder": "Selected folder",
-  "createNew": "Create a new matrix",
-  "createDialogBody": "Choose the type of matrix to create:",
+    "confirmDeleteAxis": "Are you sure you want to delete this axis? This will impact initiative score calculations.",
+    "valueAxisDeleted": "Value axis deleted",
+    "complexityAxisDeleted": "Complexity axis deleted",
+    "weightsRecalcWarning": "Warning: changing weights will automatically recalculate all scores for your existing initiatives.",
+    "levelN": "Level {level}",
+    "selectedFolder": "Selected folder",
+    "createNew": "Create a new matrix",
+    "createDialogBody": "Choose the type of matrix to create:",
     "help": {
       "intro": "Adjust value and complexity axis weights to customize initiative evaluation.",
       "details": "The matrix uses 5 levels for each criterion, with specific descriptions for each. Click a criterion to view and edit detailed descriptions for the 5 levels."
@@ -325,14 +319,14 @@
         "readOnlyAction": "Action not allowed (read-only mode)."
       }
     },
-  "new": {
-    "nameLabel": "Folder name",
-    "namePlaceholder": "Enter the folder name (optional)",
-    "orgOptional": "Organization (optional)",
-    "unspecified": "Unspecified",
-    "createOrg": "Create an organization",
-    "context": "Context",
-    "contextPlaceholder": "Describe the business context and objectives…",
+    "new": {
+      "nameLabel": "Folder name",
+      "namePlaceholder": "Enter the folder name (optional)",
+      "orgOptional": "Organization (optional)",
+      "unspecified": "Unspecified",
+      "createOrg": "Create an organization",
+      "context": "Context",
+      "contextPlaceholder": "Describe the business context and objectives…",
       "useCaseCount": "Number of initiatives",
       "modelLabel": "Generation model",
       "modelHint": "Used for initiative and matrix generation for this folder.",
@@ -433,8 +427,7 @@
       "create": "Error while creating organization",
       "load": "Error while loading organization",
       "loadList": "Error while loading organizations"
-    }
-    ,
+    },
     "confirmDelete": "Are you sure you want to delete this organization?"
   },
   "locks": {
@@ -473,19 +466,19 @@
     "execSummaryEmpty": "No executive summary available for this folder",
     "execSummaryGenerate": "Generate executive summary",
     "loadingData": "Loading data…",
-  "useCaseCount": "Initiative count",
-  "quickWins": "Quick wins",
-  "roiQuadrants": {
+    "useCaseCount": "Initiative count",
     "quickWins": "Quick wins",
-    "majorProjects": "Major projects",
-    "wait": "Wait",
-    "dontDo": "Don't do"
-  },
-  "roiQuadrantConfig": "ROI quadrant configuration",
-  "roiStats": {
-    "medianValue": "Median value",
-    "medianComplexity": "Median complexity"
-  },
+    "roiQuadrants": {
+      "quickWins": "Quick wins",
+      "majorProjects": "Major projects",
+      "wait": "Wait",
+      "dontDo": "Don't do"
+    },
+    "roiQuadrantConfig": "ROI quadrant configuration",
+    "roiStats": {
+      "medianValue": "Median value",
+      "medianComplexity": "Median complexity"
+    },
     "roiConfig": {
       "buttonTitle": "ROI quadrant configuration",
       "close": "Close configuration",
@@ -503,8 +496,7 @@
     "annex": "Annex",
     "annexUseCases": "Initiative sheets",
     "subtitle": "Prioritize your innovations by value contribution",
-    "about": "About"
-    ,
+    "about": "About",
     "backCover": {
       "p1": "Top AI Ideas is part of the SENT-tech vision: more than twenty years of expertise in innovation, data, digital and artificial intelligence. Here, AI is never an end in itself, but a lever that has become indispensable for competitiveness.",
       "p2": "Value emerges from a holistic approach, where business opportunities meet technological capabilities. Designed to guide organizations in their choices, Top AI Ideas helps identify the most promising initiatives through a collaborative, rigorous and impact-driven process.",
@@ -609,12 +601,28 @@
       "toasts": {
         "codexEnrollmentStarted": "Codex sign-in started. Open the displayed OpenAI link and enter the shown code.",
         "codexConnected": "Codex provider connected.",
-        "codexDisconnected": "Codex provider marked as disconnected."
+        "codexDisconnected": "Codex provider marked as disconnected.",
+        "googleEnrollmentStarted": "Google sign-in started. Please follow the instructions to complete the connection.",
+        "googleConnected": "Google Cloud provider connected.",
+        "googleDisconnected": "Google Cloud provider disconnected."
       },
       "errors": {
         "load": "Unable to load provider connections.",
         "save": "Unable to update provider connection.",
         "missingEnrollment": "No pending Codex enrollment found. Start sign-in first."
+      },
+      "google": {
+        "accountLabel": "Google Cloud / Workspace account (optional)",
+        "accountPlaceholder": "e.g. dev@company.com",
+        "startEnrollment": "Connect Google Workspace / Cloud",
+        "pendingHint": "Google sign-in started. Please authenticate in the new tab, then copy the error URL starting with 127.0.0.1 and paste it here.",
+        "pastedUrlLabel": "Pasted URL (127.0.0.1...)",
+        "pastedUrlPlaceholder": "http://127.0.0.1:8709/callback?state=...",
+        "completeEnrollment": "Submit URL",
+        "regenerateEnrollment": "Restart sign-in",
+        "cancelEnrollment": "Cancel",
+        "disconnect": "Disconnect Google account",
+        "description": "Connect your Google Workspace or Google Cloud account to use Vertex AI and Gemini APIs under your own corporate quota."
       }
     },
     "chromeExtension": {
@@ -685,8 +693,7 @@
     "promptDescription": "Description",
     "detectedVariables": "Detected variables",
     "noVariablesDetected": "No variables detected",
-    "promptContent": "Prompt content"
-    ,
+    "promptContent": "Prompt content",
     "confirmDeactivate": "Deactivate your account? You can request a reactivation.",
     "confirmDeleteAccount": "PERMANENT DELETION: delete your account and all your data immediately?",
     "deactivateAccount": "Deactivate my account",
@@ -1204,14 +1211,30 @@
         "label": "Code: git",
         "description": "Run git actions (status/diff/ls-files/add/commit/push/...) with policy checks"
       },
-      "organizationRead": { "label": "Organization (read)" },
-      "organizationUpdate": { "label": "Organization (edit)" },
-      "folderRead": { "label": "Folder (read)" },
-      "folderUpdate": { "label": "Folder (edit)" },
-      "usecaseRead": { "label": "Initiative (read)" },
-      "usecaseUpdate": { "label": "Initiative (edit)" },
-      "matrix": { "label": "Matrix (read/edit)" },
-      "executiveSummary": { "label": "Executive summary" }
+      "organizationRead": {
+        "label": "Organization (read)"
+      },
+      "organizationUpdate": {
+        "label": "Organization (edit)"
+      },
+      "folderRead": {
+        "label": "Folder (read)"
+      },
+      "folderUpdate": {
+        "label": "Folder (edit)"
+      },
+      "usecaseRead": {
+        "label": "Initiative (read)"
+      },
+      "usecaseUpdate": {
+        "label": "Initiative (edit)"
+      },
+      "matrix": {
+        "label": "Matrix (read/edit)"
+      },
+      "executiveSummary": {
+        "label": "Executive summary"
+      }
     },
     "todoCard": {
       "title": "Plan created from chat",

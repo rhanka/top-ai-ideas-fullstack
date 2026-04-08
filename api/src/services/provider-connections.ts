@@ -12,8 +12,14 @@ import {
 import { createId } from '../utils/id';
 import { decryptSecretOrNull, encryptSecret } from './secret-crypto';
 import { settingsService } from './settings';
+import {
+  completeGoogleDeviceEnrollment,
+  startGoogleDeviceEnrollment,
+  type GoogleEnrollmentResult,
+} from './google-provider-auth';
 
-export type ProviderConnectionId = 'codex' | 'openai' | 'gemini' | 'anthropic' | 'mistral' | 'cohere';
+
+export type ProviderConnectionId = 'codex' | 'openai' | 'gemini' | 'anthropic' | 'mistral' | 'cohere' | 'google';
 
 export type ProviderConnectionState = {
   providerId: ProviderConnectionId;
@@ -58,10 +64,42 @@ type CodexConnectedSecret = {
   connectedAt: string;
 };
 
+
+type GoogleConnectionPayload = {
+  status: 'connected' | 'pending' | 'disconnected';
+  enrollmentId: string | null;
+  enrollmentUrl: string | null;
+  enrollmentCode: string | null;
+  enrollmentExpiresAt: string | null;
+  accountLabel: string | null;
+  updatedAt: string | null;
+  updatedByUserId: string | null;
+};
+
+type GooglePendingEnrollmentPayload = {
+  enrollmentId: string;
+  codeVerifier: string;
+  state: string;
+  expectedAccountLabel: string | null;
+};
+
+type GoogleConnectedSecret = {
+  accessToken: string;
+  refreshToken: string;
+  idToken: string;
+  accountLabel: string | null;
+  connectedAt: string;
+};
+
+const GOOGLE_CONNECTION_SETTINGS_KEY = 'provider_connection:google';
+const GOOGLE_CONNECTION_PENDING_SECRET_KEY = 'provider_connection_secret:google_pending';
+const GOOGLE_CONNECTION_SECRET_KEY = 'provider_connection_secret:google';
+
 const CODEX_CONNECTION_SETTINGS_KEY = 'provider_connection:codex';
 const CODEX_CONNECTION_PENDING_SECRET_KEY = 'provider_connection_secret:codex_pending';
 const CODEX_CONNECTION_SECRET_KEY = 'provider_connection_secret:codex';
 const OPENAI_TRANSPORT_MODE_SETTING_KEY = 'provider_connection_mode:openai';
+const GEMINI_TRANSPORT_MODE_SETTING_KEY = 'provider_connection_mode:gemini';
 
 const normalizeText = (value: unknown): string => {
   if (typeof value !== 'string') return '';
@@ -88,6 +126,34 @@ const parseCodexConnectionPayload = (
         : legacyConnected
           ? 'connected'
           : 'disconnected';
+    return {
+      status,
+      enrollmentId: normalizeOptionalText(parsed.enrollmentId),
+      enrollmentUrl: normalizeOptionalText(parsed.enrollmentUrl),
+      enrollmentCode: normalizeOptionalText(parsed.enrollmentCode),
+      enrollmentExpiresAt: normalizeOptionalText(parsed.enrollmentExpiresAt),
+      accountLabel: normalizeOptionalText(parsed.accountLabel),
+      updatedAt: normalizeOptionalText(parsed.updatedAt),
+      updatedByUserId: normalizeOptionalText(parsed.updatedByUserId),
+    };
+  } catch {
+    return null;
+  }
+};
+
+
+const parseGoogleConnectionPayload = (
+  raw: string | null,
+): GoogleConnectionPayload | null => {
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as Partial<GoogleConnectionPayload> | null;
+    if (!parsed || typeof parsed !== 'object') return null;
+    const statusRaw = normalizeText(parsed.status).toLowerCase();
+    const status: GoogleConnectionPayload['status'] =
+      statusRaw === 'connected' || statusRaw === 'pending' || statusRaw === 'disconnected'
+        ? (statusRaw as GoogleConnectionPayload['status'])
+        : 'disconnected';
     return {
       status,
       enrollmentId: normalizeOptionalText(parsed.enrollmentId),
@@ -151,6 +217,44 @@ const writeCodexConnection = async (
     'Codex provider connection state for the current admin user.',
     { userId },
   );
+};
+
+
+const readGoogleConnection = async (userId: string): Promise<GoogleConnectionPayload | null> => {
+  const raw = await settingsService.get(GOOGLE_CONNECTION_SETTINGS_KEY, {
+    userId,
+    fallbackToGlobal: false,
+  });
+  return parseGoogleConnectionPayload(raw);
+};
+
+const readGooglePendingEnrollment = async (
+  userId: string,
+): Promise<GooglePendingEnrollmentPayload | null> => {
+  const raw = await settingsService.get(GOOGLE_CONNECTION_PENDING_SECRET_KEY, {
+    userId,
+    fallbackToGlobal: false,
+  });
+  return parseSecretPayload<GooglePendingEnrollmentPayload>(raw);
+};
+
+const writeGoogleConnection = async (
+  userId: string,
+  payload: GoogleConnectionPayload,
+): Promise<void> => {
+  await settingsService.set(
+    GOOGLE_CONNECTION_SETTINGS_KEY,
+    JSON.stringify(payload),
+    'Google provider connection state for the current admin user.',
+    { userId },
+  );
+};
+
+const deleteGoogleSecrets = async (userId: string): Promise<void> => {
+  await Promise.all([
+    deleteUserScopedSetting(userId, GOOGLE_CONNECTION_PENDING_SECRET_KEY),
+    deleteUserScopedSetting(userId, GOOGLE_CONNECTION_SECRET_KEY),
+  ]);
 };
 
 const writeEncryptedSetting = async (
@@ -218,6 +322,26 @@ export const getOpenAITransportMode = async (): Promise<'codex' | 'token'> =>
     ? 'codex'
     : 'token';
 
+
+export const getGeminiTransportMode = async (): Promise<'google' | 'token'> =>
+  normalizeText(
+    await settingsService.get(GEMINI_TRANSPORT_MODE_SETTING_KEY, { fallbackToGlobal: true }),
+  ).toLowerCase() === 'google'
+    ? 'google'
+    : 'token';
+
+export const setGeminiTransportMode = async (
+  mode: 'google' | 'token',
+): Promise<'google' | 'token'> => {
+  const normalized = mode === 'google' ? 'google' : 'token';
+  await settingsService.set(
+    GEMINI_TRANSPORT_MODE_SETTING_KEY,
+    normalized,
+    'Gemini runtime source mode (`token` or `google`).',
+  );
+  return normalized;
+};
+
 export const setOpenAITransportMode = async (
   mode: 'codex' | 'token',
 ): Promise<'codex' | 'token'> => {
@@ -277,6 +401,41 @@ const inferCodexAccountLabel = (
   return email || fallbackLabel;
 };
 
+
+const toGoogleProviderState = (
+  connection: GoogleConnectionPayload | null,
+): ProviderConnectionState => {
+  const status = connection?.status ?? 'disconnected';
+  const ready = status === 'connected';
+  return {
+    providerId: 'google',
+    label: 'Google Cloud (SSO)',
+    ready,
+    connectionStatus: status,
+    enrollmentId: connection?.enrollmentId ?? null,
+    enrollmentUrl: connection?.enrollmentUrl ?? null,
+    enrollmentCode: connection?.enrollmentCode ?? null,
+    enrollmentExpiresAt: connection?.enrollmentExpiresAt ?? null,
+    managedBy: status === 'disconnected' ? 'none' : 'admin_settings',
+    accountLabel: connection?.accountLabel ?? null,
+    updatedAt: connection?.updatedAt ?? null,
+    updatedByUserId: connection?.updatedByUserId ?? null,
+    canConfigure: true,
+  };
+};
+
+const inferGoogleAccountLabel = (
+  result: GoogleEnrollmentResult,
+  fallbackLabel: string | null,
+): string | null => {
+  const claims = decodeJwtPayload(result.idToken);
+  const email =
+    normalizeOptionalText(claims?.email) ||
+    normalizeOptionalText(claims?.preferred_username) ||
+    normalizeOptionalText(claims?.name);
+  return email || fallbackLabel;
+};
+
 const assertExpectedAccountLabel = (
   expected: string | null,
   actual: string | null,
@@ -291,8 +450,9 @@ export const listProviderConnections = async (input?: {
   userId?: string | null;
 }): Promise<ProviderConnectionState[]> => {
   const userId = normalizeOptionalText(input?.userId);
-  const [codexConnection, openaiCredential, geminiCredential, anthropicCredential, mistralCredential, cohereCredential] = await Promise.all([
+  const [codexConnection, googleConnection, openaiCredential, geminiCredential, anthropicCredential, mistralCredential, cohereCredential] = await Promise.all([
     userId ? readCodexConnection(userId) : Promise.resolve(null),
+    userId ? readGoogleConnection(userId) : Promise.resolve(null),
     resolveProviderCredential({
       providerId: 'openai',
       userId,
@@ -337,6 +497,7 @@ export const listProviderConnections = async (input?: {
 
   return [
     toCodexProviderState(codexConnection),
+    toGoogleProviderState(googleConnection),
     toSimpleProviderState('openai', 'OpenAI', openaiCredential),
     toSimpleProviderState('gemini', 'Gemini', geminiCredential),
     toSimpleProviderState('anthropic', 'Anthropic', anthropicCredential),
@@ -494,4 +655,144 @@ export const disconnectCodexEnrollment = async (input: {
   ]);
 
   return toCodexProviderState(next);
+};
+
+
+export const resolveConnectedGoogleTransport = async (
+  userId: string,
+): Promise<{ accessToken: string; accountId: string | null } | null> => {
+  const secret = parseSecretPayload<GoogleConnectedSecret>(
+    await settingsService.get(GOOGLE_CONNECTION_SECRET_KEY, { userId, fallbackToGlobal: false }),
+  );
+  const accessToken = normalizeOptionalText(secret?.accessToken);
+  if (!accessToken) return null;
+  return {
+    accessToken,
+    accountId: inferGoogleAccountLabel({ idToken: secret.idToken } as any, secret.accountLabel),
+  };
+};
+
+export const startGoogleEnrollment = async (input: {
+  accountLabel?: string | null;
+  updatedByUserId: string;
+}): Promise<ProviderConnectionState> => {
+  const enrollment = await startGoogleDeviceEnrollment();
+  const enrollmentId = createId();
+  const accountLabel = normalizeOptionalText(input.accountLabel);
+  const now = new Date().toISOString();
+  const visible: GoogleConnectionPayload = {
+    status: 'pending',
+    enrollmentId,
+    enrollmentUrl: enrollment.verificationUrl,
+    enrollmentCode: null,
+    enrollmentExpiresAt: null,
+    accountLabel,
+    updatedAt: now,
+    updatedByUserId: normalizeOptionalText(input.updatedByUserId),
+  };
+  const secret: GooglePendingEnrollmentPayload = {
+    enrollmentId,
+    codeVerifier: enrollment.codeVerifier,
+    state: enrollment.state,
+    expectedAccountLabel: accountLabel,
+  };
+
+  await Promise.all([
+    deleteGoogleSecrets(input.updatedByUserId),
+    writeGoogleConnection(input.updatedByUserId, visible),
+    writeEncryptedSetting(
+      input.updatedByUserId,
+      GOOGLE_CONNECTION_PENDING_SECRET_KEY,
+      secret,
+      'Pending Google enrollment secret for the current admin user.',
+    ),
+  ]);
+
+  return toGoogleProviderState(visible);
+};
+
+export const completeGoogleEnrollment = async (input: {
+  enrollmentId: string;
+  pastedUrl: string;
+  accountLabel?: string | null;
+  updatedByUserId: string;
+}): Promise<ProviderConnectionState> => {
+  const [current, pending] = await Promise.all([
+    readGoogleConnection(input.updatedByUserId),
+    readGooglePendingEnrollment(input.updatedByUserId),
+  ]);
+
+  if (!current || current.status !== 'pending' || current.enrollmentId !== input.enrollmentId) {
+    throw new Error('Invalid or expired Google enrollment session.');
+  }
+  if (!pending || pending.enrollmentId !== input.enrollmentId) {
+    throw new Error('Missing pending Google enrollment state.');
+  }
+
+  const result = await completeGoogleDeviceEnrollment(input.pastedUrl, {
+    codeVerifier: pending.codeVerifier,
+    state: pending.state,
+  });
+
+  const requestedAccountLabel =
+    normalizeOptionalText(input.accountLabel) || pending.expectedAccountLabel;
+  const connectedAccountLabel = inferGoogleAccountLabel(result, requestedAccountLabel);
+  
+  if (requestedAccountLabel && connectedAccountLabel && requestedAccountLabel.toLowerCase() !== connectedAccountLabel.toLowerCase()) {
+    throw new Error(`Connected Google account mismatch: expected ${requestedAccountLabel}, got ${connectedAccountLabel}.`);
+  }
+
+  const now = new Date().toISOString();
+  const visible: GoogleConnectionPayload = {
+    status: 'connected',
+    enrollmentId: null,
+    enrollmentUrl: null,
+    enrollmentCode: null,
+    enrollmentExpiresAt: null,
+    accountLabel: connectedAccountLabel,
+    updatedAt: now,
+    updatedByUserId: normalizeOptionalText(input.updatedByUserId),
+  };
+  const secret: GoogleConnectedSecret = {
+    accessToken: result.accessToken,
+    refreshToken: result.refreshToken,
+    idToken: result.idToken,
+    accountLabel: connectedAccountLabel,
+    connectedAt: now,
+  };
+
+  await Promise.all([
+    deleteUserScopedSetting(input.updatedByUserId, GOOGLE_CONNECTION_PENDING_SECRET_KEY),
+    writeGoogleConnection(input.updatedByUserId, visible),
+    writeEncryptedSetting(
+      input.updatedByUserId,
+      GOOGLE_CONNECTION_SECRET_KEY,
+      secret,
+      'Google provider credential for the current admin user.',
+    ),
+  ]);
+
+  return toGoogleProviderState(visible);
+};
+
+export const disconnectGoogleEnrollment = async (input: {
+  updatedByUserId: string;
+}): Promise<ProviderConnectionState> => {
+  const next: GoogleConnectionPayload = {
+    status: 'disconnected',
+    enrollmentId: null,
+    enrollmentUrl: null,
+    enrollmentCode: null,
+    enrollmentExpiresAt: null,
+    accountLabel: null,
+    updatedAt: new Date().toISOString(),
+    updatedByUserId: normalizeOptionalText(input.updatedByUserId),
+  };
+
+  await Promise.all([
+    writeGoogleConnection(input.updatedByUserId, next),
+    deleteGoogleSecrets(input.updatedByUserId),
+  ]);
+
+  return toGoogleProviderState(next);
 };

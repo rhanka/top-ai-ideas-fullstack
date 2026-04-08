@@ -44,13 +44,10 @@
     "redirecting": "Redirection…",
     "user": "Utilisateur",
     "na": "N/A",
-    "readOnlyDisabled": "Mode lecture seule : création / suppression désactivées."
-    ,
+    "readOnlyDisabled": "Mode lecture seule : création / suppression désactivées.",
     "ai": "IA",
-    "references": "Références"
-    ,
-    "pointsAbbr": "pts"
-    ,
+    "references": "Références",
+    "pointsAbbr": "pts",
     "add": "Ajouter",
     "general": "Général",
     "yesterday": "Hier",
@@ -59,8 +56,7 @@
     "retry": "Réessayer",
     "openMenu": "Ouvrir le menu",
     "saving": "Sauvegarde…",
-    "unsavedChanges": "Modifications non sauvegardées"
-    ,
+    "unsavedChanges": "Modifications non sauvegardées",
     "unspecified": "Non renseigné",
     "useMedian": "Utiliser la médiane",
     "actions": "Actions",
@@ -197,8 +193,7 @@
         "invalidEmail": "Veuillez saisir une adresse email valide",
         "sendCode": "Erreur lors de l'envoi du code"
       }
-    }
-    ,
+    },
     "webauthn": {
       "errors": {
         "registrationCancelled": "Vous avez annulé l'inscription",
@@ -254,8 +249,7 @@
     "pleaseSelectFolder": "Veuillez sélectionner un dossier pour voir sa matrice",
     "folderLoaded": "Évaluation du dossier \"{name}\" chargée",
     "folderNoMatrix": "Le dossier \"{name}\" n'a pas de matrice configurée",
-    "loadError": "Erreur lors du chargement de la matrice"
-    ,
+    "loadError": "Erreur lors du chargement de la matrice",
     "autoSaveError": "Erreur lors de la sauvegarde automatique de la configuration",
     "saveSuccess": "Configuration de la matrice mise à jour",
     "saveError": "Erreur lors de la sauvegarde de la matrice",
@@ -264,14 +258,14 @@
     "newComplexityAxisName": "Nouvel axe de complexité",
     "valueAxisAdded": "Nouvel axe de valeur ajouté",
     "complexityAxisAdded": "Nouvel axe de complexité ajouté",
-  "confirmDeleteAxis": "Êtes-vous sûr de vouloir supprimer cet axe ? Cette action affectera le calcul des scores des initiatives.",
-  "valueAxisDeleted": "Axe de valeur supprimé",
-  "complexityAxisDeleted": "Axe de complexité supprimé",
-  "weightsRecalcWarning": "Attention : Modifier les poids recalculera automatiquement tous les scores de vos initiatives existantes.",
-  "levelN": "Niveau {level}",
-  "selectedFolder": "Dossier sélectionné",
-  "createNew": "Créer une nouvelle matrice",
-  "createDialogBody": "Choisissez le type de matrice à créer :",
+    "confirmDeleteAxis": "Êtes-vous sûr de vouloir supprimer cet axe ? Cette action affectera le calcul des scores des initiatives.",
+    "valueAxisDeleted": "Axe de valeur supprimé",
+    "complexityAxisDeleted": "Axe de complexité supprimé",
+    "weightsRecalcWarning": "Attention : Modifier les poids recalculera automatiquement tous les scores de vos initiatives existantes.",
+    "levelN": "Niveau {level}",
+    "selectedFolder": "Dossier sélectionné",
+    "createNew": "Créer une nouvelle matrice",
+    "createDialogBody": "Choisissez le type de matrice à créer :",
     "help": {
       "intro": "Ajustez les poids des axes de valeur et de complexité pour personnaliser l'évaluation des initiatives.",
       "details": "La matrice utilise 5 niveaux pour chaque critère, avec des descriptions spécifiques pour chacun. Cliquez sur un critère pour voir et modifier les descriptions détaillées des 5 niveaux."
@@ -325,14 +319,14 @@
         "readOnlyAction": "Action non autorisée (mode lecture seule)."
       }
     },
-  "new": {
-    "nameLabel": "Nom du dossier",
-    "namePlaceholder": "Saisir le nom du dossier (optionnel)",
-    "orgOptional": "Organisation (optionnel)",
-    "unspecified": "Non spécifié",
-    "createOrg": "Créer une organisation",
-    "context": "Contexte",
-    "contextPlaceholder": "Décrire le contexte métier et les objectifs…",
+    "new": {
+      "nameLabel": "Nom du dossier",
+      "namePlaceholder": "Saisir le nom du dossier (optionnel)",
+      "orgOptional": "Organisation (optionnel)",
+      "unspecified": "Non spécifié",
+      "createOrg": "Créer une organisation",
+      "context": "Contexte",
+      "contextPlaceholder": "Décrire le contexte métier et les objectifs…",
       "useCaseCount": "Nombre d'initiatives",
       "modelLabel": "Modèle de génération",
       "modelHint": "Utilisé pour la génération des initiatives et de la matrice de ce dossier.",
@@ -433,8 +427,7 @@
       "create": "Erreur lors de la création de l'organisation",
       "load": "Erreur lors du chargement de l'organisation",
       "loadList": "Erreur lors du chargement des organisations"
-    }
-    ,
+    },
     "confirmDelete": "Êtes-vous sûr de vouloir supprimer cette organisation ?"
   },
   "locks": {
@@ -473,19 +466,19 @@
     "execSummaryEmpty": "Aucune synthèse exécutive disponible pour ce dossier",
     "execSummaryGenerate": "Générer la synthèse exécutive",
     "loadingData": "Chargement des données…",
-  "useCaseCount": "Nombre d'initiatives",
-  "quickWins": "Gains rapides",
-  "roiQuadrants": {
+    "useCaseCount": "Nombre d'initiatives",
     "quickWins": "Gains rapides",
-    "majorProjects": "Projets majeurs",
-    "wait": "Attendre",
-    "dontDo": "Ne pas faire"
-  },
-  "roiQuadrantConfig": "Configuration du quadrant ROI",
-  "roiStats": {
-    "medianValue": "Valeur médiane",
-    "medianComplexity": "Complexité médiane"
-  },
+    "roiQuadrants": {
+      "quickWins": "Gains rapides",
+      "majorProjects": "Projets majeurs",
+      "wait": "Attendre",
+      "dontDo": "Ne pas faire"
+    },
+    "roiQuadrantConfig": "Configuration du quadrant ROI",
+    "roiStats": {
+      "medianValue": "Valeur médiane",
+      "medianComplexity": "Complexité médiane"
+    },
     "roiConfig": {
       "buttonTitle": "Configuration du quadrant ROI",
       "close": "Fermer la configuration",
@@ -503,8 +496,7 @@
     "annex": "Annexe",
     "annexUseCases": "Fiches des initiatives",
     "subtitle": "Priorisez vos innovations par l'apport de valeur",
-    "about": "À Propos"
-    ,
+    "about": "À Propos",
     "backCover": {
       "p1": "Top AI Ideas s'inscrit dans la vision de SENT-tech : plus de vingt ans d'expertise en innovation, données, digital et intelligence artificielle. Ici, l'IA n'est jamais une finalité, mais un levier devenu indispensable à la compétitivité.",
       "p2": "La valeur naît d'une approche holistique, où les opportunités d'affaires rencontrent les capacités technologiques. Conçu pour guider les organisations dans leurs choix, Top AI Ideas aide à identifier les initiatives les plus prometteuses, dans une démarche collaborative, rigoureuse et orientée impact.",
@@ -609,12 +601,28 @@
       "toasts": {
         "codexEnrollmentStarted": "Connexion Codex démarrée. Ouvrez le lien OpenAI affiché puis saisissez le code indiqué.",
         "codexConnected": "Provider Codex connecté.",
-        "codexDisconnected": "Provider Codex marqué comme déconnecté."
+        "codexDisconnected": "Provider Codex marqué comme déconnecté.",
+        "googleEnrollmentStarted": "Connexion Google démarrée. Suivez les instructions pour finaliser l'association.",
+        "googleConnected": "Provider Google Cloud connecté.",
+        "googleDisconnected": "Provider Google Cloud déconnecté."
       },
       "errors": {
         "load": "Impossible de charger les connexions providers.",
         "save": "Impossible de mettre à jour la connexion provider.",
         "missingEnrollment": "Aucune connexion Codex en attente. Démarrez d’abord la connexion."
+      },
+      "google": {
+        "accountLabel": "Compte Google Cloud / Workspace (optionnel)",
+        "accountPlaceholder": "ex: dev@entreprise.com",
+        "startEnrollment": "Connecter Google Workspace / Cloud",
+        "pendingHint": "Connexion Google démarrée. Veuillez vous authentifier dans le nouvel onglet, puis copiez l'URL d'erreur commençant par 127.0.0.1 et collez-la ici.",
+        "pastedUrlLabel": "URL copiée (127.0.0.1...)",
+        "pastedUrlPlaceholder": "http://127.0.0.1:8709/callback?state=...",
+        "completeEnrollment": "Valider l'URL",
+        "regenerateEnrollment": "Recommencer",
+        "cancelEnrollment": "Annuler",
+        "disconnect": "Déconnecter le compte Google",
+        "description": "Connectez votre compte Google Workspace ou Google Cloud pour utiliser les APIs Vertex AI et Gemini via votre propre quota d'entreprise."
       }
     },
     "chromeExtension": {
@@ -685,8 +693,7 @@
     "promptDescription": "Description",
     "detectedVariables": "Variables détectées",
     "noVariablesDetected": "Aucune variable détectée",
-    "promptContent": "Contenu du prompt"
-    ,
+    "promptContent": "Contenu du prompt",
     "confirmDeactivate": "Désactiver votre compte ? Vous pourrez demander une réactivation.",
     "confirmDeleteAccount": "SUPPRESSION DÉFINITIVE: supprimer votre compte et toutes vos données immédiatement ?",
     "deactivateAccount": "Désactiver mon compte",
@@ -1204,14 +1211,30 @@
         "label": "Code: git",
         "description": "Exécuter des actions git (status/diff/ls-files/add/commit/push/...) avec contrôle de politique"
       },
-      "organizationRead": { "label": "Organisation (lecture)" },
-      "organizationUpdate": { "label": "Organisation (édition)" },
-      "folderRead": { "label": "Dossier (lecture)" },
-      "folderUpdate": { "label": "Dossier (édition)" },
-      "usecaseRead": { "label": "Initiative (lecture)" },
-      "usecaseUpdate": { "label": "Initiative (édition)" },
-      "matrix": { "label": "Matrice (lecture/édition)" },
-      "executiveSummary": { "label": "Synthèse exécutive" }
+      "organizationRead": {
+        "label": "Organisation (lecture)"
+      },
+      "organizationUpdate": {
+        "label": "Organisation (édition)"
+      },
+      "folderRead": {
+        "label": "Dossier (lecture)"
+      },
+      "folderUpdate": {
+        "label": "Dossier (édition)"
+      },
+      "usecaseRead": {
+        "label": "Initiative (lecture)"
+      },
+      "usecaseUpdate": {
+        "label": "Initiative (édition)"
+      },
+      "matrix": {
+        "label": "Matrice (lecture/édition)"
+      },
+      "executiveSummary": {
+        "label": "Synthèse exécutive"
+      }
     },
     "todoCard": {
       "title": "Plan créé depuis le chat",
@@ -1507,7 +1530,7 @@
     "types": {
       "neutral": "Personnel (neutre)",
       "aiIdeas": "AI Ideas",
-      "opportunity": "Opportunit\u00e9",
+      "opportunity": "Opportunité",
       "code": "Code"
     },
     "confirm": {

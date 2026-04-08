@@ -8,7 +8,7 @@ import {
   resolveProviderCredential,
   type ResolvedProviderCredential
 } from '../provider-credentials';
-import { getOpenAITransportMode, resolveConnectedCodexTransport } from '../provider-connections';
+import { getOpenAITransportMode, resolveConnectedCodexTransport, getGeminiTransportMode, resolveConnectedGoogleTransport } from '../provider-connections';
 import {
   GeminiProviderRuntime,
   type GeminiGenerateRequest,
@@ -790,6 +790,13 @@ export const callLLM = async (options: CallLLMOptions): Promise<OpenAI.Chat.Comp
   }
 
   if (selection.providerId === 'gemini') {
+    const geminiTransportMode = await getGeminiTransportMode();
+    const googleTransport =
+      typeof userId === 'string' &&
+      userId.trim().length > 0 &&
+      geminiTransportMode === 'google'
+        ? await resolveConnectedGoogleTransport(userId)
+        : null;
     const provider = getGeminiProvider();
     const raw = await provider.generate({
       mode: 'generate-content',
@@ -803,7 +810,7 @@ export const callLLM = async (options: CallLLMOptions): Promise<OpenAI.Chat.Comp
           maxOutputTokens,
         }),
       },
-      credential: credentialResolution.credential ?? undefined,
+      credential: googleTransport ? googleTransport.accessToken : (credentialResolution.credential ?? undefined),
       signal,
     } satisfies GeminiGenerateRequest);
 
@@ -1044,6 +1051,15 @@ export async function* callLLMStream(
       : null;
   const useCodexTransport = Boolean(codexTransport);
 
+  const geminiTransportMode = await getGeminiTransportMode();
+  const googleTransport =
+    selection.providerId === 'gemini' &&
+    typeof userId === 'string' &&
+    userId.trim().length > 0 &&
+    geminiTransportMode === 'google'
+      ? await resolveConnectedGoogleTransport(userId)
+      : null;
+
   if (!capabilities.supportsStreaming) {
     throw new Error(`Provider ${selection.providerId} does not support streaming`);
   }
@@ -1075,7 +1091,7 @@ export async function* callLLMStream(
           model: selectedModel,
           body: requestBody,
         },
-        credential: credentialResolution.credential ?? undefined,
+        credential: googleTransport ? googleTransport.accessToken : (credentialResolution.credential ?? undefined),
         signal,
       } satisfies GeminiStreamGenerateRequest);
 
