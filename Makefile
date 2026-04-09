@@ -1281,13 +1281,15 @@ test-security: test-security-sast test-security-sca test-security-container test
 # API Backend Tests (Vitest)
 # -----------------------------------------------------------------------------
 API_TEST_WORKERS ?= 4
+API_TEST_ARGS ?=
 
 .PHONY: test-api-%
 
 test-api-%: ## Run API tests (usage: make test-api-unit, make test-api-queue, SCOPE=admin make test-api-unit)
-	@$(DOCKER_COMPOSE) exec -T -e SCOPE="$(SCOPE)" -e VITEST_MAX_WORKERS="$(API_TEST_WORKERS)" api sh -lc ' \
+	@$(DOCKER_COMPOSE) exec -T -e SCOPE="$(SCOPE)" -e VITEST_MAX_WORKERS="$(API_TEST_WORKERS)" -e API_TEST_ARGS="$(API_TEST_ARGS)" api sh -lc ' \
 	  TEST_TYPE="$*"; \
 	  requested_workers="$${VITEST_MAX_WORKERS:-4}"; \
+	  extra_args="$${API_TEST_ARGS:-}"; \
 	  workers=1; \
 	  cleanup_scope=global; \
 	  if [ "$$TEST_TYPE" = "smoke" ] || [ "$$TEST_TYPE" = "endpoints" ]; then \
@@ -1299,11 +1301,19 @@ test-api-%: ## Run API tests (usage: make test-api-unit, make test-api-queue, SC
 	  export VITEST_MAX_WORKERS="$$workers"; \
 	  export TEST_CLEANUP_SCOPE="$$cleanup_scope"; \
 	  if [ -n "$$SCOPE" ]; then \
-	    echo "▶ Running scoped $$TEST_TYPE tests: $$SCOPE (workers=$$workers, cleanup=$$cleanup_scope)"; \
-	    npx vitest run "$$SCOPE"; \
+	    echo "▶ Running scoped $$TEST_TYPE tests: $$SCOPE (workers=$$workers, cleanup=$$cleanup_scope, args=$${extra_args:-<none>})"; \
+	    if [ -n "$$extra_args" ]; then \
+	      npx vitest run $$SCOPE $$extra_args; \
+	    else \
+	      npx vitest run $$SCOPE; \
+	    fi; \
 	  else \
-	    echo "▶ Running all $$TEST_TYPE tests (workers=$$workers, cleanup=$$cleanup_scope)"; \
-	    npm run test:$$TEST_TYPE; \
+	    echo "▶ Running all $$TEST_TYPE tests (workers=$$workers, cleanup=$$cleanup_scope, args=$${extra_args:-<none>})"; \
+	    if [ -n "$$extra_args" ]; then \
+	      npm run test:$$TEST_TYPE -- $$extra_args; \
+	    else \
+	      npm run test:$$TEST_TYPE; \
+	    fi; \
 	  fi'
 
 .PHONY: test-api-smoke-restore
