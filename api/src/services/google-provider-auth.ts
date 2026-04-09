@@ -1,8 +1,8 @@
 import crypto from 'crypto';
+import { GEMINI_OAUTH_CLIENT_ID, GEMINI_OAUTH_CLIENT_SECRET } from '../generated/gemini-oauth-credentials';
 
 const GOOGLE_AUTH_ISSUER = 'https://accounts.google.com/o/oauth2/v2/auth';
 const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
-const GOOGLE_CLIENT_ID = '764086051850-6qr4p6gpi6hn506pt8ejuq83di341hur.apps.googleusercontent.com';
 const GOOGLE_REDIRECT_URI = 'http://127.0.0.1:8709/callback';
 const GOOGLE_SCOPES = [
   'https://www.googleapis.com/auth/cloud-platform',
@@ -68,7 +68,7 @@ export const startGoogleDeviceEnrollment = async (): Promise<{
   const state = crypto.randomBytes(16).toString('base64url');
 
   const params = new URLSearchParams({
-    client_id: GOOGLE_CLIENT_ID,
+    client_id: GEMINI_OAUTH_CLIENT_ID,
     redirect_uri: GOOGLE_REDIRECT_URI,
     response_type: 'code',
     scope: GOOGLE_SCOPES,
@@ -114,7 +114,8 @@ export const completeGoogleDeviceEnrollment = async (
   }
 
   const body = new URLSearchParams({
-    client_id: GOOGLE_CLIENT_ID,
+    client_id: GEMINI_OAUTH_CLIENT_ID,
+    client_secret: GEMINI_OAUTH_CLIENT_SECRET,
     grant_type: 'authorization_code',
     code,
     redirect_uri: GOOGLE_REDIRECT_URI,

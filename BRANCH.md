@@ -22,18 +22,23 @@ Deliver Google SSO flows for admin and standard users with account linking and s
   - `e2e/**`
   - `plan/09-BRANCH_feat-sso-google.md`
 - **Forbidden Paths (must not change in this branch)**:
-  - `Makefile`
   - `docker-compose*.yml`
   - `.cursor/rules/**`
   - `plan/NN-BRANCH_*.md` (except this branch file)
 - **Conditional Paths (allowed only with explicit exception when not already listed in Allowed Paths)**:
+  - `Makefile` (only for adding new targets related to Google SSO)
   - `api/drizzle/*.sql` (max 1 file)
   - `.github/workflows/**`
   - `spec/**`, `PLAN.md`, `TODO.md` (docs consolidation or roadmap sync only)
+  - `.gitignore` (only for generated build artifacts)
   - `scripts/**` (only if strictly required by the branch objective)
 - **Exception process**:
   - Declare exception ID `BR09-EX1` in this file before touching conditional/forbidden paths.
     - Reason: Add `spec/SPEC_EVOL_SSO_GOOGLE.md` to document the design decision of using Gemini CLI OAuth Client ID + Loopback mechanism.
+  - **BR09-EX2**: Modify `Makefile` to add `extract-gemini-credentials` target; modify `.gitignore` to exclude generated build artifact `api/src/generated/`.
+    - Reason: OAuth credentials are extracted at build time from `@google/gemini-cli-core` npm package. Requires a Make target for manual extraction and gitignore for generated TS file.
+    - Impact: additive only (new target, new gitignore line). No behavioral change to existing targets.
+    - Rollback: revert the two lines added.
   - Mirror the same exception in this file under `## Feedback Loop` (or `## Questions / Notes` if not yet migrated).
 
 ## Feedback Loop
@@ -43,6 +48,7 @@ Actions with the following status should be included around tasks only if really
 
 ## Questions / Notes
 - **BR09-EX1**: Add `spec/SPEC_EVOL_SSO_GOOGLE.md` to document the design decision of using Gemini CLI OAuth Client ID + Loopback mechanism.
+- **BR09-EX2**: Add `extract-gemini-credentials` Makefile target + `.gitignore` entry for `api/src/generated/`. Required for build-time extraction of Gemini CLI OAuth credentials from `@google/gemini-cli-core`.
 
 ## AI Flaky tests
 - Acceptance rule:
@@ -107,6 +113,17 @@ Actions with the following status should be included around tasks only if really
   - [x] Lot 3 gate:
     - [x] `make typecheck-api ENV=test-feat-sso-google`
     - [x] `make typecheck-ui ENV=test-feat-sso-google`
+
+- [x] **Lot 4 — Fix OAuth credentials (UAT bug: `invalid_request`)**
+  - [x] Diagnose: wrong client ID (gcloud CLI instead of Gemini CLI) + missing `client_secret` in token exchange.
+  - [x] Add `@google/gemini-cli-core` as devDependency for credential extraction.
+  - [x] Create `api/scripts/extract-gemini-credentials.mjs` extraction script.
+  - [x] Generate `api/src/generated/gemini-oauth-credentials.ts` (gitignored build artifact).
+  - [x] Add `postinstall`/`prebuild` hooks in `api/package.json`.
+  - [x] Update `api/src/services/google-provider-auth.ts`: import from generated file, add `client_secret` to token exchange.
+  - [x] Add `extract-gemini-credentials` Makefile target (BR09-EX2).
+  - [x] Add `api/src/generated/` to `.gitignore` (BR09-EX2).
+  - [x] Update `spec/SPEC_EVOL_SSO_GOOGLE.md` with corrected credentials source.
 
 - [ ] **Lot N-2** UAT
   - [ ] Web app (splitted by sublist for each env)

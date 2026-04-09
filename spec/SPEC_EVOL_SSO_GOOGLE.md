@@ -13,9 +13,11 @@ This avoids centralizing API costs on a single corporate billing account and ins
 - Google also blocked the "Out-Of-Band" (OOB) manual copy/paste flow (`urn:ietf:wg:oauth:2.0:oob`) for security reasons.
 
 ### 2.2 Client Identity Emulation
-To benefit from the same default quotas and seamless integration as official developer tools, this implementation will emulate the official **Gemini CLI** OAuth 2.0 Desktop Application.
-- **Client ID:** `764086051850-6qr4p6gpi6hn506pt8ejuq83di341hur.apps.googleusercontent.com`
+To benefit from the same default quotas and seamless integration as official developer tools, this implementation emulates the official **Gemini CLI** OAuth 2.0 Desktop Application.
+- **Client ID and Client Secret** are extracted at build time from the `@google/gemini-cli-core` npm package (devDependency). The extraction script reads `dist/src/code_assist/oauth2.js` and generates `api/src/generated/gemini-oauth-credentials.ts`.
+- **Source of truth:** `@google/gemini-cli-core` open-source package (Apache-2.0). The client secret is public per Google's installed application policy (see [Google OAuth2 docs](https://developers.google.com/identity/protocols/oauth2#installed)).
 - **Required Scopes:** `https://www.googleapis.com/auth/cloud-platform` (Vertex AI access), `openid`, `email`, `profile`.
+- **Build-time extraction flow:** `npm install` triggers `postinstall` hook → `scripts/extract-gemini-credentials.mjs` reads the package → writes `src/generated/gemini-oauth-credentials.ts` (gitignored). The `prebuild` hook ensures the file exists before esbuild bundles it.
 
 ### 2.3 The Loopback Workaround
 Because the Client ID is a "Desktop App", Google only permits redirections to `127.0.0.1` or `localhost`.
@@ -32,8 +34,8 @@ If the application is deployed in production (e.g., `https://top-ai-ideas.sent-t
 
 ### 3.1 API (Backend)
 New service: `api/src/services/google-provider-auth.ts`
-- **`startGoogleDeviceEnrollment()`**: Generates the OAuth 2.0 authorization URL.
-- **`completeGoogleDeviceEnrollment(redirectUrl, pending)`**: Parses the authorization code from the provided URL and exchanges it for tokens using standard HTTP calls to `oauth2.googleapis.com/token`.
+- **`startGoogleDeviceEnrollment()`**: Generates the OAuth 2.0 authorization URL using the Gemini CLI client ID (extracted from `@google/gemini-cli-core`).
+- **`completeGoogleDeviceEnrollment(redirectUrl, pending)`**: Parses the authorization code from the provided URL and exchanges it for tokens (including `client_secret`) using standard HTTP calls to `oauth2.googleapis.com/token`.
 
 Modifications in `api/src/services/provider-connections.ts`:
 - Manage Google connection state alongside Codex.

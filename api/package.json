@@ -8,6 +8,8 @@
     "@xmldom/xmldom": ">=0.8.12"
   },
   "scripts": {
+    "postinstall": "node scripts/extract-gemini-credentials.mjs || true",
+    "prebuild": "node scripts/extract-gemini-credentials.mjs",
     "dev": "tsx watch src/index.ts",
     "build": "esbuild src/index.ts --bundle --platform=node --target=node20 --format=esm --outfile=dist/index.js --external:pg --external:drizzle-orm --external:pino --external:pino-pretty --external:nodemailer --external:officeparser --external:events --external:stream --external:util --external:url --external:net --external:tls --external:crypto --external:fs --external:path --external:buffer --external:@aws-sdk/* --external:@smithy/* --sourcemap && esbuild src/workers/docx-render.worker.ts --bundle --platform=node --target=node20 --format=esm --outfile=dist/workers/docx-render.worker.js --external:pg --external:drizzle-orm --external:pino --external:pino-pretty --external:nodemailer --external:officeparser --external:events --external:stream --external:util --external:url --external:net --external:tls --external:crypto --external:fs --external:path --external:buffer --external:@aws-sdk/* --external:@smithy/* --sourcemap && esbuild tests/utils/seed-test-data.ts --bundle --platform=node --target=node20 --format=esm --outdir=dist/tests --outbase=tests --external:pg --external:drizzle-orm --external:pino --external:pino-pretty --external:buffer --external:@aws-sdk/* --external:@smithy/* --sourcemap",
     "start": "node dist/index.js",
@@ -66,6 +68,7 @@
     "zod": "^3.22.4"
   },
   "devDependencies": {
+    "@google/gemini-cli-core": "^0.37.0",
     "@types/better-sqlite3": "^7.6.8",
     "@types/node": "^20.14.2",
     "@types/nodemailer": "^7.0.4",
