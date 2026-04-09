@@ -170,7 +170,7 @@ jobs:
             make test-api-endpoints API_TEST_WORKERS=1 API_TEST_ARGS="--shard=${{ matrix.endpoints_shard }}/4"
           elif [ "${{ matrix.suite }}" = "ai" ] && [ -n "${{ matrix.ai_specs }}" ]; then
             SPECS=$(echo "${{ matrix.ai_specs }}" | tr ',' ' ' | xargs -I{} echo "tests/ai/{}.test.ts" | tr '\n' ' ')
-            make test-api-ai SCOPE="$$SPECS" API_TEST_WORKERS=1
+            make test-api-ai SCOPE="$SPECS" API_TEST_WORKERS=1
           else
             make test-api-${{ matrix.suite }}
           fi

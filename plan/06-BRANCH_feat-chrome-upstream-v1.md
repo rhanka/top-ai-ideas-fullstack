@@ -20,7 +20,7 @@ Upstream remote control: the webapp can dispatch tab_read/tab_action to connecte
   - [x] Impact: allow scoped updates in `Makefile` and `.github/workflows/ci.yml` so extension build targets are lockfile-safe and are executed directly in CI.
   - [x] Rollback: revert the `Makefile` and workflow changes to return to indirect-only validation via `make build-ui-image`.
 - [x] **BR06-EX2 — Stabilize CI API/E2E red lanes**
-  - [x] Reason: the rebased branch still failed on the real CI paths for `test-api-endpoints`, `test-api-ai`, `test-e2e (group-c)` and `test-e2e (group-d)`.
+  - [x] Reason: the rebased branch still failed on the real CI paths for `test-api-endpoints`, `test-api-ai`, `test-e2e (group-c)` and `test-e2e (group-d)`; the AI matrix also had a GitHub Actions quoting bug where `$$SPECS` expanded to the bash PID instead of the spec list.
   - [x] Impact: allow scoped updates in `Makefile` and `.github/workflows/ci.yml` to replay CI via make targets, plus targeted fixes in API streaming/tests and E2E selectors/timeouts.
   - [x] Rollback: revert the scoped CI stabilization changes in `Makefile`, workflow, API streaming/tests and E2E specs.
 
