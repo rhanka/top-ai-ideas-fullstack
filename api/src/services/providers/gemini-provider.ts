@@ -15,7 +15,7 @@ import {
 const GEMINI_MODELS: ModelCatalogEntry[] = [
   {
     providerId: 'gemini',
-    modelId: 'gemini-3.1-pro-preview-customtools',
+    modelId: 'gemini-3.1-pro-preview',
     label: 'Gemini 3.1 Pro',
     reasoningTier: 'advanced',
     supportsTools: true,
@@ -24,8 +24,8 @@ const GEMINI_MODELS: ModelCatalogEntry[] = [
   },
   {
     providerId: 'gemini',
-    modelId: 'gemini-3.1-flash-lite-preview',
-    label: 'Gemini 3.1 Flash Lite',
+    modelId: 'gemini-3-flash-preview',
+    label: 'Gemini 3 Flash',
     reasoningTier: 'standard',
     supportsTools: true,
     supportsStreaming: true,
