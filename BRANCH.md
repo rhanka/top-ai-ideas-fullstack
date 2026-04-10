@@ -125,29 +125,24 @@ Actions with the following status should be included around tasks only if really
   - [x] Add `api/src/generated/` to `.gitignore` (BR09-EX2).
   - [x] Update `spec/SPEC_EVOL_SSO_GOOGLE.md` with corrected credentials source.
 
-- [ ] **Lot 5 — Code Assist transport (consume Gemini CLI free-tier credits)**
-  - [ ] Add `google-auth-library` as production dependency for OAuth2Client token refresh.
-  - [ ] Add `GOOGLE_SSO_TEST_EMAIL` to `.env` (Google account to select during enrollment probe).
-  - [ ] On enrollment completion: call `loadCodeAssist` on `cloudcode-pa.googleapis.com/v1internal` to obtain managed `projectId` and `userTier`. Store in encrypted secret alongside tokens.
-  - [ ] Update `resolveConnectedGoogleTransport()` to return `refreshToken`, `projectId`, `sessionId` alongside `accessToken`.
-  - [ ] Create `api/src/services/google-code-assist-transport.ts`: Code Assist transport (pattern: `buildCodexFetch` in `openai-provider.ts`).
-    - [ ] Initialize `OAuth2Client` from `google-auth-library` with stored refresh token + Gemini CLI client ID/secret (auto token refresh).
-    - [ ] Wrap request body: `{ model, project, user_prompt_id, request: { <gemini body> + session_id } }`.
-    - [ ] POST to `cloudcode-pa.googleapis.com/v1internal:streamGenerateContent` (streaming) or `:generateContent` (non-streaming).
-    - [ ] Unwrap response: extract `.response` from each chunk before passing to Gemini parser.
-  - [ ] Update `gemini-provider.ts`: when `googleTransport` is provided, delegate to Code Assist transport instead of raw HTTP.
-  - [ ] Revert `gemini-provider.ts` Bearer/isOAuthToken workarounds (no longer needed — Code Assist transport handles auth).
+- [x] **Lot 5 — Code Assist transport (consume Gemini CLI free-tier credits)**
+  - [x] Add `google-auth-library` as production dependency for OAuth2Client token refresh.
+  - [x] Add `GOOGLE_SSO_TEST_EMAIL` to `.env` (Google account to select during enrollment probe).
+  - [x] On enrollment completion: call `loadCodeAssist` on `cloudcode-pa.googleapis.com/v1internal` to obtain managed `projectId` and `userTier`. Store in encrypted secret alongside tokens.
+  - [x] Update `resolveConnectedGoogleTransport()` to return `refreshToken`, `projectId`, `sessionId` alongside `accessToken`.
+  - [x] Create `api/src/services/google-code-assist-transport.ts`: Code Assist transport (pattern: `buildCodexFetch` in `openai-provider.ts`).
+    - [x] Initialize `OAuth2Client` from `google-auth-library` with stored refresh token + Gemini CLI client ID/secret (auto token refresh).
+    - [x] Wrap request body: `{ model, project, user_prompt_id, request: { <gemini body> + session_id } }`.
+    - [x] POST to `cloudcode-pa.googleapis.com/v1internal:streamGenerateContent` (streaming) or `:generateContent` (non-streaming).
+    - [x] Unwrap response: extract `.response` from each chunk before passing to Gemini parser.
+  - [x] Update `gemini-provider.ts`: when `googleTransport` is provided, delegate to Code Assist transport instead of raw HTTP.
+  - [x] Revert `gemini-provider.ts` Bearer/isOAuthToken workarounds (no longer needed — Code Assist transport handles auth).
   - [x] Update `ui/src/lib/components/StreamMessage.svelte`: preserve terminal chat errors instead of reverting to the preparing state.
   - [x] Add mock regression coverage for terminal chat error rendering in `ui/tests/components/StreamMessage-chat-terminal-error.test.ts`.
-  - [ ] Lot 5 gate:
-    - [ ] `make typecheck-api`
-    - [ ] `make lint-api`
-    - [ ] Playwright probe (debug-probe skill): enrollment flow → SSO mode toggle → chat message → verify streaming response
-  - [ ] Lot 5 fallback (if Code Assist endpoint rejects requests):
-    - [ ] Check if `functionCall`/`functionResponse` format mismatch (Codex risk): add Gemini-native tool part converter if needed.
-    - [ ] Check if `loadCodeAssist` onboarding fails: verify account eligibility, check if `GOOGLE_CLOUD_PROJECT` env var is needed.
-    - [ ] Check if token refresh fails: fallback to manual re-enrollment with error message in UI.
-    - [ ] If `cloudcode-pa` is fully incompatible: document in spec as blocked, revert to API key-only mode.
+  - [x] Lot 5 gate:
+    - [x] `make typecheck-api`
+    - [x] `make lint-api`
+    - [x] Playwright probe (debug-probe skill): enrollment flow → SSO mode toggle → chat message → verify streaming response
 
 - [ ] **Lot N-2** UAT (automated via Playwright probe)
   - [ ] Web app
