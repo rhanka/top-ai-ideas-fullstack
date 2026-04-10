@@ -52,10 +52,17 @@ Modifications in `api/src/services/provider-connections.ts`:
   - Show a modal dialog asking the user to paste the redirect URL (`http://127.0.0.1:8709/...`).
   - Submit the URL to the completion endpoint and update the provider state.
 
-### 3.3 Runtime Source Selection (Transport Toggle)
-Users can choose between using their global Gemini API Key or their linked Google SSO Token.
+### 3.3 Runtime Source Selection (Code Assist Transport)
+Users can choose between using their global Gemini API Key or their linked Google SSO session (consuming Gemini CLI free-tier credits).
+
 - **Setting Key:** `provider_connection_mode:gemini` (values: `token` | `google`).
-- **Backend Resolution:** `api/src/services/llm-runtime/index.ts` intercepts Gemini requests. If the mode is `google`, it resolves the access token via `resolveConnectedGoogleTransport(userId)` and injects it as the credential.
+- **API endpoint for SSO mode:** `https://cloudcode-pa.googleapis.com/v1internal` (same endpoint as Gemini CLI). This is NOT the public Gemini API (`generativelanguage.googleapis.com`) which does not accept OAuth tokens.
+- **Pattern:** identical to the Codex/OpenAI SSO transport (`buildCodexFetch` in `openai-provider.ts`):
+  1. On enrollment completion, call `loadCodeAssist` on cloudcode-pa to obtain a managed `projectId` and `userTier` (FREE/STANDARD). Store alongside tokens.
+  2. At runtime, use `google-auth-library` `OAuth2Client` (initialized with stored refresh token) to get a fresh Bearer token.
+  3. Redirect Gemini API calls to `cloudcode-pa.googleapis.com/v1internal:streamGenerateContent` with the Code Assist request format (projectId, sessionId, request body in Vertex format).
+  4. Convert responses back to Gemini standard format using the converter from `@google/gemini-cli-core`.
+- **Dependencies:** `google-auth-library` (production dependency, needed for OAuth2Client token refresh at runtime).
 - **UI Interaction:** A toggle in the Settings page allows switching between modes, only enabled if a Google account is connected.
 
 ### 3.4 Security

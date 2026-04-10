@@ -6,9 +6,8 @@ const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
 const GOOGLE_REDIRECT_URI = 'http://127.0.0.1:8709/callback';
 const GOOGLE_SCOPES = [
   'https://www.googleapis.com/auth/cloud-platform',
-  'openid',
-  'email',
-  'profile'
+  'https://www.googleapis.com/auth/userinfo.email',
+  'https://www.googleapis.com/auth/userinfo.profile',
 ].join(' ');
 
 export type GoogleEnrollmentPending = {
