@@ -89,6 +89,8 @@ type GoogleConnectedSecret = {
   idToken: string;
   accountLabel: string | null;
   connectedAt: string;
+  codeAssistProjectId?: string;
+  codeAssistUserTier?: string;
 };
 
 const GOOGLE_CONNECTION_SETTINGS_KEY = 'provider_connection:google';
@@ -660,14 +662,23 @@ export const disconnectCodexEnrollment = async (input: {
 
 export const resolveConnectedGoogleTransport = async (
   userId: string,
-): Promise<{ accessToken: string; accountId: string | null } | null> => {
+): Promise<{
+  accessToken: string;
+  refreshToken: string;
+  projectId: string;
+  accountId: string | null;
+} | null> => {
   const secret = parseSecretPayload<GoogleConnectedSecret>(
     await settingsService.get(GOOGLE_CONNECTION_SECRET_KEY, { userId, fallbackToGlobal: false }),
   );
   const accessToken = normalizeOptionalText(secret?.accessToken);
-  if (!accessToken) return null;
+  const refreshToken = normalizeOptionalText(secret?.refreshToken);
+  const projectId = normalizeOptionalText(secret?.codeAssistProjectId);
+  if (!accessToken || !refreshToken || !projectId) return null;
   return {
     accessToken,
+    refreshToken,
+    projectId,
     accountId: inferGoogleAccountLabel({ idToken: secret.idToken } as any, secret.accountLabel),
   };
 };
@@ -742,6 +753,19 @@ export const completeGoogleEnrollment = async (input: {
     throw new Error(`Connected Google account mismatch: expected ${requestedAccountLabel}, got ${connectedAccountLabel}.`);
   }
 
+  // Obtain Code Assist project ID for free-tier credit consumption
+  let codeAssistProjectId: string | undefined;
+  let codeAssistUserTier: string | undefined;
+  try {
+    const { loadCodeAssistProject } = await import('./google-code-assist-transport');
+    const codeAssist = await loadCodeAssistProject(result.accessToken, result.refreshToken);
+    codeAssistProjectId = codeAssist.projectId;
+    codeAssistUserTier = codeAssist.userTier;
+  } catch (err) {
+    // Non-fatal: enrollment succeeds but SSO runtime won't work without projectId
+    console.error('Code Assist onboarding failed (SSO runtime will be unavailable):', err instanceof Error ? err.message : err);
+  }
+
   const now = new Date().toISOString();
   const visible: GoogleConnectionPayload = {
     status: 'connected',
@@ -759,6 +783,8 @@ export const completeGoogleEnrollment = async (input: {
     idToken: result.idToken,
     accountLabel: connectedAccountLabel,
     connectedAt: now,
+    codeAssistProjectId,
+    codeAssistUserTier,
   };
 
   await Promise.all([

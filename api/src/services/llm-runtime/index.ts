@@ -810,7 +810,8 @@ export const callLLM = async (options: CallLLMOptions): Promise<OpenAI.Chat.Comp
           maxOutputTokens,
         }),
       },
-      credential: googleTransport ? googleTransport.accessToken : (credentialResolution.credential ?? undefined),
+      credential: googleTransport ? undefined : (credentialResolution.credential ?? undefined),
+      googleTransport: googleTransport ?? undefined,
       signal,
     } satisfies GeminiGenerateRequest);
 
@@ -1091,7 +1092,8 @@ export async function* callLLMStream(
           model: selectedModel,
           body: requestBody,
         },
-        credential: googleTransport ? googleTransport.accessToken : (credentialResolution.credential ?? undefined),
+        credential: googleTransport ? undefined : (credentialResolution.credential ?? undefined),
+        googleTransport: googleTransport ?? undefined,
         signal,
       } satisfies GeminiStreamGenerateRequest);
 

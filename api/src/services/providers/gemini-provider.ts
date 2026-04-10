@@ -6,6 +6,11 @@ import type {
   ProviderDescriptor,
   ProviderRuntime,
 } from '../provider-runtime';
+import {
+  codeAssistGenerate,
+  codeAssistStreamGenerate,
+  type GoogleCodeAssistTransport,
+} from '../google-code-assist-transport';
 
 const GEMINI_MODELS: ModelCatalogEntry[] = [
   {
@@ -37,6 +42,7 @@ export type GeminiGenerateRequest = {
   mode: 'generate-content';
   requestOptions: GeminiRequestOptions;
   credential?: string;
+  googleTransport?: GoogleCodeAssistTransport;
   signal?: AbortSignal;
 };
 
@@ -44,6 +50,7 @@ export type GeminiStreamGenerateRequest = {
   mode: 'stream-generate-content';
   requestOptions: GeminiRequestOptions;
   credential?: string;
+  googleTransport?: GoogleCodeAssistTransport;
   signal?: AbortSignal;
 };
 
@@ -111,6 +118,15 @@ export class GeminiProviderRuntime implements ProviderRuntime {
       throw new Error('GeminiProviderRuntime.generate: unsupported mode');
     }
 
+    if (payload.googleTransport) {
+      return await codeAssistGenerate(
+        payload.requestOptions.model,
+        payload.requestOptions.body,
+        payload.googleTransport,
+        payload.signal,
+      );
+    }
+
     return await this.requestJson(
       payload.requestOptions,
       payload.credential,
@@ -122,6 +138,15 @@ export class GeminiProviderRuntime implements ProviderRuntime {
     const payload = request as GeminiStreamGenerateRequest;
     if (payload.mode !== 'stream-generate-content') {
       throw new Error('GeminiProviderRuntime.streamGenerate: unsupported mode');
+    }
+
+    if (payload.googleTransport) {
+      return await codeAssistStreamGenerate(
+        payload.requestOptions.model,
+        payload.requestOptions.body,
+        payload.googleTransport,
+        payload.signal,
+      );
     }
 
     return await this.requestSse(
