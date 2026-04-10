@@ -137,6 +137,8 @@ Actions with the following status should be included around tasks only if really
     - [ ] Unwrap response: extract `.response` from each chunk before passing to Gemini parser.
   - [ ] Update `gemini-provider.ts`: when `googleTransport` is provided, delegate to Code Assist transport instead of raw HTTP.
   - [ ] Revert `gemini-provider.ts` Bearer/isOAuthToken workarounds (no longer needed — Code Assist transport handles auth).
+  - [x] Update `ui/src/lib/components/StreamMessage.svelte`: preserve terminal chat errors instead of reverting to the preparing state.
+  - [ ] Add mock regression coverage for terminal chat error rendering in `ui/tests/components/StreamMessage-chat-terminal-error.test.ts`.
   - [ ] Lot 5 gate:
     - [ ] `make typecheck-api`
     - [ ] `make lint-api`
