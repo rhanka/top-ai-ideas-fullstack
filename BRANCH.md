@@ -144,15 +144,15 @@ Actions with the following status should be included around tasks only if really
     - [x] `make lint-api`
     - [x] Playwright probe (debug-probe skill): enrollment flow → SSO mode toggle → chat message → verify streaming response
 
-- [ ] **Lot N-2** UAT (automated via Playwright probe)
-  - [ ] Web app
-    - [ ] Probe: navigate to Settings > Provider connections.
-    - [ ] Probe: start Google enrollment, select `GOOGLE_SSO_TEST_EMAIL` account on consent screen, complete loopback URL paste.
-    - [ ] Probe: verify provider status changes to "Connected".
-    - [ ] Probe: switch Gemini runtime source to "Google SSO token".
-    - [ ] Probe: send a chat message using Gemini, verify streaming response arrives.
-    - [ ] Probe: switch back to API key mode, verify chat still works.
-    - [ ] Probe: disconnect Google provider, verify status changes to "Disconnected".
+- [x] **Lot N-2** UAT (automated via Playwright probe)
+  - [x] Web app
+    - [x] Probe: navigate to Settings > Provider connections.
+    - [x] Probe: start Google enrollment, select `GOOGLE_SSO_TEST_EMAIL` account on consent screen, complete loopback URL paste.
+    - [x] Probe: verify provider status changes to "Connected".
+    - [x] Probe: switch Gemini runtime source to "Google SSO token".
+    - [x] Probe: send a chat message using Gemini, verify streaming response arrives.
+    - [x] Probe: switch back to API key mode, verify chat still works.
+    - [x] Probe: disconnect Google provider, verify status changes to "Disconnected".
 
 - [ ] **Lot N-1 — Docs consolidation**
   - [ ] Consolidate branch learnings into the relevant `spec/*` files.
