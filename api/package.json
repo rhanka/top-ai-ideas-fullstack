@@ -8,8 +8,8 @@
     "@xmldom/xmldom": ">=0.8.12"
   },
   "scripts": {
-    "postinstall": "node scripts/extract-gemini-credentials.mjs || true",
-    "prebuild": "node scripts/extract-gemini-credentials.mjs",
+    "extract:gemini-credentials": "node scripts/extract-gemini-credentials.mjs",
+    "postinstall": "sh -c 'if [ -f scripts/extract-gemini-credentials.mjs ]; then npm run extract:gemini-credentials; fi'",
     "dev": "tsx watch src/index.ts",
     "build": "esbuild src/index.ts --bundle --platform=node --target=node20 --format=esm --outfile=dist/index.js --external:pg --external:drizzle-orm --external:pino --external:pino-pretty --external:nodemailer --external:officeparser --external:events --external:stream --external:util --external:url --external:net --external:tls --external:crypto --external:fs --external:path --external:buffer --external:@aws-sdk/* --external:@smithy/* --sourcemap && esbuild src/workers/docx-render.worker.ts --bundle --platform=node --target=node20 --format=esm --outfile=dist/workers/docx-render.worker.js --external:pg --external:drizzle-orm --external:pino --external:pino-pretty --external:nodemailer --external:officeparser --external:events --external:stream --external:util --external:url --external:net --external:tls --external:crypto --external:fs --external:path --external:buffer --external:@aws-sdk/* --external:@smithy/* --sourcemap && esbuild tests/utils/seed-test-data.ts --bundle --platform=node --target=node20 --format=esm --outdir=dist/tests --outbase=tests --external:pg --external:drizzle-orm --external:pino --external:pino-pretty --external:buffer --external:@aws-sdk/* --external:@smithy/* --sourcemap",
     "start": "node dist/index.js",
@@ -17,6 +17,7 @@
     "format": "prettier --write \"src/**/*.ts\"",
     "format:check": "prettier --check \"src/**/*.ts\"",
     "typecheck": "tsc --noEmit",
+    "pretypecheck:ai": "npm run extract:gemini-credentials",
     "test": "vitest run",
     "test:smoke": "vitest run tests/smoke --exclude tests/smoke/restore-validation.test.ts",
     "test:smoke:restore": "vitest run tests/smoke/restore-validation.test.ts",

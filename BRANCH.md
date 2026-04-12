@@ -39,6 +39,10 @@ Deliver Google SSO flows for admin and standard users with account linking and s
     - Reason: OAuth credentials are extracted at build time from `@google/gemini-cli-core` npm package. Requires a Make target for manual extraction and gitignore for generated TS file.
     - Impact: additive only (new target, new gitignore line). No behavioral change to existing targets.
     - Rollback: revert the two lines added.
+  - **BR09-EX4**: Modify `.github/workflows/ci.yml` to generate `api/src/generated/gemini-oauth-credentials.ts` as a CI artifact before `typecheck-lint-api` and `build-api-image`.
+    - Reason: `docker-compose.dev.yml` bind-mounts `./api:/app`, which masks generated files baked into the image during `typecheck-api`. CI must restore the generated source into the checkout before typecheck/build steps.
+    - Impact: additive on CI only (new preparation job + artifact download). No runtime behavior change.
+    - Rollback: remove the preparation job, artifact download steps, and `needs` wiring.
   - Mirror the same exception in this file under `## Feedback Loop` (or `## Questions / Notes` if not yet migrated).
 
 ## Feedback Loop
@@ -49,6 +53,8 @@ Actions with the following status should be included around tasks only if really
 ## Questions / Notes
 - **BR09-EX1**: Add `spec/SPEC_EVOL_SSO_GOOGLE.md` to document the design decision of using Gemini CLI OAuth Client ID + Loopback mechanism.
 - **BR09-EX2**: Add `extract-gemini-credentials` Makefile target + `.gitignore` entry for `api/src/generated/`. Required for build-time extraction of Gemini CLI OAuth credentials from `@google/gemini-cli-core`.
+- **BR09-EX4**: switch CI to a generated-source artifact flow for `api/src/generated/gemini-oauth-credentials.ts` before `typecheck-lint-api` and `build-api-image`, instead of relying on a file generated only inside the Docker image.
+- **CI note (2026-04-12)**: `tests/ai/initiative-generation-async.test.ts` must accept org-aware batches where every generated item legally keeps `organizationIds: []`; the assertion validates only that any assigned `organizationId` stays within the explicit `org_ids` set.
 
 ## AI Flaky tests
 - Acceptance rule:
