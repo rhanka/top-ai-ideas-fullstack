@@ -27,6 +27,10 @@ Upstream remote control: the webapp can dispatch tab_read/tab_action to connecte
   - [x] Repro: first extension login left the chat tab mounted before extension auth status resolved, so the widget surfaced `Error while loading messages` and no model list instead of guiding the user to configuration.
   - [x] Fix: gate `ChatPanel` behind extension auth readiness/connection, show a transient loading state while auth status is loading, and auto-open extension settings when the runtime reports a disconnected session.
   - [x] Validation: `make test-ui SCOPE=tests/utils/extension-auth-ui.test.ts API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=test-feat-chrome-upstream-v1-rewrite`, `make typecheck-ui API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=test-feat-chrome-upstream-v1-rewrite`, `make lint-ui API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=test-feat-chrome-upstream-v1-rewrite`.
+- [x] **BR06-FL-04 — Connected extension must expose the current browser tab upstream**
+  - [x] Repro: after a successful extension connect, the webapp still had no registered tabs unless the user manually changed tabs or navigated; the upstream registration block also called `getValidAccessToken()` without passing runtime config.
+  - [x] Fix: pass runtime config into the tab register/keepalive/unregister auth calls, register the current active tab immediately after a successful extension connect, and bootstrap the active-tab registration when the extension worker starts.
+  - [x] Validation: `make build-ext-chrome API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=test-feat-chrome-upstream-v1-rewrite`, `make typecheck-ui API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=test-feat-chrome-upstream-v1-rewrite`, `make lint-ui API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=test-feat-chrome-upstream-v1-rewrite`.
 
 ## AI Flaky tests
 - Acceptance rule: non-systematic provider/network nondeterminism only. Record command + file + signature.

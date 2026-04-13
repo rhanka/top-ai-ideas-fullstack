@@ -471,6 +471,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             try {
                 const config = await loadExtensionConfig();
                 const result = await connectExtensionAuth(config);
+                if (result.ok) {
+                    await registerActiveTabFromCurrentWindow();
+                }
                 sendResponse({
                     ok: result.ok,
                     ...result,
@@ -980,11 +983,18 @@ void bootstrapToolPermissionSync();
 let registeredTabId: string | null = null;
 let keepaliveTimer: ReturnType<typeof setInterval> | null = null;
 
+async function registerActiveTabFromCurrentWindow(): Promise<void> {
+    const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+    if (tab && canInjectTabUrl(tab.url)) {
+        await registerTab(tab);
+    }
+}
+
 async function registerTab(tab: chrome.tabs.Tab): Promise<void> {
     const config = await loadExtensionConfig();
     if (!config.apiBaseUrl || !tab.id || !tab.url) return;
     try {
-        const token = await getValidAccessToken();
+        const token = await getValidAccessToken(config, { allowRefresh: true });
         if (!token) return;
         const res = await fetch(`${config.apiBaseUrl}/chrome-extension/tabs/register`, {
             method: 'POST',
@@ -1006,7 +1016,8 @@ function startKeepalive(apiBaseUrl: string): void {
     keepaliveTimer = setInterval(async () => {
         if (!registeredTabId) return;
         try {
-            const token = await getValidAccessToken();
+            const config = await loadExtensionConfig();
+            const token = await getValidAccessToken(config, { allowRefresh: true });
             if (!token) return;
             await fetch(`${apiBaseUrl}/chrome-extension/tabs/keepalive`, {
                 method: 'POST',
@@ -1022,7 +1033,7 @@ async function unregisterTab(): Promise<void> {
     const config = await loadExtensionConfig();
     if (!config.apiBaseUrl) return;
     try {
-        const token = await getValidAccessToken();
+        const token = await getValidAccessToken(config, { allowRefresh: false });
         if (!token) return;
         await fetch(`${config.apiBaseUrl}/chrome-extension/tabs/${registeredTabId}`, {
             method: 'DELETE',
@@ -1052,3 +1063,5 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
 chrome.tabs.onRemoved.addListener(async () => {
     await unregisterTab();
 });
+
+void registerActiveTabFromCurrentWindow();
