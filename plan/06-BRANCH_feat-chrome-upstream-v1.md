@@ -15,6 +15,11 @@ Upstream remote control: the webapp can dispatch tab_read/tab_action to connecte
 - **Conditional Paths**: `api/drizzle/*.sql` (max 1), `.github/workflows/**`
 
 ## Feedback Loop
+- [x] **BR06-FL-01 — API endpoints gate flaky accepted for Lot 2**
+  - [x] `make test-api-endpoints API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=test-feat-chrome-upstream-v1-rewrite` reduced from auth-wide `429` failures to one residual flaky on `tests/api/chat-tools.test.ts`.
+  - [x] Failure signature: missing `tool_call_result` in `comment_assistant suggest`, with queue logs `Session not found` during the full parallel endpoints run.
+  - [x] Scoped rerun passed: `make test-api-endpoints SCOPE=tests/api/chat-tools.test.ts API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=test-feat-chrome-upstream-v1-rewrite`.
+  - [x] User accepted this residual flaky for Lot 2 validation on 2026-04-07.
 - [x] **BR06-EX1 — Align extension build targets with CI**
   - [x] Reason: local `build-ext-chrome` / `build-ext-vscode` mutated `ui/package-lock.json`, while CI validated extension compilation only indirectly through `make build-ui-image`.
   - [x] Impact: allow scoped updates in `Makefile` and `.github/workflows/ci.yml` so extension build targets are lockfile-safe and are executed directly in CI.
@@ -53,18 +58,18 @@ Upstream remote control: the webapp can dispatch tab_read/tab_action to connecte
   - [x] Keepalive interval 15s.
   - [x] MenuPopover strategy=fixed.
   - [x] Restore extension code from main (revert Lot 3 refactoring that broke floating mode).
-  - [ ] Lot gate:
-    - [ ] `make typecheck-api API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=test-feat-chrome-upstream-v1-rewrite`
-    - [ ] `make typecheck-ui API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=test-feat-chrome-upstream-v1-rewrite`
-    - [ ] `make lint-api API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=test-feat-chrome-upstream-v1-rewrite`
-    - [ ] `make lint-ui API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=test-feat-chrome-upstream-v1-rewrite`
-    - [ ] **API tests**
-      - [ ] `api/tests/unit/tab-registry.test.ts` (non-reg)
-      - [ ] `api/tests/unit/chat-service-tab-tools.test.ts` (non-reg)
-      - [ ] Sub-lot gate: `make test-api-smoke test-api-endpoints API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=test-feat-chrome-upstream-v1-rewrite`
-    - [ ] **UI tests**
-      - [ ] `ui/tests/upstream/injected-script.test.ts` (non-reg)
-      - [ ] Sub-lot gate: `make test-ui API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=test`
+  - [x] Lot gate:
+    - [x] `make typecheck-api API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=test-feat-chrome-upstream-v1-rewrite`
+    - [x] `make typecheck-ui API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=test-feat-chrome-upstream-v1-rewrite`
+    - [x] `make lint-api API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=test-feat-chrome-upstream-v1-rewrite`
+    - [x] `make lint-ui API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=test-feat-chrome-upstream-v1-rewrite`
+    - [x] **API tests**
+      - [x] `api/tests/unit/tab-registry.test.ts` (non-reg)
+      - [x] `api/tests/unit/chat-service-tab-tools.test.ts` (non-reg)
+      - [x] Sub-lot gate: `make test-api-smoke test-api-endpoints API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=test-feat-chrome-upstream-v1-rewrite` (accepted with `BR06-FL-01`)
+    - [x] **UI tests**
+      - [x] `ui/tests/upstream/injected-script.test.ts` (non-reg)
+      - [x] Sub-lot gate: `make test-ui API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=test`
 
 - [ ] **Lot N-2 — UAT**
   - [ ] Chrome extension
@@ -85,13 +90,5 @@ Upstream remote control: the webapp can dispatch tab_read/tab_action to connecte
   - [ ] Update PLAN.md.
 
 - [ ] **Lot N — Final validation**
-  - [x] Align extension operator targets and CI path on `make build-ext-chrome` / `make build-ext-vscode`
-  - [x] `make build-ext-chrome API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=test-feat-chrome-upstream-v1-rewrite`
-  - [x] `make build-ext-vscode API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=test-feat-chrome-upstream-v1-rewrite`
-  - [x] Stabilize CI red lanes for API/E2E after rebase
-  - [x] `make test-api-endpoints API_TEST_WORKERS=1 API_TEST_ARGS="--shard=3/4" API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=test-feat-chrome-upstream-v1-rewrite`
-  - [x] `make test-api-ai SCOPE="tests/ai/chat-sync.test.ts tests/ai/executive-summary-auto.test.ts tests/ai/comment-assistant.test.ts" API_TEST_WORKERS=1 API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=test-feat-chrome-upstream-v1-rewrite`
-  - [x] `make test-e2e E2E_GROUPS="03" WORKERS=1 RETRIES=0 MAX_FAILURES=1 API_PORT=8786 UI_PORT=5186 MAILDEV_UI_PORT=1086 ENV=e2e`
-  - [x] `make test-e2e E2E_GROUPS="08" WORKERS=1 RETRIES=0 MAX_FAILURES=1 API_PORT=8786 UI_PORT=5186 MAILDEV_UI_PORT=1086 ENV=e2e`
   - [ ] typecheck + lint + test-api + test-ui
   - [ ] PR → UAT + CI OK → merge.
