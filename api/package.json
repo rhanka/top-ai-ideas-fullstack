@@ -16,7 +16,7 @@
     "lint": "eslint \"src/**/*.ts\"",
     "format": "prettier --write \"src/**/*.ts\"",
     "format:check": "prettier --check \"src/**/*.ts\"",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "node --max-old-space-size=10240 ./node_modules/typescript/bin/tsc --noEmit",
     "pretypecheck:ai": "npm run extract:gemini-credentials",
     "test": "vitest run",
     "test:smoke": "vitest run tests/smoke --exclude tests/smoke/restore-validation.test.ts",

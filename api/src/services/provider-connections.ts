@@ -427,7 +427,7 @@ const toGoogleProviderState = (
 };
 
 const inferGoogleAccountLabel = (
-  result: GoogleEnrollmentResult,
+  result: Pick<GoogleEnrollmentResult, 'idToken'>,
   fallbackLabel: string | null,
 ): string | null => {
   const claims = decodeJwtPayload(result.idToken);
@@ -679,7 +679,7 @@ export const resolveConnectedGoogleTransport = async (
     accessToken,
     refreshToken,
     projectId,
-    accountId: inferGoogleAccountLabel({ idToken: secret.idToken } as any, secret.accountLabel),
+    accountId: inferGoogleAccountLabel({ idToken: secret.idToken }, secret.accountLabel),
   };
 };
 

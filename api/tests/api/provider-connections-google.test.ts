@@ -98,7 +98,7 @@ describe('provider connections google API', () => {
         }),
       );
 
-    const pastedUrl = \`http://127.0.0.1:8709/callback?state=\${state}&code=4/0AX4XfWh_some_auth_code\`;
+    const pastedUrl = `http://127.0.0.1:8709/callback?state=${state}&code=4/0AX4XfWh_some_auth_code`;
 
     const completeResponse = await authenticatedRequest(
       app,
@@ -177,7 +177,7 @@ describe('provider connections google API', () => {
         }),
       );
 
-    const pastedUrl = \`http://127.0.0.1:8709/callback?state=\${state}&code=4/0AX4XfWh_some_auth_code\`;
+    const pastedUrl = `http://127.0.0.1:8709/callback?state=${state}&code=4/0AX4XfWh_some_auth_code`;
 
     await authenticatedRequest(
       app,

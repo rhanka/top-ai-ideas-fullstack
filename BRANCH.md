@@ -55,6 +55,7 @@ Actions with the following status should be included around tasks only if really
 - **BR09-EX2**: Add `extract-gemini-credentials` Makefile target + `.gitignore` entry for `api/src/generated/`. Required for build-time extraction of Gemini CLI OAuth credentials from `@google/gemini-cli-core`.
 - **BR09-EX4**: switch CI to a generated-source artifact flow for `api/src/generated/gemini-oauth-credentials.ts` before `typecheck-lint-api` and `build-api-image`, instead of relying on a file generated only inside the Docker image.
 - **CI note (2026-04-12)**: `tests/ai/initiative-generation-async.test.ts` must accept org-aware batches where every generated item legally keeps `organizationIds: []`; the assertion validates only that any assigned `organizationId` stays within the explicit `org_ids` set.
+- **CI note (2026-04-12)**: keep Gemini canonical model IDs aligned across runtime and tests: `gemini-3.1-pro-preview` and `gemini-3.1-flash-lite-preview`; no `-customtools` suffix and no fallback to `gemini-3-flash-preview`.
 
 ## AI Flaky tests
 - Acceptance rule:

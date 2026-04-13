@@ -49,13 +49,13 @@ describe('Me API', () => {
       'PUT',
       '/api/v1/me/ai-settings',
       user.sessionToken!,
-      { defaultModel: 'gemini-3.1-pro-preview-customtools' }
+      { defaultModel: 'gemini-3.1-pro-preview' }
     );
     expect(update.status).toBe(200);
     const updateData = await update.json();
     expect(updateData.settings.defaultProviderId).toBe('gemini');
     expect(updateData.settings.defaultModel).toBe(
-      'gemini-3.1-pro-preview-customtools'
+      'gemini-3.1-pro-preview'
     );
 
     const rows = await db
@@ -68,7 +68,7 @@ describe('Me API', () => {
         )
       );
     expect(rows).toHaveLength(1);
-    expect(rows[0].value).toBe('gemini-3.1-pro-preview-customtools');
+    expect(rows[0].value).toBe('gemini-3.1-pro-preview');
 
     const anotherUser = await createAuthenticatedUser('editor');
     const anotherSettings = await authenticatedRequest(
