@@ -23,6 +23,10 @@ Upstream remote control: the webapp can dispatch tab_read/tab_action to connecte
   - [x] Reason: the rebased branch still failed on the real CI paths for `test-api-endpoints`, `test-api-ai`, `test-e2e (group-c)` and `test-e2e (group-d)`; the AI matrix also had a GitHub Actions quoting bug where `$$SPECS` expanded to the bash PID instead of the spec list.
   - [x] Impact: allow scoped updates in `Makefile` and `.github/workflows/ci.yml` to replay CI via make targets, plus targeted fixes in API streaming/tests and E2E selectors/timeouts.
   - [x] Rollback: revert the scoped CI stabilization changes in `Makefile`, workflow, API streaming/tests and E2E specs.
+- [x] **BR06-FL-03 — First extension login must gate chat on settings**
+  - [x] Repro: first extension login left the chat tab mounted before extension auth status resolved, so the widget surfaced `Error while loading messages` and no model list instead of guiding the user to configuration.
+  - [x] Fix: gate `ChatPanel` behind extension auth readiness/connection, show a transient loading state while auth status is loading, and auto-open extension settings when the runtime reports a disconnected session.
+  - [x] Validation: `make test-ui SCOPE=tests/utils/extension-auth-ui.test.ts API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=test-feat-chrome-upstream-v1-rewrite`, `make typecheck-ui API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=test-feat-chrome-upstream-v1-rewrite`, `make lint-ui API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=test-feat-chrome-upstream-v1-rewrite`.
 
 ## AI Flaky tests
 - Acceptance rule: non-systematic provider/network nondeterminism only. Record command + file + signature.
