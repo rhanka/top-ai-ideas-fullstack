@@ -248,6 +248,10 @@ install-api:
 install-api-dev:
 	$(DOCKER_COMPOSE) -f docker-compose.yml -f docker-compose.dev.yml exec api npm install ${NPM_LIB} --save-dev
 
+.PHONY: extract-gemini-credentials
+extract-gemini-credentials: ## Extract Gemini CLI OAuth credentials from @google/gemini-cli-core
+	$(DOCKER_COMPOSE) -f docker-compose.yml -f docker-compose.dev.yml exec api node scripts/extract-gemini-credentials.mjs
+
 .PHONY: build
 build: build-ui build-api ## Build UI and API artifacts
 

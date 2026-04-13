@@ -71,6 +71,7 @@
   type State = {
     startedAtMs: number;
     endedAtMs?: number | null;
+    terminalEventType?: 'done' | 'error' | null;
     stepTitle: string;
     stepKind: Step['kind'];
     auxText: string;
@@ -93,6 +94,7 @@
   let st: State = {
     startedAtMs: Date.now(),
     endedAtMs: null,
+    terminalEventType: null,
     stepTitle: '',
     stepKind: 'other',
     auxText: '',
@@ -124,6 +126,7 @@
   let hasContent = false;
   let hasAcknowledgement = false;
   let showStartup = false;
+  let showChatTerminalError = false;
   let hasPassiveHistoryShell = false;
   let passiveHistoryShellHeading = '';
   let toolsCount = 0;
@@ -580,6 +583,8 @@
       }
     } else if (eventType === 'done' || eventType === 'error') {
       st.endedAtMs = ts;
+      st.terminalEventType = eventType;
+      st.sawStarted = false;
       st.stepKind = eventType === 'done' ? 'content' : 'status';
       st.stepTitle = eventType === 'done' ? $_('stream.done') : $_('stream.error');
       if (eventType === 'error') st.auxText = String(data?.message ?? $_('stream.unknownError'));
@@ -781,6 +786,7 @@
     st = {
       startedAtMs: Date.now(),
       endedAtMs: null,
+      terminalEventType: null,
       stepTitle: $_('stream.inProgress'),
       stepKind: 'other',
       auxText: '',
@@ -843,7 +849,17 @@
     hasAcknowledgement =
       typeof acknowledgementText === 'string' &&
       acknowledgementText.trim().length > 0;
-    showStartup = !!st.sawStarted && !hasSteps && !hasContent && !finalText;
+    showStartup =
+      !!st.sawStarted &&
+      !hasSteps &&
+      !hasContent &&
+      !finalText &&
+      !st.terminalEventType;
+    showChatTerminalError =
+      variant === 'chat' &&
+      st.terminalEventType === 'error' &&
+      !hasContent &&
+      !finalText;
     toolsCount = st.toolCallIds.size;
     const passiveHistoryShell = summarizePassiveHistoryShell(runtimeSummary);
     hasPassiveHistoryShell =
@@ -1046,25 +1062,37 @@
           <Streamdown content={displayContent} />
         </div>
       {:else}
-        {#if showStartup && showRuntimeInlinePreview}
-          <div class="flex items-center gap-2 text-[11px] text-slate-500 mt-0.5">
-            <Loader2 class="w-3.5 h-3.5 animate-spin" />
-            <span>{$_('stream.preparing')}</span>
-          </div>
-        {/if}
-        {#if hasSteps && !hasContent && showRuntimeInlinePreview}
-          <div class="text-[11px] text-slate-500">{$_('stream.stepRunning', { values: { title: st.stepTitle || $_('stream.inProgress') } })}</div>
+        {#if showChatTerminalError}
+          <div class="mt-0.5 text-[11px] text-red-600">{$_('stream.error')}</div>
           {#if st.auxText}
             <div
-              class="stream-aux-markdown mt-1 text-[11px] text-slate-400 whitespace-pre-wrap break-words max-h-16 overflow-y-auto slim-scroll [&_*]:text-slate-400"
+              class="mt-1 text-[11px] text-red-500 whitespace-pre-wrap break-words max-h-24 overflow-y-auto slim-scroll"
               use:scrollToEnd
             >
-              {#if st.stepKind === 'reasoning' || st.stepKind === 'tool'}
-                <Streamdown content={st.auxText} />
-              {:else}
-                {st.auxText}
-              {/if}
+              {st.auxText}
             </div>
+          {/if}
+        {:else}
+          {#if showStartup && showRuntimeInlinePreview}
+            <div class="flex items-center gap-2 text-[11px] text-slate-500 mt-0.5">
+              <Loader2 class="w-3.5 h-3.5 animate-spin" />
+              <span>{$_('stream.preparing')}</span>
+            </div>
+          {/if}
+          {#if hasSteps && !hasContent && showRuntimeInlinePreview}
+            <div class="text-[11px] text-slate-500">{$_('stream.stepRunning', { values: { title: st.stepTitle || $_('stream.inProgress') } })}</div>
+            {#if st.auxText}
+              <div
+                class="stream-aux-markdown mt-1 text-[11px] text-slate-400 whitespace-pre-wrap break-words max-h-16 overflow-y-auto slim-scroll [&_*]:text-slate-400"
+                use:scrollToEnd
+              >
+                {#if st.stepKind === 'reasoning' || st.stepKind === 'tool'}
+                  <Streamdown content={st.auxText} />
+                {:else}
+                  {st.auxText}
+                {/if}
+              </div>
+            {/if}
           {/if}
         {/if}
       {/if}

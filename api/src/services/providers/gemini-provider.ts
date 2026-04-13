@@ -6,11 +6,16 @@ import type {
   ProviderDescriptor,
   ProviderRuntime,
 } from '../provider-runtime';
+import {
+  codeAssistGenerate,
+  codeAssistStreamGenerate,
+  type GoogleCodeAssistTransport,
+} from '../google-code-assist-transport';
 
 const GEMINI_MODELS: ModelCatalogEntry[] = [
   {
     providerId: 'gemini',
-    modelId: 'gemini-3.1-pro-preview-customtools',
+    modelId: 'gemini-3.1-pro-preview',
     label: 'Gemini 3.1 Pro',
     reasoningTier: 'advanced',
     supportsTools: true,
@@ -37,6 +42,7 @@ export type GeminiGenerateRequest = {
   mode: 'generate-content';
   requestOptions: GeminiRequestOptions;
   credential?: string;
+  googleTransport?: GoogleCodeAssistTransport;
   signal?: AbortSignal;
 };
 
@@ -44,6 +50,7 @@ export type GeminiStreamGenerateRequest = {
   mode: 'stream-generate-content';
   requestOptions: GeminiRequestOptions;
   credential?: string;
+  googleTransport?: GoogleCodeAssistTransport;
   signal?: AbortSignal;
 };
 
@@ -111,6 +118,15 @@ export class GeminiProviderRuntime implements ProviderRuntime {
       throw new Error('GeminiProviderRuntime.generate: unsupported mode');
     }
 
+    if (payload.googleTransport) {
+      return await codeAssistGenerate(
+        payload.requestOptions.model,
+        payload.requestOptions.body,
+        payload.googleTransport,
+        payload.signal,
+      );
+    }
+
     return await this.requestJson(
       payload.requestOptions,
       payload.credential,
@@ -124,6 +140,15 @@ export class GeminiProviderRuntime implements ProviderRuntime {
       throw new Error('GeminiProviderRuntime.streamGenerate: unsupported mode');
     }
 
+    if (payload.googleTransport) {
+      return await codeAssistStreamGenerate(
+        payload.requestOptions.model,
+        payload.requestOptions.body,
+        payload.googleTransport,
+        payload.signal,
+      );
+    }
+
     return await this.requestSse(
       payload.requestOptions,
       payload.credential,
@@ -131,18 +156,35 @@ export class GeminiProviderRuntime implements ProviderRuntime {
     );
   }
 
+
+  private isOAuthToken(credential: string | undefined | null): boolean {
+    if (!credential) return false;
+    return credential.startsWith('ya29.') || credential.startsWith('ya29a.');
+  }
   private buildApiUrl(input: {
     model: string;
-    apiKey: string;
     stream: boolean;
   }): string {
     const action = input.stream ? 'streamGenerateContent' : 'generateContent';
     const encodedModel = encodeURIComponent(input.model);
-    const alt = input.stream ? '&alt=sse' : '';
-    return `https://generativelanguage.googleapis.com/v1beta/models/${encodedModel}:${action}?key=${encodeURIComponent(input.apiKey)}${alt}`;
+    const alt = input.stream ? '?alt=sse' : '';
+    return `https://generativelanguage.googleapis.com/v1beta/models/${encodedModel}:${action}${alt}`;
+  }
+
+  private buildHeaders(credential: string): Record<string, string> {
+    const headers: Record<string, string> = { 'content-type': 'application/json' };
+    if (this.isOAuthToken(credential)) {
+      headers['authorization'] = `Bearer ${credential}`;
+    } else {
+      headers['x-goog-api-key'] = credential;
+    }
+    return headers;
   }
 
   private resolveApiKey(override?: string): string {
+    if (override && this.isOAuthToken(override)) {
+      return override.trim();
+    }
     const validation = this.validateCredential(override);
     if (!validation.ok) {
       throw new Error(validation.message || 'Gemini API key is not configured');
@@ -155,18 +197,15 @@ export class GeminiProviderRuntime implements ProviderRuntime {
     credential?: string,
     signal?: AbortSignal
   ): Promise<unknown> {
-    const apiKey = this.resolveApiKey(credential);
+    const resolved = this.resolveApiKey(credential);
     const response = await fetch(
       this.buildApiUrl({
         model: requestOptions.model,
-        apiKey,
         stream: false,
       }),
       {
         method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-        },
+        headers: this.buildHeaders(resolved),
         body: JSON.stringify(requestOptions.body),
         signal,
       }
@@ -184,18 +223,15 @@ export class GeminiProviderRuntime implements ProviderRuntime {
     credential?: string,
     signal?: AbortSignal
   ): Promise<AsyncIterable<unknown>> {
-    const apiKey = this.resolveApiKey(credential);
+    const resolved = this.resolveApiKey(credential);
     const response = await fetch(
       this.buildApiUrl({
         model: requestOptions.model,
-        apiKey,
         stream: true,
       }),
       {
         method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-        },
+        headers: this.buildHeaders(resolved),
         body: JSON.stringify(requestOptions.body),
         signal,
       }

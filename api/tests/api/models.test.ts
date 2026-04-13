@@ -45,7 +45,7 @@ describe('Models API', () => {
         .sort();
 
     expect(modelsByProvider('openai')).toEqual(['gpt-4.1-nano', 'gpt-5.4', 'gpt-5.4-nano']);
-    expect(modelsByProvider('gemini')).toEqual(['gemini-3.1-flash-lite-preview', 'gemini-3.1-pro-preview-customtools']);
+    expect(modelsByProvider('gemini')).toEqual(['gemini-3.1-flash-lite-preview', 'gemini-3.1-pro-preview']);
     expect(modelsByProvider('anthropic')).toEqual(['claude-opus-4-6', 'claude-sonnet-4-6']);
     expect(modelsByProvider('mistral')).toEqual(['magistral-medium-2509', 'mistral-small-2603']);
     expect(modelsByProvider('cohere')).toEqual(['command-a-03-2025', 'command-a-reasoning-08-2025']);

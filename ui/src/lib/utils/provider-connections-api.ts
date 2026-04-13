@@ -1,7 +1,7 @@
 import { apiGet, apiPost } from './api';
 
 export type ProviderConnectionState = {
-  providerId: 'codex' | 'openai' | 'gemini' | 'anthropic' | 'mistral' | 'cohere';
+  providerId: 'codex' | 'openai' | 'gemini' | 'anthropic' | 'mistral' | 'cohere' | 'google';
   label: string;
   ready: boolean;
   connectionStatus: 'connected' | 'pending' | 'disconnected';
@@ -89,5 +89,62 @@ export const disconnectCodexProviderEnrollmentWith = async (
   requester: ProviderConnectionsPostRequester,
 ): Promise<ProviderConnectionState> => {
   const payload = await requester('/settings/provider-connections/codex/enrollment/disconnect');
+  return payload.provider;
+};
+
+
+export const startGoogleProviderEnrollment = async (input: {
+  accountLabel?: string | null;
+}): Promise<ProviderConnectionState> =>
+  startGoogleProviderEnrollmentWith(input, (path, body) =>
+    apiPost<{ provider: ProviderConnectionState }>(path, body ?? {}),
+  );
+
+export const startGoogleProviderEnrollmentWith = async (
+  input: {
+    accountLabel?: string | null;
+  },
+  requester: ProviderConnectionsPostRequester,
+): Promise<ProviderConnectionState> => {
+  const payload = await requester('/settings/provider-connections/google/enrollment/start', {
+    accountLabel: input.accountLabel ?? null,
+  });
+  return payload.provider;
+};
+
+export const completeGoogleProviderEnrollment = async (input: {
+  enrollmentId: string;
+  pastedUrl: string;
+  accountLabel?: string | null;
+}): Promise<ProviderConnectionState> =>
+  completeGoogleProviderEnrollmentWith(input, (path, body) =>
+    apiPost<{ provider: ProviderConnectionState }>(path, body ?? {}),
+  );
+
+export const completeGoogleProviderEnrollmentWith = async (
+  input: {
+    enrollmentId: string;
+    pastedUrl: string;
+    accountLabel?: string | null;
+  },
+  requester: ProviderConnectionsPostRequester,
+): Promise<ProviderConnectionState> => {
+  const payload = await requester('/settings/provider-connections/google/enrollment/complete', {
+    enrollmentId: input.enrollmentId,
+    pastedUrl: input.pastedUrl,
+    accountLabel: input.accountLabel ?? null,
+  });
+  return payload.provider;
+};
+
+export const disconnectGoogleProviderEnrollment = async (): Promise<ProviderConnectionState> =>
+  disconnectGoogleProviderEnrollmentWith((path, body) =>
+    apiPost<{ provider: ProviderConnectionState }>(path, body ?? {}),
+  );
+
+export const disconnectGoogleProviderEnrollmentWith = async (
+  requester: ProviderConnectionsPostRequester,
+): Promise<ProviderConnectionState> => {
+  const payload = await requester('/settings/provider-connections/google/enrollment/disconnect');
   return payload.provider;
 };

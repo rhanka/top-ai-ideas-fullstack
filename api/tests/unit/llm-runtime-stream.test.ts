@@ -532,7 +532,7 @@ const STREAM_TEST_MATRIX: StreamTestConfig[] = [
   // -----------------------------------------------------------------------
   {
     providerId: 'gemini',
-    model: 'gemini-3.1-pro-preview-customtools',
+    model: 'gemini-3.1-pro-preview',
     label: 'Gemini Pro Preview',
     chatEvents: [
       { candidates: [{ content: { parts: [{ text: 'Hello' }] } }] },
@@ -786,7 +786,7 @@ describe('LLM stream event normalization', () => {
       callLLMStream({
         messages: [{ role: 'user', content: 'Think about this' }],
         providerId: 'gemini',
-        model: 'gemini-3.1-pro-preview-customtools',
+        model: 'gemini-3.1-pro-preview',
       }),
     );
 

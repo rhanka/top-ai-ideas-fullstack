@@ -21,6 +21,9 @@
     completeCodexProviderEnrollment,
     disconnectCodexProviderEnrollment,
     startCodexProviderEnrollment,
+    startGoogleProviderEnrollment,
+    completeGoogleProviderEnrollment,
+    disconnectGoogleProviderEnrollment,
     type ProviderConnectionState,
   } from '$lib/utils/provider-connections-api';
   import { emitUserAISettingsUpdated } from '$lib/utils/user-ai-settings-events';
@@ -95,8 +98,16 @@
   let vscodeExtensionTokenError = '';
   let isLoadingProviderConnections = false;
   let isSavingCodexProviderConnection = false;
+  let isSavingGoogleProviderConnection = false;
+  let googleConnectionAccountLabel = '';
+  let googleConnectionPastedUrl = '';
+  let googleProviderConnection: ProviderConnectionState | null = null;
+  $: googleProviderConnection =
+    providerConnections.find((provider) => provider.providerId === 'google') ||
+    null;
+
   let providerConnectionsError = '';
-  let providerConnections: ProviderConnectionState[] = [], openaiTransportMode: 'codex' | 'token' = 'token';
+  let providerConnections: ProviderConnectionState[] = [], openaiTransportMode: 'codex' | 'token' = 'token', geminiTransportMode: 'google' | 'token' = 'token';
   let codexConnectionAccountLabel = '';
   let codexPollingTimer: ReturnType<typeof setTimeout> | null = null;
   
@@ -376,9 +387,14 @@
       const payload = await apiGet<{
         providers: ProviderConnectionState[];
         openaiTransportMode?: 'codex' | 'token';
+        geminiTransportMode?: 'google' | 'token';
       }>('/settings/provider-connections');
       providerConnections = Array.isArray(payload.providers) ? payload.providers : [];
       openaiTransportMode = payload.openaiTransportMode === 'codex' ? 'codex' : 'token';
+      geminiTransportMode = payload.geminiTransportMode === 'google' ? 'google' : 'token';
+      googleConnectionAccountLabel =
+        providerConnections.find((provider) => provider.providerId === 'google')?.accountLabel ||
+        '';
       codexConnectionAccountLabel =
         providerConnections.find((provider) => provider.providerId === 'codex')
           ?.accountLabel || '';
@@ -489,6 +505,118 @@
       }
     } finally {
       isSavingCodexProviderConnection = false;
+    }
+  };
+
+  
+  const syncGoogleProviderInList = (updatedProvider: ProviderConnectionState) => {
+    providerConnections = providerConnections.map((provider) =>
+      provider.providerId === 'google' ? updatedProvider : provider,
+    );
+    if (!providerConnections.some((provider) => provider.providerId === 'google')) {
+      providerConnections = [updatedProvider, ...providerConnections];
+    }
+    googleConnectionAccountLabel = updatedProvider.accountLabel || '';
+  };
+
+  
+  const saveGeminiTransportMode = async (mode: 'google' | 'token') => {
+    if (geminiTransportMode === mode) return;
+    isSavingGoogleProviderConnection = true;
+    providerConnectionsError = '';
+    try {
+      await apiPost('/settings/provider-connections/gemini/mode', { mode });
+      geminiTransportMode = mode;
+      await loadProviderConnections();
+    } catch (error) {
+      providerConnectionsError =
+        error instanceof Error ? error.message : get(_)('settings.providerConnections.errors.save');
+    } finally {
+      isSavingGoogleProviderConnection = false;
+    }
+  };
+
+  const startGoogleProviderConnection = async () => {
+    isSavingGoogleProviderConnection = true;
+    providerConnectionsError = '';
+    try {
+      const updatedProvider = await startGoogleProviderEnrollment({
+        accountLabel: googleConnectionAccountLabel.trim() || null,
+      });
+      syncGoogleProviderInList(updatedProvider);
+      addToast({
+        type: 'success',
+        message: get(_)('settings.providerConnections.toasts.googleEnrollmentStarted'),
+      });
+      if (updatedProvider.enrollmentUrl) {
+         window.open(updatedProvider.enrollmentUrl, '_blank');
+      }
+    } catch (error) {
+      console.error('Failed to update google provider connection:', error);
+      providerConnectionsError =
+        error instanceof Error
+          ? error.message
+          : get(_)('settings.providerConnections.errors.save');
+    } finally {
+      isSavingGoogleProviderConnection = false;
+    }
+  };
+
+  const completeGoogleProviderConnection = async () => {
+    const google = googleProviderConnection;
+    if (!google?.enrollmentId) {
+      providerConnectionsError = get(_)('settings.providerConnections.errors.missingEnrollment');
+      return;
+    }
+    if (!googleConnectionPastedUrl) {
+       providerConnectionsError = 'Please paste the URL';
+       return;
+    }
+    isSavingGoogleProviderConnection = true;
+    providerConnectionsError = '';
+    try {
+      const updatedProvider = await completeGoogleProviderEnrollment({
+        enrollmentId: google.enrollmentId,
+        pastedUrl: googleConnectionPastedUrl.trim(),
+        accountLabel: googleConnectionAccountLabel.trim() || null,
+      });
+      syncGoogleProviderInList(updatedProvider);
+      googleConnectionPastedUrl = '';
+      if (updatedProvider.connectionStatus === 'connected') {
+        addToast({
+          type: 'success',
+          message: get(_)('settings.providerConnections.toasts.googleConnected'),
+        });
+      }
+    } catch (error) {
+      console.error('Failed to complete google provider enrollment:', error);
+      providerConnectionsError =
+          error instanceof Error
+            ? error.message
+            : get(_)('settings.providerConnections.errors.save');
+    } finally {
+      isSavingGoogleProviderConnection = false;
+    }
+  };
+
+  const disconnectGoogleProviderConnection = async () => {
+    isSavingGoogleProviderConnection = true;
+    providerConnectionsError = '';
+    try {
+      const updatedProvider = await disconnectGoogleProviderEnrollment();
+      syncGoogleProviderInList(updatedProvider);
+      addToast({
+        type: 'success',
+        message: get(_)('settings.providerConnections.toasts.googleDisconnected'),
+      });
+    } catch (error) {
+      console.error('Failed to disconnect google provider connection:', error);
+      providerConnectionsError =
+        error instanceof Error
+          ? error.message
+          : get(_)('settings.providerConnections.errors.save');
+    } finally {
+      isSavingGoogleProviderConnection = false;
     }
   };
 
@@ -1344,7 +1472,115 @@
             {/if}
           {/if}
         </div>
+      
+      {#if googleProviderConnection?.canConfigure}
+        <div class="space-y-2 rounded border border-slate-200 p-3 mt-4">
+          
+          <div class="space-y-2 rounded border border-slate-200 p-3 mt-4">
+            <div class="text-sm font-medium text-slate-700">Gemini runtime source</div>
+            <div class="flex flex-wrap gap-2">
+              <button
+                type="button"
+                class={geminiTransportMode === 'token' ? settingsPrimaryButtonClass : settingsSecondaryButtonClass}
+                on:click={() => saveGeminiTransportMode('token')}
+                disabled={isSavingGoogleProviderConnection}
+              >
+                Gemini API key
+              </button>
+              <button
+                type="button"
+                class={geminiTransportMode === 'google' ? settingsPrimaryButtonClass : settingsSecondaryButtonClass}
+                on:click={() => saveGeminiTransportMode('google')}
+                disabled={isSavingGoogleProviderConnection || googleProviderConnection?.connectionStatus !== 'connected'}
+              >
+                Google SSO token (Vertex AI / Code Assist)
+              </button>
+            </div>
+          </div>
+
+          <h3 class="text-sm font-semibold text-slate-800">Google Cloud (Vertex AI) SSO</h3>
+          <p class="text-xs text-slate-600 mb-2">{$_('settings.providerConnections.google.description')}</p>
+          <label for="google-provider-account" class="block text-sm font-medium text-slate-700">
+            {$_('settings.providerConnections.google.accountLabel')}
+          </label>
+          <input
+            id="google-provider-account"
+            type="text"
+            bind:value={googleConnectionAccountLabel}
+            placeholder={$_('settings.providerConnections.google.accountPlaceholder')}
+            class="w-full rounded border border-slate-300 px-3 py-2 text-sm text-slate-700"
+            disabled={isSavingGoogleProviderConnection}
+          />
+          <div class="flex flex-wrap gap-2 mt-2">
+            {#if !googleProviderConnection || googleProviderConnection.connectionStatus === 'disconnected'}
+              <button
+                type="button"
+                class={settingsPrimaryButtonClass}
+                on:click={startGoogleProviderConnection}
+                disabled={isSavingGoogleProviderConnection}
+              >
+                {$_('settings.providerConnections.google.startEnrollment')}
+              </button>
+            {/if}
+            {#if googleProviderConnection?.connectionStatus === 'pending'}
+              <button
+                type="button"
+                class={settingsPrimaryButtonClass}
+                on:click={startGoogleProviderConnection}
+                disabled={isSavingGoogleProviderConnection}
+              >
+                {$_('settings.providerConnections.google.regenerateEnrollment')}
+              </button>
+              <button
+                type="button"
+                class={settingsSecondaryButtonClass}
+                on:click={disconnectGoogleProviderConnection}
+                disabled={isSavingGoogleProviderConnection}
+              >
+                {$_('settings.providerConnections.google.cancelEnrollment')}
+              </button>
+            {/if}
+            {#if googleProviderConnection?.connectionStatus === 'connected'}
+              <button
+                type="button"
+                class={settingsSecondaryButtonClass}
+                on:click={disconnectGoogleProviderConnection}
+                disabled={isSavingGoogleProviderConnection}
+              >
+                {$_('settings.providerConnections.google.disconnect')}
+              </button>
+            {/if}
+          </div>
+          {#if googleProviderConnection?.connectionStatus === 'pending'}
+            <div class="mt-3 p-3 bg-blue-50 border border-blue-200 rounded">
+              <p class="text-sm text-blue-800 mb-2">
+                {$_('settings.providerConnections.google.pendingHint')}
+              </p>
+              <label for="google-pasted-url" class="block text-xs font-medium text-slate-700 mb-1">
+                {$_('settings.providerConnections.google.pastedUrlLabel')}
+              </label>
+              <input
+                id="google-pasted-url"
+                type="text"
+                bind:value={googleConnectionPastedUrl}
+                placeholder={$_('settings.providerConnections.google.pastedUrlPlaceholder')}
+                class="w-full rounded border border-slate-300 px-3 py-2 text-sm text-slate-700 mb-2"
+                disabled={isSavingGoogleProviderConnection}
+              />
+              <button
+                type="button"
+                class={settingsPrimaryButtonClass}
+                on:click={completeGoogleProviderConnection}
+                disabled={isSavingGoogleProviderConnection || !googleConnectionPastedUrl}
+              >
+                {$_('settings.providerConnections.google.completeEnrollment')}
+              </button>
+            </div>
+          {/if}
+        </div>
       {/if}
+
+    {/if}
     {/if}
 
     {#if providerConnectionsError}

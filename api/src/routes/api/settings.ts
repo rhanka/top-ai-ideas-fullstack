@@ -8,9 +8,14 @@ import {
   completeCodexEnrollment,
   disconnectCodexEnrollment,
   getOpenAITransportMode,
+  getGeminiTransportMode,
+  setGeminiTransportMode,
   listProviderConnections,
   setOpenAITransportMode,
   startCodexEnrollment,
+  startGoogleEnrollment,
+  completeGoogleEnrollment,
+  disconnectGoogleEnrollment,
 } from '../../services/provider-connections';
 
 const settingsSchema = z.object({
@@ -28,7 +33,19 @@ const codexEnrollmentCompleteSchema = z.object({
   accountLabel: z.string().trim().max(120).optional().nullable(),
 });
 
+
+const googleEnrollmentStartSchema = z.object({
+  accountLabel: z.string().trim().max(120).optional().nullable(),
+});
+
+const googleEnrollmentCompleteSchema = z.object({
+  enrollmentId: z.string().trim().min(1),
+  pastedUrl: z.string().trim(),
+  accountLabel: z.string().trim().max(120).optional().nullable(),
+});
+
 const openaiTransportModeSchema = z.object({ mode: z.enum(['codex', 'token']) });
+const geminiTransportModeSchema = z.object({ mode: z.enum(['google', 'token']) });
 
 export const settingsRouter = new Hono();
 
@@ -183,12 +200,20 @@ settingsRouter.delete('/vscode-extension-token', async (c) => {
 
 settingsRouter.get('/provider-connections', async (c) => {
   const user = c.get('user') as { userId?: string } | undefined;
-  const [providers, openaiTransportMode] = await Promise.all([
+  const [providers, openaiTransportMode, geminiTransportMode] = await Promise.all([
     listProviderConnections({ userId: user?.userId ?? null }),
     getOpenAITransportMode(),
+    getGeminiTransportMode(),
   ]);
-  return c.json({ providers, openaiTransportMode });
+  return c.json({ providers, openaiTransportMode, geminiTransportMode });
 });
+
+
+settingsRouter.post(
+  '/provider-connections/gemini/mode',
+  zValidator('json', geminiTransportModeSchema),
+  async (c) => c.json({ mode: await setGeminiTransportMode(c.req.valid('json').mode) }),
+);
 
 settingsRouter.post(
   '/provider-connections/openai/mode',
@@ -242,6 +267,59 @@ settingsRouter.post('/provider-connections/codex/enrollment/disconnect', async (
     return c.json({ message: 'Authentication required' }, 401);
   }
   const provider = await disconnectCodexEnrollment({
+    updatedByUserId: user.userId,
+  });
+  return c.json({ provider });
+});
+
+
+settingsRouter.post(
+  '/provider-connections/google/enrollment/start',
+  zValidator('json', googleEnrollmentStartSchema),
+  async (c) => {
+    const user = c.get('user') as { userId?: string } | undefined;
+    if (!user?.userId) {
+      return c.json({ message: 'Authentication required' }, 401);
+    }
+    const payload = c.req.valid('json');
+    const provider = await startGoogleEnrollment({
+      accountLabel: payload.accountLabel ?? null,
+      updatedByUserId: user.userId,
+    });
+    return c.json({ provider });
+  },
+);
+
+settingsRouter.post(
+  '/provider-connections/google/enrollment/complete',
+  zValidator('json', googleEnrollmentCompleteSchema),
+  async (c) => {
+    const user = c.get('user') as { userId?: string } | undefined;
+    if (!user?.userId) {
+      return c.json({ message: 'Authentication required' }, 401);
+    }
+    const payload = c.req.valid('json');
+    try {
+      const provider = await completeGoogleEnrollment({
+        enrollmentId: payload.enrollmentId,
+        pastedUrl: payload.pastedUrl,
+        accountLabel: payload.accountLabel ?? null,
+        updatedByUserId: user.userId,
+      });
+      return c.json({ provider });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Enrollment completion failed';
+      return c.json({ message }, 400);
+    }
+  },
+);
+
+settingsRouter.post('/provider-connections/google/enrollment/disconnect', async (c) => {
+  const user = c.get('user') as { userId?: string } | undefined;
+  if (!user?.userId) {
+    return c.json({ message: 'Authentication required' }, 401);
+  }
+  const provider = await disconnectGoogleEnrollment({
     updatedByUserId: user.userId,
   });
   return c.json({ provider });
