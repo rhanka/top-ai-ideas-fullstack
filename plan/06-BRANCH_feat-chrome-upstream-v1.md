@@ -91,4 +91,19 @@ Upstream remote control: the webapp can dispatch tab_read/tab_action to connecte
 
 - [ ] **Lot N — Final validation**
   - [ ] typecheck + lint + test-api + test-ui
+  - [ ] Investigate PR #113 CI red lanes (analysis only, no fix yet):
+    - [x] `test-api-unit-integration (ai, chat-tools,company-enrichment-sync,documents-tool,initiative-generation-sync)`
+      - File: `api/tests/ai/company-enrichment-sync.test.ts > should enrich an organization directly via /organizations/ai-enrich`
+      - Signature: `Error: Test timed out in 60000ms.` (single failure, 23/24 pass)
+      - Scope: `api/tests/ai/**` — covered by AI flaky allowlist per `rules/testing.md`.
+      - Classification: candidate AI-flaky (provider-side latency). Needs rerun to confirm non-systematic.
+      - Proposed action: rerun the AI lane; if it fails again on same test, re-evaluate; otherwise accept as `BR06-FL-05` AI-flaky with user sign-off.
+    - [x] `test-e2e (group-d, 08)`
+      - File: `e2e/tests/08-chat-heavy.spec.ts:85 > devrait permettre upload + résumé + usage tool + suppression en viewer`
+      - Signature: primary — `assistantResponse` locator not visible within 90s after `sendMessageAndWaitApi`; debug logs show `job status: 404 {"message":"Job not found"}` and `stream events: 404 Not Found`. Secondary (retries 1-2) — strict-mode violation on document-delete selector because README.md rows accumulate across retries.
+      - Scope: `e2e/tests/08-chat-heavy.spec.ts` — NOT in AI flaky allowlist per `rules/testing.md`.
+      - Suspect surface from branch diff: `api/src/services/stream-service.ts` was rewritten in commit `5131bc70 fix(ci): stabilize api and e2e lanes` (+88/-34 lines, advisory locks + factored `notifyStreamEvent`). The failure signature matches a stream/queue correctness regression (stream never completes → bubble never appears → job GC'd by the time debug polls).
+      - Secondary suspect: `api/src/services/chat-service.ts` tab-tool injection path (`buildServerTabToolDefinitions` + `listRegisteredTabs` call during tool assembly) could theoretically affect non-extension users if not gated correctly, but the test user has no tabs registered so the injection should no-op.
+      - Classification: legitimate CI red on our branch; cannot be dismissed as pre-existing (main is green on SHA `a102a9be`).
+      - Proposed action: reproduce locally on `tmp/feat-chrome-upstream-v1-rewrite` with `make clean test-e2e E2E_SPEC=tests/08-chat-heavy.spec.ts API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=e2e-feat-chrome-upstream-v1-rewrite`. If reproduced, bisect between `4c23f58b refactor(upstream): restore extension from main, add tab register only` and `5131bc70 fix(ci): stabilize api and e2e lanes` to identify the faulty commit; then fix under Lot N.
   - [ ] PR → UAT + CI OK → merge.
