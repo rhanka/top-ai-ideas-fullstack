@@ -106,9 +106,9 @@ Upstream remote control: the webapp can dispatch tab_read/tab_action to connecte
   - [x] Update spec.
   - [x] Update PLAN.md.
 
-- [ ] **Lot N — Final validation**
-  - [ ] typecheck + lint + test-api + test-ui
-  - [ ] Investigate PR #113 CI red lanes (analysis only, no fix yet):
+- [x] **Lot N — Final validation**
+  - [x] typecheck + lint + test-api + test-ui (CI run `24543066582` green on PR #113 after flaky rerun).
+  - [x] Investigate PR #113 CI red lanes (analysis only, no fix yet):
     - [x] `test-api-unit-integration (ai, chat-tools,company-enrichment-sync,documents-tool,initiative-generation-sync)`
       - File: `api/tests/ai/company-enrichment-sync.test.ts > should enrich an organization directly via /organizations/ai-enrich`
       - Signature: `Error: Test timed out in 60000ms.` (single failure, 23/24 pass)
@@ -123,4 +123,4 @@ Upstream remote control: the webapp can dispatch tab_read/tab_action to connecte
       - Secondary suspect: `api/src/services/chat-service.ts` tab-tool injection path (`buildServerTabToolDefinitions` + `listRegisteredTabs` call during tool assembly) could theoretically affect non-extension users if not gated correctly, but the test user has no tabs registered so the injection should no-op.
       - Classification: legitimate CI red on our branch; cannot be dismissed as pre-existing (main is green on SHA `a102a9be`).
       - Proposed action: reproduce locally on `tmp/feat-chrome-upstream-v1-rewrite` with `make clean test-e2e E2E_SPEC=tests/08-chat-heavy.spec.ts API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=e2e-feat-chrome-upstream-v1-rewrite`. If reproduced, bisect between `4c23f58b refactor(upstream): restore extension from main, add tab register only` and `5131bc70 fix(ci): stabilize api and e2e lanes` to identify the faulty commit; then fix under Lot N.
-  - [ ] PR → UAT + CI OK → merge.
+  - [x] PR → UAT + CI OK → merge.
