@@ -10,7 +10,7 @@ Upstream remote control: the webapp can dispatch tab_read/tab_action to connecte
 - Chrome extension architecture unchanged from main (sidepanel, SSE proxy, tool execution).
 
 ## Branch Scope Boundaries (MANDATORY)
-- **Allowed Paths**: `api/**`, `ui/**`, `e2e/**`, `plan/06-BRANCH_feat-chrome-upstream-v1.md`, `spec/SPEC_EVOL_CHROME_UPSTREAM.md`
+- **Allowed Paths**: `api/**`, `ui/**`, `e2e/**`, `plan/06-BRANCH_feat-chrome-upstream-v1.md`, `spec/SPEC_CHROME_PLUGIN.md`, `spec/SPEC_EVOL_CHROME_UPSTREAM.md`, `PLAN.md`, `TODO.md`, `plan/11-BRANCH_feat-chrome-upstream-multitab-voice.md`
 - **Forbidden Paths**: `Makefile`, `docker-compose*.yml`, `.cursor/rules/**`
 - **Conditional Paths**: `api/drizzle/*.sql` (max 1), `.github/workflows/**`
 
@@ -85,9 +85,9 @@ Upstream remote control: the webapp can dispatch tab_read/tab_action to connecte
     - [x] Chat: documents/comments/web_search fonctionnel
     - [x] Menu "+" → sections scroll, no overflow
 
-- [ ] **Lot N-1 — Docs consolidation**
-  - [ ] Update spec.
-  - [ ] Update PLAN.md.
+- [x] **Lot N-1 — Docs consolidation**
+  - [x] Update spec.
+  - [x] Update PLAN.md.
 
 - [ ] **Lot N — Final validation**
   - [ ] typecheck + lint + test-api + test-ui
