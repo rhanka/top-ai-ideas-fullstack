@@ -98,20 +98,24 @@ jobs:
   build-api-image:
     runs-on: ubuntu-latest
     needs: [changes]
+    env:
+      DOCKER_USERNAME: nologin
+      DOCKER_PASSWORD: ${{ secrets.SCW_SECRET_KEY }}
     steps:
       - uses: actions/checkout@v4
-        if: needs.changes.outputs.api == 'true' || needs.changes.outputs.global == 'true'
       - name: Setup Docker
-        if: needs.changes.outputs.api == 'true' || needs.changes.outputs.global == 'true'
         uses: docker/setup-buildx-action@v3
+      - name: Pull existing API image from registry
+        id: pull-api
+        if: needs.changes.outputs.api != 'true' && needs.changes.outputs.global != 'true'
+        run: make pull-api-image
+        continue-on-error: true
       - name: Build API image
-        if: needs.changes.outputs.api == 'true' || needs.changes.outputs.global == 'true'
+        if: needs.changes.outputs.api == 'true' || needs.changes.outputs.global == 'true' || steps.pull-api.outcome == 'failure'
         run: make build-api
       - name: Save API image as artifact
-        if: needs.changes.outputs.api == 'true' || needs.changes.outputs.global == 'true'
         run: make save-api
       - name: Upload API image artifact
-        if: needs.changes.outputs.api == 'true' || needs.changes.outputs.global == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: api-image
@@ -189,11 +193,12 @@ jobs:
   build-ui:
     runs-on: ubuntu-latest
     needs: [changes]
+    env:
+      DOCKER_USERNAME: nologin
+      DOCKER_PASSWORD: ${{ secrets.SCW_SECRET_KEY }}
     steps:
       - uses: actions/checkout@v4
-        if: needs.changes.outputs.ui == 'true' || needs.changes.outputs.global == 'true'
       - name: Setup Docker
-        if: needs.changes.outputs.ui == 'true' || needs.changes.outputs.global == 'true'
         uses: docker/setup-buildx-action@v3
       - name: Build Chrome extension target
         if: needs.changes.outputs.ui == 'true' || needs.changes.outputs.global == 'true'
@@ -201,17 +206,20 @@ jobs:
       - name: Build VSCode extension target
         if: needs.changes.outputs.ui == 'true' || needs.changes.outputs.global == 'true'
         run: make build-ext-vscode
+      - name: Pull existing UI image from registry
+        id: pull-ui
+        if: needs.changes.outputs.ui != 'true' && needs.changes.outputs.global != 'true'
+        run: make pull-ui-image
+        continue-on-error: true
       - name: Build UI image
-        if: needs.changes.outputs.ui == 'true' || needs.changes.outputs.global == 'true'
+        if: needs.changes.outputs.ui == 'true' || needs.changes.outputs.global == 'true' || steps.pull-ui.outcome == 'failure'
         run: make build-ui-image
       - name: Save UI image as artifact
-        if: needs.changes.outputs.ui == 'true' || needs.changes.outputs.global == 'true'
         run: make save-ui
       - name: Test UI
         if: needs.changes.outputs.ui == 'true' || needs.changes.outputs.global == 'true'
         run: make test-ui
       - name: Upload UI image artifact
-        if: needs.changes.outputs.ui == 'true' || needs.changes.outputs.global == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: ui-image
