@@ -71,19 +71,19 @@ Upstream remote control: the webapp can dispatch tab_read/tab_action to connecte
       - [x] `ui/tests/upstream/injected-script.test.ts` (non-reg)
       - [x] Sub-lot gate: `make test-ui API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=test`
 
-- [ ] **Lot N-2 — UAT**
-  - [ ] Chrome extension
-    - [ ] Install updated extension → side panel fonctionne comme avant (non-reg)
-    - [ ] Floating mode fonctionne (LinkedIn, Outlook, etc.)
-    - [ ] Navigate to a site → tab registered via API
-    - [ ] Webapp chat (sans sidepanel) → tab_read/tab_action apparaissent
-    - [ ] tab_read depuis webapp → DOM content returned
-    - [ ] tab_action click depuis webapp → action exécutée
-    - [ ] Extension sidepanel → local tools fonctionnent comme sur main (non-reg)
-  - [ ] Web app — non-reg
-    - [ ] Chat sans extension: no tab_read/tab_action
-    - [ ] Chat: documents/comments/web_search fonctionnel
-    - [ ] Menu "+" → sections scroll, no overflow
+- [x] **Lot N-2 — UAT**
+  - [x] Chrome extension
+    - [x] Install updated extension → side panel fonctionne comme avant (non-reg)
+    - [x] Floating mode fonctionne (LinkedIn, Outlook, etc.)
+    - [x] Navigate to a site → tab registered via API
+    - [x] Webapp chat (sans sidepanel) → tab_read/tab_action apparaissent
+    - [x] tab_read depuis webapp → DOM content returned
+    - [x] tab_action click depuis webapp → action exécutée
+    - [x] Extension sidepanel → local tools fonctionnent comme sur main (non-reg)
+  - [x] Web app — non-reg
+    - [x] Chat sans extension: no tab_read/tab_action
+    - [x] Chat: documents/comments/web_search fonctionnel
+    - [x] Menu "+" → sections scroll, no overflow
 
 - [ ] **Lot N-1 — Docs consolidation**
   - [ ] Update spec.
