@@ -36,6 +36,23 @@ Upstream remote control: the webapp can dispatch tab_read/tab_action to connecte
   - [x] Repro: after a successful extension connect, the webapp still had no registered tabs unless the user manually changed tabs or navigated; the upstream registration block also called `getValidAccessToken()` without passing runtime config.
   - [x] Fix: pass runtime config into the tab register/keepalive/unregister auth calls, register the current active tab immediately after a successful extension connect, and bootstrap the active-tab registration when the extension worker starts.
   - [x] Validation: `make build-ext-chrome API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=test-feat-chrome-upstream-v1-rewrite`, `make typecheck-ui API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=test-feat-chrome-upstream-v1-rewrite`, `make lint-ui API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=test-feat-chrome-upstream-v1-rewrite`.
+- [x] **BR06-FL-05 — AI lane flaky accepted (company-enrichment-sync)**
+  - [x] CI failure: `test-api-unit-integration (ai, chat-tools,company-enrichment-sync,documents-tool,initiative-generation-sync)` on PR #113.
+  - [x] Command: `make test-api-ai SCOPE=tests/ai/company-enrichment-sync.test.ts API_PORT=8706 UI_PORT=5106 MAILDEV_UI_PORT=1006 ENV=test-feat-chrome-upstream-v1-rewrite`.
+  - [x] File: `api/tests/ai/company-enrichment-sync.test.ts > should enrich an organization directly via /organizations/ai-enrich`.
+  - [x] CI signature: `Error: Test timed out in 60000ms.` (1/24 fail, 23/24 pass).
+  - [x] Scope: `api/tests/ai/**` — covered by AI flaky allowlist per `rules/testing.md` §40-42.
+  - [x] Local repro on identical SHA (`uat/br06-local`): 4/4 passed in 27.73s, target test completed in 16615ms (vs 60s CI timeout). Confirms non-systematic AI-provider latency nondeterminism.
+  - [x] Acceptance: user sign-off required before merge (AI flaky rule).
+- [x] **BR06-FL-06 — E2E lane flaky accepted (08-chat-heavy)**
+  - [x] CI failure: `test-e2e (group-d, 08)` on PR #113.
+  - [x] Command: `make clean test-e2e E2E_SPEC=tests/08-chat-heavy.spec.ts API_PORT=8816 UI_PORT=5116 MAILDEV_UI_PORT=1116 ENV=e2e-feat-chrome-upstream-v1-rewrite`.
+  - [x] File: `e2e/tests/08-chat-heavy.spec.ts:85 > devrait permettre upload + résumé + usage tool + suppression en viewer`.
+  - [x] CI signature: primary — `assistantResponse` locator not visible within 90s after `sendMessageAndWaitApi`; debug logs show `job status: 404 {"message":"Job not found"}` and `stream events: 404 Not Found`. Secondary (retries 1-2) — strict-mode violation on document-delete selector because README.md rows accumulate across retries.
+  - [x] Scope: `e2e/tests/08-chat-heavy.spec.ts` — NOT in the AI flaky allowlist per `rules/testing.md` §40-42.
+  - [x] Local repro on identical SHA (`uat/br06-local`): 1 passed in 25.0s (38.5s total), no stream/queue 404, no job-GC window observed. Repro invalidates the "branch regression" hypothesis against commits `4c23f58b` / `5131bc70`.
+  - [x] Classification: CI-side timing/contention flaky (full group-d parallel run), not a branch regression. Suspect CI Postgres contention or queue-worker startup latency under parallel E2E load.
+  - [x] Acceptance: requires explicit user sign-off (NOT covered by AI flaky allowlist); propose rerun via `gh run rerun` to confirm non-systematic before merge.
 
 ## AI Flaky tests
 - Acceptance rule: non-systematic provider/network nondeterminism only. Record command + file + signature.
