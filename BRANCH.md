@@ -139,7 +139,7 @@ Create the first publishable Entropic package, `@entropic/llm-mesh`, as a provid
   - [ ] Move reusable provider descriptors and model catalog data into the package contract.
   - [ ] Add package adapters or adapter interfaces for OpenAI, Anthropic/Claude, Google/Gemini, Mistral, and Cohere.
   - [ ] Keep provider SDK calls deterministic under unit tests with mocked clients.
-  - [ ] Normalize provider errors with retryability metadata.
+  - [x] Normalize provider errors with retryability metadata.
   - [ ] Preserve existing application provider behavior until BR-14b performs full migration.
   - [ ] Lot gate:
     - [ ] `make typecheck-api API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`

@@ -1,6 +1,7 @@
 export * from './auth.js';
 export * from './capabilities.js';
 export * from './catalog.js';
+export * from './errors.js';
 export * from './generation.js';
 export * from './messages.js';
 export * from './providers.js';

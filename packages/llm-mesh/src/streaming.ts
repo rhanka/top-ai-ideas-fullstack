@@ -1,4 +1,5 @@
 import type { ModelId, ProviderId } from './providers.js';
+import type { NormalizedProviderError } from './errors.js';
 import type { ToolCall, ToolCallDelta, ToolResult } from './tools.js';
 
 export const streamEventTypes = [
@@ -29,15 +30,6 @@ export interface TokenUsage {
   reasoningTokens?: number;
   totalTokens?: number;
   providerRawUsage?: unknown;
-}
-
-export interface NormalizedProviderError {
-  providerId: ProviderId;
-  message: string;
-  code?: string;
-  retryable?: boolean;
-  statusCode?: number;
-  cause?: unknown;
 }
 
 export interface ReasoningDeltaEvent {
