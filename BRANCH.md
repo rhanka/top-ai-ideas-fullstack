@@ -36,7 +36,7 @@ Create the first publishable Entropic package, `@entropic/llm-mesh`, as a provid
   - `api/tests/api/ai-settings.test.ts`
   - `api/tests/ai/**`
   - `spec/SPEC_EVOL_ENTROPIC_BR14_ORCHESTRATION.md`
-  - `spec/SPEC_EVOL_LLM_MESH_SDK.md`
+  - `spec/SPEC_EVOL_LLM_MESH.md`
 - **Forbidden Paths (must not change in this branch)**:
   - `README.md`
   - `README.fr.md`
@@ -70,7 +70,7 @@ Create the first publishable Entropic package, `@entropic/llm-mesh`, as a provid
 
 ## Feedback Loop
 - [ ] `attention` BR14c-EX1 — Conditional `Makefile`, `api/package.json`, `api/package-lock.json`, `api/tsconfig.json`, and `api/vitest.config.ts` changes are allowed only if Lot 1 proves the package cannot be typechecked/tested through existing targets. Reason: a publishable package needs deterministic make-backed build/test targets. Impact: build/test scaffolding only, no runtime behavior. Rollback: remove package-specific targets/config and keep package tests under existing API targets.
-- [ ] `attention` BR14c-EX2 — `spec/SPEC_EVOL_LLM_MESH_SDK.md` may be created if Lot 0 audit findings are too detailed for this branch file. Reason: the public package contract must be reviewable before implementation. Impact: specification only. Rollback: consolidate into `SPEC_EVOL_ENTROPIC_BR14_ORCHESTRATION.md` and delete the branch spec.
+- [ ] `attention` BR14c-EX2 — `spec/SPEC_EVOL_LLM_MESH.md` owns the reusable function classification, Graphify-backed usage audit, external framework benchmark, and public package contract. Reason: the public package contract must be reviewable before implementation and must not bloat `BRANCH.md`. Impact: specification only. Rollback: consolidate final decisions into `SPEC_EVOL_ENTROPIC_BR14_ORCHESTRATION.md` and delete the branch spec.
 
 ## AI Flaky tests
 - Acceptance rule:
@@ -106,9 +106,10 @@ Create the first publishable Entropic package, `@entropic/llm-mesh`, as a provid
   - [x] Confirm command style: `make ... API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=<env>` with `ENV` last.
   - [x] Confirm scope and guardrails.
   - [x] Validate scope boundaries and declare conditional exceptions.
-  - [x] Complete read-only audit of current provider runtime and classify reusable vs app-specific code.
+  - [x] Run Graphify review analysis for current provider runtime, provider adapters, model catalog, credential, and Codex transport files.
+  - [x] Move reusable vs app-specific classification into `spec/SPEC_EVOL_LLM_MESH.md`.
   - [x] Decide whether `@entropic/llm-mesh` can be tested through existing API targets or needs BR14c-EX1.
-  - [ ] Create `spec/SPEC_EVOL_LLM_MESH_SDK.md` only if the public contract needs a separate review artifact.
+  - [x] Complete external framework benchmark in `spec/SPEC_EVOL_LLM_MESH.md` before Lot 1 implementation.
 
 - [ ] **Lot 1 — Public package contract**
   - [ ] Create `packages/llm-mesh` package boundary.
@@ -203,7 +204,7 @@ Create the first publishable Entropic package, `@entropic/llm-mesh`, as a provid
 
 - [ ] **Lot 6 — Docs consolidation**
   - [ ] Update `spec/SPEC_EVOL_ENTROPIC_BR14_ORCHESTRATION.md` with final BR-14c contract only if behavior changed from the initial orchestration spec.
-  - [ ] Consolidate `spec/SPEC_EVOL_LLM_MESH_SDK.md` into permanent specs if created and still needed.
+  - [ ] Consolidate `spec/SPEC_EVOL_LLM_MESH.md` into permanent specs if still branch-specific after implementation.
   - [ ] Delete temporary branch-only spec files after consolidation if applicable.
   - [ ] Update `BRANCH.md` checklist and feedback loop before final validation.
 
@@ -221,19 +222,6 @@ Create the first publishable Entropic package, `@entropic/llm-mesh`, as a provid
   - [ ] Final gate step 3: once UAT + CI are both `OK`, commit removal of `BRANCH.md`, push, and merge.
 
 ## Lot 0 Audit Notes
-- [x] Current app provider IDs live in `api/src/services/provider-runtime.ts`: `openai`, `gemini`, `anthropic`, `mistral`, `cohere`.
-- [x] Reusable for package: provider IDs, provider descriptors, model catalog entry shape, capability flags, reasoning tiers, credential validation result, normalized provider error shape.
-- [x] Current registry construction is app-local in `api/src/services/provider-registry.ts` and instantiates SDK-backed provider runtimes directly.
-- [x] Reusable for package: registry interface and model/provider listing contract. App-specific until BR-14b: singleton construction wired to app environment and provider SDK concrete classes.
-- [x] Current model catalog is app-local in `api/src/services/model-catalog.ts`; it maps provider runtime entries into API payloads and resolves defaults with legacy cutover rules.
-- [x] Reusable for package: capability matrix and provider/model selection primitives. App-specific until BR-14b: `settingsService` defaults, legacy cutover policy, API payload snake_case mapping.
-- [x] Current provider adapters in `api/src/services/providers/*.ts` already cover OpenAI, Anthropic/Claude, Google/Gemini, Mistral, and Cohere.
-- [x] Reusable for package: provider model lists, SDK request/stream entry points, error normalization, mocked-client test patterns. App-specific until BR-14b: `env.*_API_KEY` imports, Codex fetch wiring embedded in OpenAI provider, and current provider-specific request payload shapes.
-- [x] Current stream normalization is concentrated in `api/src/services/llm-runtime/index.ts`; it already exposes normalized `StreamEvent` types but mixes provider SDK request building, credential resolution, Codex transport, and application runtime selection.
-- [x] Reusable for package: normalized stream event taxonomy, tool-call normalization rules, structured-output schema sanitizers, provider-specific stream mappers. App-specific until BR-14b: chat message conversion, runtime selection from user/workspace settings, retry/continuation orchestration, and chat-service context budgeting.
-- [x] Current credential precedence lives in `api/src/services/provider-credentials.ts`: request override, user BYOK, workspace key, environment, none.
-- [x] Reusable for package: auth source enum and resolver contract. App-specific until BR-14b: encrypted settings storage, workspace/user lookup, and `settingsService` integration.
-- [x] Current Codex account transport lives in `api/src/services/provider-connections.ts` and `api/src/services/codex-provider-auth.ts`; BR-14c must expose an account transport contract without moving operational enrollment UI.
-- [x] Reusable for package: account transport shape `{ accessToken, accountId }`, transport mode distinction, and future account-provider extension point. App-specific until BR-14b/BR-14d: Codex device enrollment persistence, UI settings routes, secrets, and operational OAuth endpoints.
-- [x] Existing deterministic coverage is concentrated in `api/tests/unit/provider-registry-expansion.test.ts`, provider unit tests, `api/tests/unit/llm-runtime-stream.test.ts`, `api/tests/unit/provider-credentials.test.ts`, and API catalog/settings tests.
-- [x] There is no root package manifest and no existing `packages/` workspace. Decision: BR14c-EX1 is required before implementation if the branch creates a real publishable package with make-backed typecheck/test/build targets.
+- [x] Reusable function classification, Graphify evidence, and framework comparison live in `spec/SPEC_EVOL_LLM_MESH.md`.
+- [x] `BRANCH.md` remains the execution plan and PR checklist only.
+- [x] External benchmark completed on 2026-04-21 from official sources only.
