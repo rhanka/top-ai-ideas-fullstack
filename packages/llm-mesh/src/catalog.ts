@@ -4,13 +4,15 @@ import {
   type ProviderCapabilities,
 } from './capabilities.js';
 import type { AccountTransportProviderId, TokenAuthSourceType } from './auth.js';
-import type {
-  KnownModelId,
-  ModelTaskHint,
-  ProviderFamily,
-  ProviderId,
-  ProviderStatus,
-  ReasoningTier,
+import {
+  type KnownModelId,
+  type ModelId,
+  type ModelTaskHint,
+  type ProviderFamily,
+  type ProviderId,
+  type ProviderStatus,
+  type ReasoningTier,
+  providerIds,
 } from './providers.js';
 
 export interface ProviderDescriptor {
@@ -265,3 +267,34 @@ export const modelProfiles = [
 export const providerCapabilityMatrix = providerProfiles;
 
 export const modelCapabilityMatrix = modelProfiles;
+
+export const listProviderProfiles = (): readonly ProviderDescriptor[] => {
+  return providerIds.map((providerId) => providerProfiles[providerId]);
+};
+
+export const listModelProfiles = (): readonly ModelProfile[] => {
+  return modelProfiles;
+};
+
+export const listModelProfilesByProvider = (
+  providerId: ProviderId,
+): readonly ModelProfile[] => {
+  return modelProfiles.filter((model) => model.providerId === providerId);
+};
+
+export const getProviderProfile = (
+  providerId: ProviderId,
+): ProviderDescriptor => {
+  return providerProfiles[providerId];
+};
+
+export const getModelProfile = (
+  providerId: ProviderId,
+  modelId: ModelId,
+): ModelProfile | null => {
+  return (
+    modelProfiles.find(
+      (model) => model.providerId === providerId && model.modelId === modelId,
+    ) ?? null
+  );
+};
