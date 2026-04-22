@@ -1,3 +1,4 @@
+export * from './adapters.js';
 export * from './auth.js';
 export * from './capabilities.js';
 export * from './catalog.js';

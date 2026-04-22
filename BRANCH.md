@@ -137,13 +137,13 @@ Create the first publishable Entropic package, `@entropic/llm-mesh`, as a provid
 
 - [ ] **Lot 2 — Provider adapters and capability matrix**
   - [x] Move reusable provider descriptors and model catalog data into the package contract.
-  - [ ] Add package adapters or adapter interfaces for OpenAI, Anthropic/Claude, Google/Gemini, Mistral, and Cohere.
+  - [x] Add package adapters or adapter interfaces for OpenAI, Anthropic/Claude, Google/Gemini, Mistral, and Cohere.
   - [x] Keep provider SDK calls deterministic under unit tests with mocked clients.
   - [x] Normalize provider errors with retryability metadata.
-  - [ ] Preserve existing application provider behavior until BR-14b performs full migration.
+  - [x] Preserve existing application provider behavior until BR-14b performs full migration.
   - [ ] Lot gate:
-    - [ ] `make typecheck-api API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
-    - [ ] `make lint-api API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
+    - [x] `make typecheck-api API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
+    - [x] `make lint-api API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
     - [ ] **Package/API tests**
       - [ ] Add or update `api/tests/unit/claude-provider.test.ts`.
       - [ ] Add or update `api/tests/unit/gemini-provider-sse.test.ts`.
@@ -152,9 +152,9 @@ Create the first publishable Entropic package, `@entropic/llm-mesh`, as a provid
       - [ ] Add or update `api/tests/unit/llm-runtime-stream.test.ts`.
       - [ ] Scoped run: `make test-api-unit SCOPE=tests/unit/llm-runtime-stream.test.ts API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`.
     - [ ] **UI tests (TypeScript only)**
-      - [ ] No UI test updates expected in Lot 2.
+      - [x] No UI test updates expected in Lot 2.
     - [ ] **E2E tests**
-      - [ ] No E2E test updates expected in Lot 2.
+      - [x] No E2E test updates expected in Lot 2.
 
 - [ ] **Lot 3 — Auth modes and account transports**
   - [ ] Model direct token, user token, workspace token, environment token, and Codex account as explicit auth sources.
