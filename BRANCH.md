@@ -112,17 +112,17 @@ Create the first publishable Entropic package, `@entropic/llm-mesh`, as a provid
   - [x] Complete external framework benchmark in `spec/SPEC_EVOL_LLM_MESH.md` before Lot 1 implementation.
 
 - [ ] **Lot 1 — Public package contract**
-  - [ ] Create `packages/llm-mesh` package boundary.
-  - [ ] Define public provider IDs, model IDs, model capability matrix, provider capability matrix, and reasoning tiers.
-  - [ ] Define normalized request/response contract for non-streaming calls.
-  - [ ] Define normalized streaming events: `reasoning_delta`, `content_delta`, `tool_call_start`, `tool_call_delta`, `tool_call_result`, `status`, `error`, `done`.
-  - [ ] Define normalized tool-use schema independent from OpenAI Chat Completions details.
-  - [ ] Define structured output capability flags and schema support limits per provider.
-  - [ ] Define auth modes: direct token, user token, workspace token, environment token, Codex account.
-  - [ ] Prepare future account auth extension points for Gemini Code Assist and Claude Code without implementing live flows.
+  - [x] Create `packages/llm-mesh` package boundary.
+  - [x] Define public provider IDs, model IDs, model capability matrix, provider capability matrix, and reasoning tiers.
+  - [x] Define normalized request/response contract for non-streaming calls.
+  - [x] Define normalized streaming events: `reasoning_delta`, `content_delta`, `tool_call_start`, `tool_call_delta`, `tool_call_result`, `status`, `error`, `done`.
+  - [x] Define normalized tool-use schema independent from OpenAI Chat Completions details.
+  - [x] Define structured output capability flags and schema support limits per provider.
+  - [x] Define auth modes: direct token, user token, workspace token, environment token, Codex account.
+  - [x] Prepare future account auth extension points for Gemini Code Assist and Claude Code without implementing live flows.
   - [ ] Lot gate:
-    - [ ] `make typecheck-api API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
-    - [ ] `make lint-api API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
+    - [x] `make typecheck-api API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
+    - [x] `make lint-api API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
     - [ ] **Package/API tests**
       - [ ] Add or update `packages/llm-mesh/tests/*.test.ts` if BR14c-EX1 is used.
       - [ ] Add or update `api/tests/unit/provider-registry-expansion.test.ts`.
@@ -131,9 +131,9 @@ Create the first publishable Entropic package, `@entropic/llm-mesh`, as a provid
       - [ ] Scoped run: `make test-api-unit SCOPE=tests/unit/provider-registry-expansion.test.ts API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`.
       - [ ] Scoped run: `make test-api-endpoints SCOPE=tests/api/models.test.ts API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`.
     - [ ] **UI tests (TypeScript only)**
-      - [ ] No UI test updates expected in Lot 1.
+      - [x] No UI test updates expected in Lot 1.
     - [ ] **E2E tests**
-      - [ ] No E2E test updates expected in Lot 1.
+      - [x] No E2E test updates expected in Lot 1.
 
 - [ ] **Lot 2 — Provider adapters and capability matrix**
   - [ ] Move reusable provider descriptors and model catalog data into the package contract.

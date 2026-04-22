@@ -1,0 +1,66 @@
+import type { AuthResolver, AuthSource } from './auth.js';
+import type { LlmMeshMessage } from './messages.js';
+import type { ModelId, ProviderId } from './providers.js';
+import type { FinishReason, StreamEvent, TokenUsage } from './streaming.js';
+import type { JsonObjectSchema, ToolCall, ToolChoice, ToolDefinition } from './tools.js';
+
+export type ResponseFormat =
+  | { type: 'text' }
+  | { type: 'json-object' }
+  | {
+      type: 'json-schema';
+      name: string;
+      schema: JsonObjectSchema;
+      description?: string;
+      strict?: boolean;
+    };
+
+export interface ReasoningOptions {
+  effort?: 'none' | 'low' | 'medium' | 'high' | 'xhigh';
+  summary?: 'auto' | 'concise' | 'detailed';
+}
+
+export interface LlmMeshRequestMetadata {
+  correlationId?: string;
+  userId?: string | null;
+  workspaceId?: string | null;
+  tenantId?: string | null;
+  tags?: readonly string[];
+  attributes?: Record<string, unknown>;
+}
+
+export interface GenerateRequest {
+  providerId?: ProviderId;
+  modelId?: ModelId;
+  messages: readonly LlmMeshMessage[];
+  auth?: AuthSource | AuthResolver;
+  tools?: readonly ToolDefinition[];
+  toolChoice?: ToolChoice;
+  responseFormat?: ResponseFormat;
+  reasoning?: ReasoningOptions;
+  maxOutputTokens?: number;
+  temperature?: number;
+  topP?: number;
+  signal?: AbortSignal;
+  metadata?: LlmMeshRequestMetadata;
+  providerOptions?: Record<string, unknown>;
+}
+
+export interface StreamRequest extends GenerateRequest {
+  previousResponseId?: string;
+}
+
+export interface GenerateResponse {
+  id: string;
+  providerId: ProviderId;
+  modelId: ModelId;
+  message: LlmMeshMessage;
+  text: string;
+  toolCalls: readonly ToolCall[];
+  finishReason: FinishReason;
+  usage?: TokenUsage;
+  structuredOutput?: unknown;
+  providerMetadata?: Record<string, unknown>;
+}
+
+export type StreamResult = AsyncIterable<StreamEvent>;
