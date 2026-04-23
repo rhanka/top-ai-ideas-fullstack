@@ -498,6 +498,116 @@ Implications for Entropic:
 
 ## Recommended Scope Split
 
+## Review Corrections Accepted on 2026-04-22
+
+The BR-14c strategic review confirmed the direction but tightened the public contract before freeze.
+
+### Package Gates
+
+`make typecheck-api` and `make lint-api` do not prove that `packages/llm-mesh` builds or tests. BR-14c must add deterministic package-specific make targets before the public contract is considered validated:
+
+- `make typecheck-llm-mesh`
+- `make test-llm-mesh`
+- `make lint-llm-mesh` if package linting is not covered by an existing target
+
+These targets are part of BR14c-EX1 because they touch make/build scaffolding, not runtime behavior.
+
+### SDK Facade
+
+The package cannot remain a vocabulary-only extraction. BR-14c must expose a minimal consumable facade:
+
+```ts
+const mesh = createLlmMesh({ registry, authResolver, hooks });
+
+await mesh.generate({ model: 'openai:gpt-5.4', messages, tools });
+for await (const event of mesh.stream({ providerId: 'google', modelId: 'gemini-3.1-pro-preview', messages })) {
+  // normalized stream event
+}
+```
+
+Required facade behavior:
+
+- Resolve `provider:model` aliases and `{ providerId, modelId }` pairs.
+- Resolve auth through an injected `AuthResolver`.
+- Validate the selected model profile and fail early when a requested feature is unsupported.
+- Delegate to provider adapters.
+- Normalize errors, stream events, tool calls, tool results, usage, and finish reasons.
+- Apply redaction before hooks or metadata export.
+
+### Capability Matrix Stance
+
+"Less optimistic capability matrix" means the package must not claim provider-wide support for features that are actually model-specific or unverified.
+
+Bad public contract:
+
+```ts
+google.supportsTools = true;
+google.supportsStructuredOutput = true;
+google.supportsReasoning = true;
+```
+
+Better public contract:
+
+```ts
+gemini31Pro.capabilities.tools.support = 'supported';
+gemini31Pro.capabilities.tools.parallelCalls = 'supported';
+gemini31Pro.capabilities.tools.streamedArgumentDeltas = 'supported';
+geminiFlashLegacy.capabilities.tools.streamedArgumentDeltas = 'unknown';
+claudeSonnet.capabilities.structuredOutput.jsonSchema = 'partial';
+cohereCommand.capabilities.reasoning = 'unsupported';
+```
+
+Required stance:
+
+- Capabilities belong primarily to `ModelProfile`, not to broad `ProviderDescriptor` defaults.
+- Every non-trivial feature should be represented as `supported`, `unsupported`, `partial`, or `unknown`; booleans may exist only as derived helpers.
+- `unknown` is the default when the behavior has not been verified against official docs or tests.
+- `partial` must carry limits, such as unsupported JSON Schema keywords, missing strict mode, no streamed tool argument deltas, no parallel calls, no thought signatures, or provider-specific continuation limits.
+- Model IDs must distinguish provider-native model IDs from Entropic aliases.
+
+This avoids over-promising to BR-14b and prevents runtime code from making unsafe assumptions such as "Google supports every tool feature" or "Anthropic structured output is equivalent to OpenAI JSON Schema strict mode."
+
+### Auth Boundary
+
+"Separate server secrets from auth descriptors" means the package needs two distinct shapes:
+
+- `SecretAuthMaterial`: executable credential material used only inside server-side adapters, such as API keys, OAuth access tokens, refresh tokens, account tokens, and provider headers.
+- `AuthDescriptor`: redacted metadata safe for events, UI, logs, traces, and browser-safe package subsets, such as source type, provider, account label, expiry presence, and redacted fingerprint.
+
+Rules:
+
+- `AuthResolver` may return secret material to the server-side mesh execution path.
+- Public lifecycle events, stream metadata, traces, errors, and usage records must receive only `AuthDescriptor`.
+- Browser-safe entry points must never accept or expose refresh tokens, account tokens, or provider API keys unless the caller explicitly opts into a direct client-side provider integration outside Entropic's default path.
+- Request-level direct token overrides are allowed for server SDK use, but they must be excluded from exported metadata and must never be copied into provider-native chunks.
+- Codex account remains an experimental account transport. Gemini Code Assist and Claude Code remain interface hooks only until a dedicated auth branch defines enrollment and storage.
+
+### Tool and Result Contract
+
+"Strengthen tools/results for MCP and streaming" means the current `ToolResult.output: unknown` shape is too small for modern tool ecosystems.
+
+Required contract direction:
+
+- Tool definitions remain provider-neutral and JSON-Schema based, but can carry provider/MCP annotations.
+- Tool-call streaming must distinguish:
+  - tool call announced,
+  - input argument delta,
+  - input available/complete,
+  - tool execution result,
+  - continuation submitted back to the provider.
+- Tool results must support rich content, not just opaque JSON:
+  - text content,
+  - JSON/structured content,
+  - image/audio references,
+  - resource links,
+  - embedded resources where safe,
+  - typed tool errors,
+  - annotations such as title, audience, cacheability, sensitivity, and display hints.
+- Provider-native call IDs and Entropic call IDs must both be preserved so continuation can resume correctly across OpenAI, Gemini, Anthropic, and MCP-style tools.
+- Stream events may keep the current high-level event taxonomy, but the `tool_call_*` payloads must contain enough lifecycle detail to render partial arguments, execute tools deterministically, and continue generation without provider-specific leakage.
+
+BR-14c does not need to implement a full MCP client. It must avoid freezing a contract that would make MCP-compatible tools or streamed tool input lifecycle impossible later.
+
 ### BR-14c MVP
 
 - Package boundary for `@entropic/llm-mesh`.

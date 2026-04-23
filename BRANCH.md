@@ -71,6 +71,7 @@ Create the first publishable Entropic package, `@entropic/llm-mesh`, as a provid
 ## Feedback Loop
 - [ ] `attention` BR14c-EX1 — Conditional `Makefile`, `api/package.json`, `api/package-lock.json`, `api/tsconfig.json`, and `api/vitest.config.ts` changes are allowed only if Lot 1 proves the package cannot be typechecked/tested through existing targets. Reason: a publishable package needs deterministic make-backed build/test targets. Impact: build/test scaffolding only, no runtime behavior. Rollback: remove package-specific targets/config and keep package tests under existing API targets.
 - [ ] `attention` BR14c-EX2 — `spec/SPEC_EVOL_LLM_MESH.md` owns the reusable function classification, Graphify-backed usage audit, external framework benchmark, and public package contract. Reason: the public package contract must be reviewable before implementation and must not bloat `BRANCH.md`. Impact: specification only. Rollback: consolidate final decisions into `SPEC_EVOL_ENTROPIC_BR14_ORCHESTRATION.md` and delete the branch spec.
+- [x] `clarification` BR14c-R1 — Strategic review accepted on 2026-04-22. BR-14c must add package-specific make gates, a minimal `createLlmMesh` facade, model-profile-first capabilities with `supported/unsupported/partial/unknown`, server-only secret material separated from redacted auth descriptors, and a richer tool/result lifecycle compatible with MCP-style content and streamed tool arguments.
 
 ## AI Flaky tests
 - Acceptance rule:
@@ -114,13 +115,18 @@ Create the first publishable Entropic package, `@entropic/llm-mesh`, as a provid
 - [ ] **Lot 1 — Public package contract**
   - [x] Create `packages/llm-mesh` package boundary.
   - [x] Define public provider IDs, model IDs, model capability matrix, provider capability matrix, and reasoning tiers.
+  - [ ] Refine capability statuses to avoid provider-wide optimistic claims; model profiles must carry `supported`, `unsupported`, `partial`, or `unknown` feature states.
   - [x] Define normalized request/response contract for non-streaming calls.
   - [x] Define normalized streaming events: `reasoning_delta`, `content_delta`, `tool_call_start`, `tool_call_delta`, `tool_call_result`, `status`, `error`, `done`.
   - [x] Define normalized tool-use schema independent from OpenAI Chat Completions details.
+  - [ ] Extend tool/result payloads for rich content, typed errors, annotations, provider call IDs, Entropic call IDs, and streamed input lifecycle details.
   - [x] Define structured output capability flags and schema support limits per provider.
   - [x] Define auth modes: direct token, user token, workspace token, environment token, Codex account.
+  - [ ] Separate server-only `SecretAuthMaterial` from redacted `AuthDescriptor` used by events, traces, UI, and browser-safe package surfaces.
   - [x] Prepare future account auth extension points for Gemini Code Assist and Claude Code without implementing live flows.
   - [ ] Lot gate:
+    - [ ] `make typecheck-llm-mesh API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
+    - [ ] `make test-llm-mesh API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
     - [x] `make typecheck-api API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
     - [x] `make lint-api API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
     - [ ] **Package/API tests**
@@ -176,6 +182,9 @@ Create the first publishable Entropic package, `@entropic/llm-mesh`, as a provid
       - [ ] No E2E test updates expected in Lot 3.
 
 - [ ] **Lot 4 — Thin application proof path**
+  - [ ] Add minimal SDK facade: `createLlmMesh({ registry, authResolver, hooks })`, `mesh.generate()`, and `mesh.stream()`.
+  - [ ] Support `provider:model` aliases and explicit `{ providerId, modelId }` selection.
+  - [ ] Validate requested features against model profile capabilities before adapter execution.
   - [ ] Add a thin application import path or proof adapter showing the API runtime can consume the mesh contract without completing BR-14b migration.
   - [ ] Avoid moving chat service behavior into the package in this branch.
   - [ ] Avoid defining any chat SDK provider abstraction in this branch.
