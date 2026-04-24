@@ -19,13 +19,29 @@ export type AccountTransportProviderId = (typeof accountTransportProviderIds)[nu
 
 export type AuthSourceType = TokenAuthSourceType | 'codex-account' | 'account-transport' | 'none';
 
-export interface DirectTokenAuthSource {
+export interface AuthDescriptor {
+  sourceType: AuthSourceType;
+  label?: string;
+  accountProviderId?: AccountTransportProviderId | (string & {});
+  accountId?: string | null;
+  accountLabel?: string | null;
+  expiresAt?: string | null;
+  hasRefreshToken?: boolean;
+  redactedFingerprint?: string;
+  metadata?: Record<string, unknown>;
+}
+
+interface AuthMaterialBase {
+  descriptor?: Partial<AuthDescriptor>;
+}
+
+export interface DirectTokenAuthMaterial extends AuthMaterialBase {
   type: 'direct-token';
   token: string;
   label?: string;
 }
 
-export interface UserTokenAuthSource {
+export interface UserTokenAuthMaterial extends AuthMaterialBase {
   type: 'user-token';
   userId: string;
   token?: string;
@@ -33,7 +49,7 @@ export interface UserTokenAuthSource {
   label?: string;
 }
 
-export interface WorkspaceTokenAuthSource {
+export interface WorkspaceTokenAuthMaterial extends AuthMaterialBase {
   type: 'workspace-token';
   workspaceId: string;
   token?: string;
@@ -41,14 +57,14 @@ export interface WorkspaceTokenAuthSource {
   label?: string;
 }
 
-export interface EnvironmentTokenAuthSource {
+export interface EnvironmentTokenAuthMaterial extends AuthMaterialBase {
   type: 'environment-token';
   envVar: string;
   token?: string;
   label?: string;
 }
 
-export interface CodexAccountAuthSource {
+export interface CodexAccountAuthMaterial extends AuthMaterialBase {
   type: 'codex-account';
   provider: 'codex';
   accessToken: string;
@@ -59,7 +75,7 @@ export interface CodexAccountAuthSource {
   expiresAt?: string | null;
 }
 
-export interface FutureAccountTransportAuthSource {
+export interface FutureAccountTransportAuthMaterial extends AuthMaterialBase {
   type: 'account-transport';
   provider: Exclude<AccountTransportProviderId, 'codex'> | (string & {});
   status: 'planned';
@@ -71,18 +87,20 @@ export interface FutureAccountTransportAuthSource {
   metadata?: Record<string, unknown>;
 }
 
-export interface NoAuthSource {
+export interface NoAuthMaterial extends AuthMaterialBase {
   type: 'none';
 }
 
-export type AuthSource =
-  | DirectTokenAuthSource
-  | UserTokenAuthSource
-  | WorkspaceTokenAuthSource
-  | EnvironmentTokenAuthSource
-  | CodexAccountAuthSource
-  | FutureAccountTransportAuthSource
-  | NoAuthSource;
+export type SecretAuthMaterial =
+  | DirectTokenAuthMaterial
+  | UserTokenAuthMaterial
+  | WorkspaceTokenAuthMaterial
+  | EnvironmentTokenAuthMaterial
+  | CodexAccountAuthMaterial
+  | FutureAccountTransportAuthMaterial
+  | NoAuthMaterial;
+
+export type AuthSource = SecretAuthMaterial;
 
 export interface AuthResolutionRequest {
   providerId: ProviderId;
@@ -95,15 +113,98 @@ export interface AuthResolutionRequest {
 }
 
 export interface AuthResolution {
-  source: AuthSource;
-  redactedLabel?: string;
+  material: SecretAuthMaterial;
+  descriptor: AuthDescriptor;
 }
 
 export type AuthResolver = (
   request: AuthResolutionRequest,
 ) => AuthResolution | Promise<AuthResolution>;
 
+export type AuthInput = SecretAuthMaterial | AuthResolution;
+
 export const futureAccountTransportProviderIds = [
   'gemini-code-assist',
   'claude-code',
 ] as const satisfies readonly AccountTransportProviderId[];
+
+export const getSecretAuthMaterial = (
+  input?: AuthInput,
+): SecretAuthMaterial | undefined => {
+  return input && 'material' in input ? input.material : input;
+};
+
+export const describeAuthMaterial = (
+  material: SecretAuthMaterial,
+): AuthDescriptor => {
+  const baseDescriptor = material.descriptor ?? {};
+
+  switch (material.type) {
+    case 'direct-token':
+      return {
+        sourceType: material.type,
+        ...(material.label ? { label: material.label } : {}),
+        ...baseDescriptor,
+      };
+
+    case 'user-token':
+      return {
+        sourceType: material.type,
+        ...(material.label ? { label: material.label } : {}),
+        ...baseDescriptor,
+      };
+
+    case 'workspace-token':
+      return {
+        sourceType: material.type,
+        ...(material.label ? { label: material.label } : {}),
+        ...baseDescriptor,
+      };
+
+    case 'environment-token':
+      return {
+        sourceType: material.type,
+        ...(material.label ? { label: material.label } : {}),
+        ...baseDescriptor,
+      };
+
+    case 'codex-account':
+      return {
+        sourceType: material.type,
+        accountProviderId: material.provider,
+        ...(material.accountId ? { accountId: material.accountId } : {}),
+        ...(material.accountLabel ? { accountLabel: material.accountLabel } : {}),
+        ...(material.expiresAt ? { expiresAt: material.expiresAt } : {}),
+        ...(material.refreshToken ? { hasRefreshToken: true } : {}),
+        ...baseDescriptor,
+      };
+
+    case 'account-transport':
+      return {
+        sourceType: material.type,
+        accountProviderId: material.provider,
+        ...(material.accountId ? { accountId: material.accountId } : {}),
+        ...(material.accountLabel ? { accountLabel: material.accountLabel } : {}),
+        ...(material.refreshToken ? { hasRefreshToken: true } : {}),
+        ...baseDescriptor,
+      };
+
+    case 'none':
+      return {
+        sourceType: material.type,
+        ...baseDescriptor,
+      };
+  }
+};
+
+export const getAuthDescriptor = (
+  input?: AuthInput,
+): AuthDescriptor | undefined => {
+  if (!input) {
+    return undefined;
+  }
+
+  return 'material' in input
+    ? input.descriptor
+    : describeAuthMaterial(input);
+};

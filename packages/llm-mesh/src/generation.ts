@@ -1,4 +1,4 @@
-import type { AuthResolver, AuthSource } from './auth.js';
+import type { AuthInput, AuthResolver } from './auth.js';
 import type { LlmMeshMessage } from './messages.js';
 import type { ModelId, ProviderId } from './providers.js';
 import type { FinishReason, StreamEvent, TokenUsage } from './streaming.js';
@@ -33,7 +33,7 @@ export interface GenerateRequest {
   providerId?: ProviderId;
   modelId?: ModelId;
   messages: readonly LlmMeshMessage[];
-  auth?: AuthSource | AuthResolver;
+  auth?: AuthInput | AuthResolver;
   tools?: readonly ToolDefinition[];
   toolChoice?: ToolChoice;
   responseFormat?: ResponseFormat;

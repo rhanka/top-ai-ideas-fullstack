@@ -1,17 +1,18 @@
-import type { AuthResolution, AuthSource } from './auth.js';
+import type { AuthInput, SecretAuthMaterial } from './auth.js';
+import { getSecretAuthMaterial } from './auth.js';
 
 const hasText = (value: string | null | undefined): boolean => {
   return typeof value === 'string' && value.trim().length > 0;
 };
 
-const unwrapAuthSource = (source?: AuthSource | AuthResolution): AuthSource | undefined => {
-  return source && 'source' in source ? source.source : source;
+const unwrapAuthMaterial = (input?: AuthInput): SecretAuthMaterial | undefined => {
+  return getSecretAuthMaterial(input);
 };
 
 export const validateAdapterAuthSource = (
-  input?: AuthSource | AuthResolution,
+  input?: AuthInput,
 ): { ok: boolean; message?: string } => {
-  const source = unwrapAuthSource(input);
+  const source = unwrapAuthMaterial(input);
   if (!source || source.type === 'none') {
     return { ok: false, message: 'Provider auth source is not configured' };
   }

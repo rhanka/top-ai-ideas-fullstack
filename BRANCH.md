@@ -122,7 +122,7 @@ Create the first publishable Entropic package, `@entropic/llm-mesh`, as a provid
   - [ ] Extend tool/result payloads for rich content, typed errors, annotations, provider call IDs, Entropic call IDs, and streamed input lifecycle details.
   - [x] Define structured output capability flags and schema support limits per provider.
   - [x] Define auth modes: direct token, user token, workspace token, environment token, Codex account.
-  - [ ] Separate server-only `SecretAuthMaterial` from redacted `AuthDescriptor` used by events, traces, UI, and browser-safe package surfaces.
+  - [x] Separate server-only `SecretAuthMaterial` from redacted `AuthDescriptor` used by events, traces, UI, and browser-safe package surfaces.
   - [x] Prepare future account auth extension points for Gemini Code Assist and Claude Code without implementing live flows.
   - [ ] Lot gate:
     - [ ] `make typecheck-llm-mesh API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`

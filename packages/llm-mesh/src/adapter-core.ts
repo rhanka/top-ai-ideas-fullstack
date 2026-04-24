@@ -1,4 +1,4 @@
-import type { AuthResolution, AuthSource } from './auth.js';
+import type { AuthInput } from './auth.js';
 import {
   getProviderProfile,
   listModelProfilesByProvider,
@@ -34,7 +34,7 @@ export interface ProviderAdapterOptions<Client extends ProviderAdapterClient = P
   models?: readonly ModelProfile[];
   errorOptions?: ProviderErrorNormalizationOptions;
   validateAuth?: (
-    source?: AuthSource | AuthResolution,
+    source?: AuthInput,
   ) => { ok: boolean; message?: string };
 }
 
@@ -89,7 +89,7 @@ export abstract class BaseProviderAdapter<Client extends ProviderAdapterClient =
     return await this.client.stream(request, context);
   }
 
-  validateAuth(source?: AuthSource | AuthResolution): { ok: boolean; message?: string } {
+  validateAuth(source?: AuthInput): { ok: boolean; message?: string } {
     return this.options.validateAuth?.(source) ?? validateAdapterAuthSource(source);
   }
 

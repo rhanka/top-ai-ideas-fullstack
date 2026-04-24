@@ -1,4 +1,4 @@
-import type { AuthResolution, AuthSource } from './auth.js';
+import type { AuthInput } from './auth.js';
 import type { GenerateRequest, GenerateResponse, StreamRequest, StreamResult } from './generation.js';
 import type { ModelProfile, ProviderDescriptor } from './catalog.js';
 import type { ProviderId } from './providers.js';
@@ -10,7 +10,7 @@ export interface CredentialValidationResult {
 }
 
 export interface ProviderRuntimeContext {
-  auth?: AuthSource | AuthResolution;
+  auth?: AuthInput;
   metadata?: Record<string, unknown>;
 }
 
@@ -19,7 +19,7 @@ export interface ProviderAdapter {
   listModels(): readonly ModelProfile[];
   generate(request: GenerateRequest, context?: ProviderRuntimeContext): Promise<GenerateResponse>;
   stream(request: StreamRequest, context?: ProviderRuntimeContext): Promise<StreamResult>;
-  validateAuth(source?: AuthSource | AuthResolution): CredentialValidationResult;
+  validateAuth(source?: AuthInput): CredentialValidationResult;
   normalizeError(error: unknown): NormalizedProviderError;
 }
 
