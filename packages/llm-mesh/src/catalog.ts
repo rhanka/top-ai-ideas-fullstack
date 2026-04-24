@@ -1,5 +1,6 @@
 import {
   geminiUnsupportedJsonSchemaKeywords,
+  type CapabilitySupport,
   type ModelCapabilities,
   type ProviderCapabilities,
 } from './capabilities.js';
@@ -58,29 +59,36 @@ const capabilities = (input: {
   structuredOutputLevel: ProviderCapabilities['structuredOutput']['jsonSchema']['level'];
   accountTransports?: readonly AccountTransportProviderId[];
   supportsReasoning?: boolean;
-  streamedArgumentDeltas?: boolean;
+  streamedArgumentDeltas?: CapabilitySupport;
   unsupportedKeywords?: readonly string[];
   stringEnumsOnly?: boolean;
 }): ProviderCapabilities => ({
-  supportsTools: true,
-  supportsStreaming: true,
-  supportsStructuredOutput: input.structuredOutputLevel !== 'none',
-  supportsReasoning: input.supportsReasoning ?? input.reasoningTier !== 'none',
   tools: {
-    supported: true,
-    parallelCalls: true,
-    streamedArgumentDeltas: input.streamedArgumentDeltas ?? true,
-    resultContinuation: true,
+    support: 'unknown',
+    parallelCalls: 'unknown',
+    streamedArgumentDeltas: input.streamedArgumentDeltas ?? 'unknown',
+    resultContinuation: 'unknown',
     toolChoice,
   },
   streaming: {
-    supported: true,
-    nativeProviderChunks: true,
+    support: 'unknown',
+    nativeProviderChunks: 'unknown',
   },
   structuredOutput: {
-    supported: input.structuredOutputLevel !== 'none',
+    support:
+      input.structuredOutputLevel === 'none'
+        ? 'unsupported'
+        : input.structuredOutputLevel === 'json-schema'
+          ? 'supported'
+          : 'partial',
     strategies: ['json-object', 'json-schema', 'tool-call'],
     jsonSchema: {
+      support:
+        input.structuredOutputLevel === 'none'
+          ? 'unsupported'
+          : input.structuredOutputLevel === 'json-schema'
+            ? 'supported'
+            : 'partial',
       level: input.structuredOutputLevel,
       strict: input.structuredOutputLevel === 'json-schema',
       ...(input.unsupportedKeywords ? { unsupportedKeywords: input.unsupportedKeywords } : {}),
@@ -90,11 +98,27 @@ const capabilities = (input: {
     },
   },
   reasoning: {
+    support:
+      input.supportsReasoning === false || input.reasoningTier === 'none'
+        ? 'unsupported'
+        : 'unknown',
     tier: input.reasoningTier,
-    controls: input.reasoningTier !== 'none',
-    visibleSummaries: input.reasoningTier !== 'none',
-    hiddenSignatures: input.reasoningTier !== 'none',
-    tokenUsageAccounting: input.reasoningTier !== 'none',
+    controls:
+      input.supportsReasoning === false || input.reasoningTier === 'none'
+        ? 'unsupported'
+        : 'unknown',
+    visibleSummaries:
+      input.supportsReasoning === false || input.reasoningTier === 'none'
+        ? 'unsupported'
+        : 'unknown',
+    hiddenSignatures:
+      input.supportsReasoning === false || input.reasoningTier === 'none'
+        ? 'unsupported'
+        : 'unknown',
+    tokenUsageAccounting:
+      input.supportsReasoning === false || input.reasoningTier === 'none'
+        ? 'unsupported'
+        : 'unknown',
   },
   modalities: textModalities,
   auth: auth(input.accountTransports),
@@ -162,14 +186,34 @@ const modelCapabilities = (
   reasoningTier: ReasoningTier,
 ): ModelCapabilities => ({
   ...providerProfiles[providerId].capabilities,
-  supportsReasoning: reasoningTier !== 'none',
   reasoning: {
     ...providerProfiles[providerId].capabilities.reasoning,
+    support:
+      providerProfiles[providerId].capabilities.reasoning.support === 'unsupported' ||
+      reasoningTier === 'none'
+        ? 'unsupported'
+        : providerProfiles[providerId].capabilities.reasoning.support,
     tier: reasoningTier,
-    controls: reasoningTier !== 'none',
-    visibleSummaries: reasoningTier !== 'none',
-    hiddenSignatures: reasoningTier !== 'none',
-    tokenUsageAccounting: reasoningTier !== 'none',
+    controls:
+      providerProfiles[providerId].capabilities.reasoning.support === 'unsupported' ||
+      reasoningTier === 'none'
+        ? 'unsupported'
+        : 'unknown',
+    visibleSummaries:
+      providerProfiles[providerId].capabilities.reasoning.support === 'unsupported' ||
+      reasoningTier === 'none'
+        ? 'unsupported'
+        : 'unknown',
+    hiddenSignatures:
+      providerProfiles[providerId].capabilities.reasoning.support === 'unsupported' ||
+      reasoningTier === 'none'
+        ? 'unsupported'
+        : 'unknown',
+    tokenUsageAccounting:
+      providerProfiles[providerId].capabilities.reasoning.support === 'unsupported' ||
+      reasoningTier === 'none'
+        ? 'unsupported'
+        : 'unknown',
   },
 });
 
@@ -250,17 +294,17 @@ export const modelProfiles = [
     providerId: 'cohere',
     modelId: 'command-a-03-2025',
     label: 'Command A',
-    reasoningTier: 'standard',
+    reasoningTier: 'none',
     defaultTaskHints: ['chat'],
-    capabilities: modelCapabilities('cohere', 'standard'),
+    capabilities: modelCapabilities('cohere', 'none'),
   },
   {
     providerId: 'cohere',
     modelId: 'command-a-reasoning-08-2025',
     label: 'Command A R.',
-    reasoningTier: 'advanced',
+    reasoningTier: 'none',
     defaultTaskHints: ['chat', 'structured', 'summary'],
-    capabilities: modelCapabilities('cohere', 'advanced'),
+    capabilities: modelCapabilities('cohere', 'none'),
   },
 ] as const satisfies readonly ModelProfile[];
 

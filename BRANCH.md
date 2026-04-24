@@ -115,7 +115,7 @@ Create the first publishable Entropic package, `@entropic/llm-mesh`, as a provid
 - [ ] **Lot 1 — Public package contract**
   - [x] Create `packages/llm-mesh` package boundary.
   - [x] Define public provider IDs, model IDs, model capability matrix, provider capability matrix, and reasoning tiers.
-  - [ ] Refine capability statuses to avoid provider-wide optimistic claims; model profiles must carry `supported`, `unsupported`, `partial`, or `unknown` feature states.
+  - [x] Refine capability statuses to avoid provider-wide optimistic claims; model profiles must carry `supported`, `unsupported`, `partial`, or `unknown` feature states.
   - [x] Define normalized request/response contract for non-streaming calls.
   - [x] Define normalized streaming events: `reasoning_delta`, `content_delta`, `tool_call_start`, `tool_call_delta`, `tool_call_result`, `status`, `error`, `done`.
   - [x] Define normalized tool-use schema independent from OpenAI Chat Completions details.

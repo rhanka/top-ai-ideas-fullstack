@@ -4,6 +4,8 @@ import type {
 } from './auth.js';
 import type { ReasoningTier } from './providers.js';
 
+export type CapabilitySupport = 'supported' | 'unsupported' | 'partial' | 'unknown';
+
 export type ToolChoiceMode = 'auto' | 'required' | 'none';
 
 export type StructuredOutputStrategy = 'json-object' | 'json-schema' | 'tool-call';
@@ -15,19 +17,20 @@ export type JsonSchemaSupportLevel =
   | 'tool-input-schema';
 
 export interface ToolUseCapabilities {
-  supported: boolean;
-  parallelCalls: boolean;
-  streamedArgumentDeltas: boolean;
-  resultContinuation: boolean;
+  support: CapabilitySupport;
+  parallelCalls: CapabilitySupport;
+  streamedArgumentDeltas: CapabilitySupport;
+  resultContinuation: CapabilitySupport;
   toolChoice: readonly ToolChoiceMode[];
 }
 
 export interface StreamingCapabilities {
-  supported: boolean;
-  nativeProviderChunks: boolean;
+  support: CapabilitySupport;
+  nativeProviderChunks: CapabilitySupport;
 }
 
 export interface JsonSchemaCapabilities {
+  support: CapabilitySupport;
   level: JsonSchemaSupportLevel;
   strict: boolean;
   unsupportedKeywords?: readonly string[];
@@ -36,17 +39,18 @@ export interface JsonSchemaCapabilities {
 }
 
 export interface StructuredOutputCapabilities {
-  supported: boolean;
+  support: CapabilitySupport;
   strategies: readonly StructuredOutputStrategy[];
   jsonSchema: JsonSchemaCapabilities;
 }
 
 export interface ReasoningCapabilities {
+  support: CapabilitySupport;
   tier: ReasoningTier;
-  controls: boolean;
-  visibleSummaries: boolean;
-  hiddenSignatures: boolean;
-  tokenUsageAccounting: boolean;
+  controls: CapabilitySupport;
+  visibleSummaries: CapabilitySupport;
+  hiddenSignatures: CapabilitySupport;
+  tokenUsageAccounting: CapabilitySupport;
 }
 
 export interface ModalityCapabilities {
@@ -60,10 +64,6 @@ export interface AuthCapabilities {
 }
 
 export interface ProviderCapabilities {
-  supportsTools: boolean;
-  supportsStreaming: boolean;
-  supportsStructuredOutput: boolean;
-  supportsReasoning: boolean;
   tools: ToolUseCapabilities;
   streaming: StreamingCapabilities;
   structuredOutput: StructuredOutputCapabilities;
