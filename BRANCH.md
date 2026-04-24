@@ -119,7 +119,7 @@ Create the first publishable Entropic package, `@entropic/llm-mesh`, as a provid
   - [x] Define normalized request/response contract for non-streaming calls.
   - [x] Define normalized streaming events: `reasoning_delta`, `content_delta`, `tool_call_start`, `tool_call_delta`, `tool_call_result`, `status`, `error`, `done`.
   - [x] Define normalized tool-use schema independent from OpenAI Chat Completions details.
-  - [ ] Extend tool/result payloads for rich content, typed errors, annotations, provider call IDs, Entropic call IDs, and streamed input lifecycle details.
+  - [x] Extend tool/result payloads for rich content, typed errors, annotations, provider call IDs, Entropic call IDs, and streamed input lifecycle details.
   - [x] Define structured output capability flags and schema support limits per provider.
   - [x] Define auth modes: direct token, user token, workspace token, environment token, Codex account.
   - [x] Separate server-only `SecretAuthMaterial` from redacted `AuthDescriptor` used by events, traces, UI, and browser-safe package surfaces.
