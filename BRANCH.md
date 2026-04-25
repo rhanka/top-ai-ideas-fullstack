@@ -1,140 +1,127 @@
-# Feature: BR-21a PptGenJS Presentation Tool
+# Feature: BR-14f Node Workspace Monorepo Infra
 
 ## Objective
-Extend the existing `document_generate` chat tool with `format: "docx" | "pptx"`, backed by `pptxgenjs` for PPTX generation, with generated PPTX files handled in chat alongside generated DOCX files. BR-21a owns only the generic generated-document primitive and generated-file chat handling. It does not implement profile exports, CV transpose, profile data models, proposal staffing, or profile-specific templates.
+Introduce the minimal repo/tooling baseline required for `api`, `ui`, and future internal Node packages to coexist cleanly in one monorepo. The branch must unblock BR-14c's thin app proof path without switching away from `make`, without introducing Nx, and without moving `api/` or `ui/` under `packages/`.
 
 ## Scope / Guardrails
-- Scope limited to a generic PptGenJS-based presentation generation tool and its technical contract.
-- Decision status: Q&A validated; implementation spec exists.
-- Branch development happens in isolated worktree `tmp/feat-pptxgenjs-tool-21a`.
-- Make-only workflow, no direct Docker commands.
-- Automated tests must use dedicated environments, never root `dev`.
-- Environment mapping: `API_PORT=8722 UI_PORT=5122 MAILDEV_UI_PORT=1022 ENV=feat-pptxgenjs-tool-21a`.
-- Test mapping: `API_PORT=8722 UI_PORT=5122 MAILDEV_UI_PORT=1022 ENV=test-feat-pptxgenjs-tool-21a`.
+- Scope limited to Node workspace metadata, Docker/make wiring, and compatibility documentation for active branches.
+- Make remains the root orchestrator.
+- `api/` and `ui/` stay as application roots; reusable packages stay under `packages/*`.
+- The branch must not introduce `@entropic/llm-mesh` itself; BR-14c keeps ownership of the package contract and proof after rebase.
+- Branch development happens in isolated worktree `tmp/chore-node-workspace-monorepo-14f`.
+- Automated tests must run on dedicated environments, never root `dev`.
 - In every `make` command, `ENV=<env>` must be passed as the last argument.
 - All new text in English.
-- A future profile branch may later consume this tool for profile exports, but BR-21a must stay profile-neutral.
 
 ## Branch Scope Boundaries (MANDATORY)
 - **Allowed Paths (implementation scope)**:
   - `BRANCH.md`
   - `PLAN.md`
-  - `plan/21a-BRAINSTORM_pptxgenjs-tool.md`
-  - `plan/21a-BRANCH_feat-pptxgenjs-tool.md`
-  - `spec/SPEC_EVOL_PPTXGENJS_TOOL.md`
-  - `spec/SPEC_TEMPLATING.md`
-  - `spec/TOOLS.md`
-  - `api/src/services/docx-generation.ts`
-  - `api/src/services/docx-freeform-helpers.ts`
-  - `api/src/services/docx-freeform-skill.ts`
-  - `api/src/services/pptx-generation.ts`
-  - `api/src/services/pptx-freeform-helpers.ts`
-  - `api/src/services/pptx-freeform-skill.ts`
-  - `api/src/services/tools.ts`
-  - `api/src/services/chat-service.ts`
-  - `api/src/routes/api/docx.ts`
-  - `api/src/routes/api/pptx.ts`
-  - `api/src/routes/api/index.ts`
-  - `api/tests/unit/*pptx*.test.ts`
-  - `api/tests/unit/*docx*.test.ts`
-  - `api/tests/api/*pptx*.test.ts`
-  - `api/tests/api/*docx*.test.ts`
-  - `ui/src/lib/utils/docx.ts`
-  - `ui/src/lib/utils/pptx.ts`
-  - `ui/src/lib/components/StreamMessage.svelte`
-  - `ui/tests/*pptx*.test.ts`
+  - `plan/14f-BRANCH_chore-node-workspace-monorepo.md`
+  - `spec/SPEC_EVOL_ENTROPIC_BR14_ORCHESTRATION.md`
+  - `package.json`
+  - `package-lock.json`
+  - `docker-compose.yml`
+  - `docker-compose.dev.yml`
+  - `docker-compose.test.yml`
+  - `Makefile`
+  - `api/package.json`
+  - `api/package-lock.json`
+  - `ui/package.json`
+  - `ui/package-lock.json`
 - **Forbidden Paths (must not change in this branch)**:
   - `README.md`
   - `README.fr.md`
   - `TRANSITION.md`
-  - `Makefile`
-  - `docker-compose*.yml`
-  - `.cursor/rules/**`
   - `packages/llm-mesh/**`
-  - `spec/SPEC_EVOL_LLM_MESH.md`
-  - `spec/SPEC_EVOL_CV_TRANSPOSE_PROFILES.md`
   - `tmp/feat-llm-mesh-sdk/**`
   - `tmp/feat-gdrive-sso-indexing-16a/**`
-  - `tmp/feat-cv-transpose-profiles*/**`
+  - `tmp/feat-pptxgenjs-tool-21a/**`
 - **Conditional Paths (allowed only with explicit exception when not already listed in Allowed Paths)**:
   - `.github/workflows/**`
-  - `TODO.md`
-  - `api/package.json`
-  - `api/package-lock.json`
-  - `api/src/db/schema.ts`
-  - `api/drizzle/*.sql`
-  - `api/src/services/queue-manager.ts`
-  - `ui/**`
-  - `e2e/**`
   - `scripts/**`
+  - `api/src/**`
+  - `ui/src/**`
 - **Exception process**:
-  - Declare exception ID `BR21a-EXn` in `## Feedback Loop` before touching any conditional/forbidden path.
+  - Declare exception ID `BR14f-EXn` in `## Feedback Loop` before touching any conditional/forbidden path.
   - Include reason, impact, and rollback strategy.
 
 ## Feedback Loop
-- [x] `clarification` BR21a-Q0 — Product principle accepted: one additional chat tool call for PPTX generation, with generated PPTX files handled in chat alongside generated DOCX files.
-- [x] `clarification` BR21a-Q1-Q8 — Q&A selected: `1X 2B 3A 4A 5A 6A 7X 8A`. Keep `document_generate`, add `format: "docx" | "pptx"`, mutualize generated-file UI/download behavior, sandbox PptGenJS with exposed helpers, use an upskill action adapted from Anthropic `pptx` skill guidance.
-- [x] `clarification` BR21a-Q9 — Anthropic `pptx` skill references are generation-only inspiration for BR-21a. Editing workflows, Python helper libraries, local filesystem workflows, and template import/repair flows are out of scope. Entropic must use the existing DOCX-style JavaScript VM sandbox pattern with approved PptGenJS helpers, not Claude's sandbox assumptions.
-- [x] `attention` BR21a-EX1 — Used for `api/package.json` and `api/package-lock.json` because `pptxgenjs` is not already installed. Reason: renderer dependency. Impact: dependency metadata only. Rollback: remove dependency and renderer import.
-- [ ] `attention` BR21a-EX2 — `api/src/services/queue-manager.ts` is conditionally allowed only if BR21a-Q2 selects a queued generation path. Reason: job processing integration. Impact: queue plumbing only. Rollback: keep synchronous freeform-only generation.
-- [x] `acknowledge` BR21a-EX3 — Approved and used for `ui/src/lib/components/ChatPanel.svelte` plus aligned UI tests under `ui/**` because the visible generated-file card lives in `ChatPanel.svelte` (`docxCardsByMessageId`, hard-coded `DOCX` label, and `downloadCompletedDocxJob(...)` button), while `StreamMessage.svelte` only forwards tool results. Reason: PPTX label + route selection cannot be generalized correctly inside the original allowed files alone. Impact: presentation of generated files only. Rollback: revert the generalized chat card/download changes and keep the existing DOCX-only card path.
-- [x] `decision` BR21a-D1 — Final generated-file contract stays tool-neutral: `document_generate` returns generic generated-file metadata, chat runtime prefers `generatedFileCards`, and `runtimeSummary.docxCards` remains a DOCX-only backward-compatible alias during migration. Profile/CV export behavior stays out of scope for BR-21a.
-- [x] `deferred` BR21a-D2 — GitHub Actions Node 24 compatibility is outside BR-21a scope and is queued as future branch BR-24 `chore/node24-actions-upgrade` because current CI/CD only emits runner deprecation warnings and does not block the PPTX delivery path.
-- [x] `attention` BR21a-UAT1 — Root UAT reproduced two blocking runtime issues on PPTX generation: repeated `code_runtime_error: pptxgenjs is not a constructor` failures and one retry without `entityId`. Fix on this branch: resolve a constructible PptGenJS export before exposing it to the sandbox, stop relying on constructor identity in PPTX result validation, prefer `pptx()` in PPTX guidance/prompting, and fall back `document_generate` to the active folder/initiative chat context when the model omits the current target. Impact: API-only hardening inside BR-21a scope. Rollback: revert the PPTX constructor resolver, presentation-shape validation, and document target fallback changes.
-- [x] `validation` BR21a-UAT2 — Root UAT rerun on 2026-04-25 from `http://localhost:5173/folders/623d703d-8d4f-4b19-a0bf-fef53d317f08` completed successfully after `b58763cf`: retry stream `ada485e5-bc11-4dc4-a399-bc8c6d217062` finished with `document_generate` result status `completed`, job `4f77a5db-f6ad-4220-8cd2-7df4fa75688b`, file `Presentation cas dusage Ellio.pptx`, and the chat UI rendered the PPTX card plus download link. No dedicated BR21a E2E test exists; branch proof is focused API/UI tests plus root UAT.
+- [x] `clarification` BR14f-D1 — Keep `make` as the top-level orchestrator. This branch adds a root Node workspace baseline only; it does not switch the repo to Nx.
+- [x] `clarification` BR14f-D2 — Keep `api/` and `ui/` at repo root as application roots. The target layout is app roots plus reusable `packages/*`, not `packages/api` and `packages/ui`.
+- [x] `attention` BR14f-I1 — BR-14c depends on BR-14f for the thin API proof path only. BR-14f must not absorb the mesh contract or product behavior.
+- [x] `attention` BR14f-I2 — BR-16a can continue in parallel, but will need a shallow rebase after BR-14f lands because its test/runtime paths depend on the same `api`/`ui` container wiring.
+- [x] `attention` BR14f-I3 — BR-21a is low-impact and should preferably merge before BR-14f to avoid needless rebase churn on a near-finished branch.
+
+## AI Flaky tests
+- Acceptance rule:
+  - Accept only non-systematic provider/network/model nondeterminism as `flaky accepted`.
+  - Non-systematic means at least one success on the same commit and same command.
+  - Never amend tests with additive timeouts.
+  - If flaky, analyze impact vs `main`: if unrelated, accept and record command + failing test file + signature in `BRANCH.md`; if related, treat as blocking.
+  - Capture explicit user sign-off before merge.
+
+## Orchestration Mode (AI-selected)
+- [x] **Mono-branch + cherry-pick** (default for orthogonal tasks; single final test cycle)
+- [ ] **Multi-branch** (only if sub-workstreams require independent CI or long-running validation)
+- Rationale: BR-14f is a tight infra baseline branch. It must stay small and become the shared base for BR-14c and any still-open app branches.
+
+## UAT Management (in orchestration context)
+- **Mono-branch**: UAT is performed on the integrated branch only if local dev flows materially change.
+- UAT checkpoints must be listed as checkboxes inside each relevant lot.
+- Execution flow:
+  - Develop and run tests in `tmp/chore-node-workspace-monorepo-14f`.
+  - Push branch before UAT.
+  - Run user UAT from root workspace (`/home/antoinefa/src/entropic`, `ENV=dev`) only after branch is pushed and ready.
+  - Switch back to `tmp/chore-node-workspace-monorepo-14f` after UAT.
 
 ## Plan / Todo (lot-based)
-- [x] **Lot 0 — Baseline and restart**
+- [x] **Lot 0 — Baseline & constraints**
   - [x] Read `rules/MASTER.md` and `rules/workflow.md`.
-  - [x] Rename branch/worktree to `feat/pptxgenjs-tool-21a` / `tmp/feat-pptxgenjs-tool-21a`.
-  - [x] Remove the previous profile-export scope from BR-21a.
-  - [x] Define environment and test mappings.
-  - [x] Locate the existing freeform DOCX tool and storage/download contract.
-  - [x] Replace premature spec with `plan/21a-BRAINSTORM_pptxgenjs-tool.md`.
-  - [x] Finalize BR21a-Q1-Q8 before writing the spec.
+  - [x] Create isolated worktree `tmp/chore-node-workspace-monorepo-14f`.
+  - [x] Copy root `.env` into the branch worktree.
+  - [x] Confirm active branch `chore/node-workspace-monorepo-14f`.
+  - [x] Define environment mapping: `API_PORT=8715 UI_PORT=5115 MAILDEV_UI_PORT=1015 ENV=chore-node-workspace-monorepo-14f`.
+  - [x] Define test mapping: `API_PORT=8715 UI_PORT=5115 MAILDEV_UI_PORT=1015 ENV=test-chore-node-workspace-monorepo-14f`.
+  - [x] Confirm scope and guardrails.
+  - [x] Update orchestration docs (`PLAN.md`, `spec/SPEC_EVOL_ENTROPIC_BR14_ORCHESTRATION.md`) to include BR-14f and branch impact.
 
-- [x] **Lot 1 — Brainstorming and Q&A**
-  - [x] Validate or edit answer block in `plan/21a-BRAINSTORM_pptxgenjs-tool.md`.
-  - [x] Record the selected answer block in this file.
-  - [x] Create `spec/SPEC_EVOL_PPTXGENJS_TOOL.md` only after Q&A is validated.
+- [ ] **Lot 1 — Root Node workspace baseline**
+  - [ ] Add a private root `package.json` with workspace metadata for `api`, `ui`, and `packages/*`.
+  - [ ] Decide lockfile strategy for the root workspace without breaking current `api`/`ui` flows.
+  - [ ] Keep `make` as the only supported entrypoint.
+  - [ ] Lot gate:
+    - [ ] `make typecheck-api API_PORT=8715 UI_PORT=5115 MAILDEV_UI_PORT=1015 ENV=test-chore-node-workspace-monorepo-14f`
+    - [ ] `make typecheck-ui API_PORT=8715 UI_PORT=5115 MAILDEV_UI_PORT=1015 ENV=test-chore-node-workspace-monorepo-14f`
 
-- [x] **Lot 2 — Presentation tool specification**
-  - [x] Freeze the selected tool name, route name, job type, and UI download contract.
-  - [x] Define the freeform PptGenJS helper API.
-  - [x] Define the sandbox allowlist, error codes, and return type contract.
-  - [x] Define expected `upskill` content and generation prompt boundaries.
+- [ ] **Lot 2 — Container and make wiring**
+  - [ ] Move `api`/`ui` container mounts to the repo root with explicit working directories.
+  - [ ] Adjust `make` / compose commands so workspace installs and service runs still work through `make`.
+  - [ ] Keep the resulting setup polyglot-ready: Node workspace for Node projects, no assumption that future Python services must join the same toolchain.
+  - [ ] Lot gate:
+    - [ ] `make up-api-test API_PORT=8715 UI_PORT=5115 MAILDEV_UI_PORT=1015 ENV=test-chore-node-workspace-monorepo-14f`
+    - [ ] `make typecheck-api API_PORT=8715 UI_PORT=5115 MAILDEV_UI_PORT=1015 ENV=test-chore-node-workspace-monorepo-14f`
+    - [ ] `make lint-api API_PORT=8715 UI_PORT=5115 MAILDEV_UI_PORT=1015 ENV=test-chore-node-workspace-monorepo-14f`
+    - [ ] `make typecheck-ui API_PORT=8715 UI_PORT=5115 MAILDEV_UI_PORT=1015 ENV=test-chore-node-workspace-monorepo-14f`
+    - [ ] `make lint-ui API_PORT=8715 UI_PORT=5115 MAILDEV_UI_PORT=1015 ENV=test-chore-node-workspace-monorepo-14f`
 
-- [x] **Lot 3 — PptGenJS generation engine**
-  - [x] Add `pptxgenjs` dependency through BR21a-EX1 if required.
-  - [x] Implement `api/src/services/pptx-freeform-helpers.ts`.
-  - [x] Implement `api/src/services/pptx-freeform-skill.ts`.
-  - [x] Implement `api/src/services/pptx-generation.ts`.
-  - [x] Gate: typecheck/lint/API unit tests.
+- [ ] **Lot 3 — Compatibility proof and branch impact**
+  - [ ] Prove the workspace baseline is sufficient for BR-14c to consume internal packages after rebase, without adding the `@entropic/llm-mesh` package itself in BR-14f.
+  - [ ] Record exact rebase impact and required follow-up for BR-14c, BR-16a, and BR-21a.
+  - [ ] Keep BR-16a and BR-21a behavior stable under the new container/runtime wiring.
+  - [ ] Lot gate:
+    - [ ] `make ps API_PORT=8715 UI_PORT=5115 MAILDEV_UI_PORT=1015 ENV=test-chore-node-workspace-monorepo-14f`
+    - [ ] `make down API_PORT=8715 UI_PORT=5115 MAILDEV_UI_PORT=1015 ENV=test-chore-node-workspace-monorepo-14f`
 
-- [x] **Lot 4 — API and chat tool integration**
-  - [x] Add the chat tool surface selected in BR21a-Q1.
-  - [x] Add generation handling in `chat-service.ts`.
-  - [x] Persist format-aware generated-file metadata compatible with DOCX and PPTX downloads.
-  - [x] Add or adapt shared generated-file download routing while preserving existing DOCX downloads.
-  - [x] Gate: typecheck/lint/API endpoint tests.
+- [ ] **Lot 4 — Docs consolidation**
+  - [ ] Consolidate final ordering and branch-contract notes in `PLAN.md` and `spec/SPEC_EVOL_ENTROPIC_BR14_ORCHESTRATION.md`.
+  - [ ] Update `BRANCH.md` feedback loop before final validation.
 
-- [x] **Lot 5 — UI download affordance**
-  - [x] Reuse or generalize the current DOCX download card path according to BR21a-Q7.
-  - [x] Add `.pptx` download helper if needed.
-  - [x] Gate: UI typecheck/lint and focused UI tests where feasible.
-
-- [x] **Lot 6 — Docs consolidation**
-  - [x] Update `spec/TOOLS.md` with the final tool contract.
-  - [x] Update `spec/SPEC_TEMPLATING.md` only for generic presentation generation behavior.
-  - [x] Keep profile-specific PPTX export out of BR-21a docs.
-  - [x] Update `BRANCH.md` feedback loop with final decisions.
-
-- [ ] **Lot 7 — Final validation**
-  - [x] `make typecheck-api API_PORT=8722 UI_PORT=5122 MAILDEV_UI_PORT=1022 ENV=test-feat-pptxgenjs-tool-21a`
-  - [x] `make lint-api API_PORT=8722 UI_PORT=5122 MAILDEV_UI_PORT=1022 ENV=test-feat-pptxgenjs-tool-21a`
-  - [x] Focused API/unit tests for freeform PPTX generation.
-  - [x] UI tests if the download card path changes.
-  - [x] Root UAT on the user-visible chat generation path.
-  - [x] Create/update PR.
-  - [ ] Verify branch CI.
-  - [ ] Remove `BRANCH.md` before merge once CI + UAT are both OK.
+- [ ] **Lot 5 — Final validation**
+  - [ ] `make typecheck-api API_PORT=8715 UI_PORT=5115 MAILDEV_UI_PORT=1015 ENV=test-chore-node-workspace-monorepo-14f`
+  - [ ] `make lint-api API_PORT=8715 UI_PORT=5115 MAILDEV_UI_PORT=1015 ENV=test-chore-node-workspace-monorepo-14f`
+  - [ ] `make typecheck-ui API_PORT=8715 UI_PORT=5115 MAILDEV_UI_PORT=1015 ENV=test-chore-node-workspace-monorepo-14f`
+  - [ ] `make lint-ui API_PORT=8715 UI_PORT=5115 MAILDEV_UI_PORT=1015 ENV=test-chore-node-workspace-monorepo-14f`
+  - [ ] Create/update PR using `BRANCH.md` text as PR body.
+  - [ ] Verify branch CI and resolve blockers.
+  - [ ] Once CI is `OK`, rebase BR-14c, then assess whether BR-16a and BR-21a also need rebases.
