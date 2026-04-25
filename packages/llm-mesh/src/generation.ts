@@ -1,8 +1,10 @@
 import type { AuthInput, AuthResolver } from './auth.js';
 import type { LlmMeshMessage } from './messages.js';
-import type { ModelId, ProviderId } from './providers.js';
+import type { ModelId, ModelReference, ProviderId, QualifiedModelId } from './providers.js';
 import type { FinishReason, StreamEvent, TokenUsage } from './streaming.js';
 import type { JsonObjectSchema, ToolCall, ToolChoice, ToolDefinition } from './tools.js';
+
+export type ModelSelection = QualifiedModelId | ModelReference;
 
 export type ResponseFormat =
   | { type: 'text' }
@@ -30,6 +32,7 @@ export interface LlmMeshRequestMetadata {
 }
 
 export interface GenerateRequest {
+  model?: ModelSelection;
   providerId?: ProviderId;
   modelId?: ModelId;
   messages: readonly LlmMeshMessage[];

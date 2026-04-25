@@ -72,6 +72,7 @@ Create the first publishable Entropic package, `@entropic/llm-mesh`, as a provid
 - [x] `attention` BR14c-EX1 — Conditional `Makefile`, `api/package.json`, `api/package-lock.json`, `api/tsconfig.json`, and `api/vitest.config.ts` changes are allowed only if Lot 1 proves the package cannot be typechecked/tested through existing targets. Reason: a publishable package needs deterministic make-backed build/test targets. Impact: build/test scaffolding only, no runtime behavior. Rollback: remove package-specific targets/config and keep package tests under existing API targets.
 - [ ] `attention` BR14c-EX2 — `spec/SPEC_EVOL_LLM_MESH.md` owns the reusable function classification, Graphify-backed usage audit, external framework benchmark, and public package contract. Reason: the public package contract must be reviewable before implementation and must not bloat `BRANCH.md`. Impact: specification only. Rollback: consolidate final decisions into `SPEC_EVOL_ENTROPIC_BR14_ORCHESTRATION.md` and delete the branch spec.
 - [x] `clarification` BR14c-R1 — Strategic review accepted on 2026-04-22. BR-14c must add package-specific make gates, a minimal `createLlmMesh` facade, model-profile-first capabilities with `supported/unsupported/partial/unknown`, server-only secret material separated from redacted auth descriptors, and a richer tool/result lifecycle compatible with MCP-style content and streamed tool arguments.
+- [ ] `blocked` BR14c-B1 — The thin API proof path cannot be exercised through current `make`/Docker targets because the `api` container mounts only `./api:/app` and cannot import `packages/llm-mesh/**` from the worktree root. Reason: any API-side proof test or runtime adapter import fails with module resolution before code execution. Impact: Lot 4 can ship the executable package facade, but the API consumption proof remains blocked until a dedicated packaging/workspace exposure decision. Rollback: none; this is an environment limitation, not a runtime regression.
 
 ## AI Flaky tests
 - Acceptance rule:
@@ -181,10 +182,10 @@ Create the first publishable Entropic package, `@entropic/llm-mesh`, as a provid
     - [ ] **E2E tests**
       - [ ] No E2E test updates expected in Lot 3.
 
-- [ ] **Lot 4 — Thin application proof path**
-  - [ ] Add minimal SDK facade: `createLlmMesh({ registry, authResolver, hooks })`, `mesh.generate()`, and `mesh.stream()`.
-  - [ ] Support `provider:model` aliases and explicit `{ providerId, modelId }` selection.
-  - [ ] Validate requested features against model profile capabilities before adapter execution.
+  - [ ] **Lot 4 — Thin application proof path**
+  - [x] Add minimal SDK facade: `createLlmMesh({ registry, authResolver, hooks })`, `mesh.generate()`, and `mesh.stream()`.
+  - [x] Support `provider:model` aliases and explicit `{ providerId, modelId }` selection.
+  - [x] Validate requested features against model profile capabilities before adapter execution.
   - [ ] Add a thin application import path or proof adapter showing the API runtime can consume the mesh contract without completing BR-14b migration.
   - [ ] Avoid moving chat service behavior into the package in this branch.
   - [ ] Avoid defining any chat SDK provider abstraction in this branch.

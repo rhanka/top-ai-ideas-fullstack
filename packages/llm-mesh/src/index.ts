@@ -5,6 +5,7 @@ export * from './catalog.js';
 export * from './errors.js';
 export * from './generation.js';
 export * from './messages.js';
+export * from './mesh.js';
 export * from './providers.js';
 export * from './registry.js';
 export * from './streaming.js';
