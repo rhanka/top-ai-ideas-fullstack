@@ -1,6 +1,6 @@
 # PLAN - Orchestrated Roadmap
 
-Status: Updated 2026-04-25 — urgent fix branch `fix/high-vulnerabilities` launched to remove the current API HIGH dependency vulnerability blocking CI/security gates. Existing active scoping remains: Entropic transition, BR-14f (Node workspace monorepo infra), BR-14c (LLM mesh npm library, priority), BR-14a (chat UI SDK), BR-16a (gdrive SSO + in-situ indexing). BR-14 split → BR-14a + BR-14b + BR-14c + BR-14d + BR-14e + BR-14f. Selected execution order: PR-117 transition ops → BR-14f → BR-14c → BR-14b → BR-14a → BR-14e → BR-14d. BR-16 split → BR-16a + BR-16b. See §5 Scheduling, `TRANSITION.md`, and `spec/SPEC_EVOL_ENTROPIC_BR14_ORCHESTRATION.md`.
+Status: Updated 2026-04-25 — urgent fix branch `fix/high-vulnerabilities` launched to remove the current API HIGH dependency vulnerability blocking CI/security gates. Existing active scoping remains: Entropic transition, BR-14f (Node workspace monorepo infra, local proof green on `ff6190cb`), BR-14c (LLM mesh npm library, priority), BR-14a (chat UI SDK), BR-16a (gdrive SSO + in-situ indexing, Picker slice green on `59dc47af`). BR-14 split → BR-14a + BR-14b + BR-14c + BR-14d + BR-14e + BR-14f. Selected execution order: PR-117 transition ops → BR-14f → BR-14c → BR-14b → BR-14a → BR-14e → BR-14d. BR-16 split → BR-16a + BR-16b. BR-21a carries a PPTX runtime fix on `b58763cf`, but mandatory root UAT is still pending before merge/rebase decisions. See §5 Scheduling, `TRANSITION.md`, and `spec/SPEC_EVOL_ENTROPIC_BR14_ORCHESTRATION.md`.
 
 ## 1) Current state
 
@@ -44,6 +44,7 @@ Status: Updated 2026-04-25 — urgent fix branch `fix/high-vulnerabilities` laun
 - BR-14d executes remaining transition ops and is mandatory unless all repo/DNS/Scaleway/workflow rename items are complete during PR-117 release.
 - BR-16a can continue in parallel but must expect a shallow rebase once BR-14f lands because its test/runtime paths depend on the same API/UI container wiring.
 - BR-21a is low-impact: finish/merge before BR-14f if possible; otherwise rebase should stay mechanical because the branch is already doc/test heavy and near completion.
+- Current proof snapshot (2026-04-25): BR-14f local workspace gates are green on `ff6190cb`; BR-16a has its Picker slice green on `59dc47af` but has not been rebased onto the workspace baseline yet; BR-21a has a runtime hardening fix on `b58763cf`, and its rebase should wait until mandatory root UAT confirms the fix.
 - Detailed branch contracts and rejected order options are in `spec/SPEC_EVOL_ENTROPIC_BR14_ORCHESTRATION.md`.
 
 ## 2) BR-04/04B as structural branch
