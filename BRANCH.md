@@ -239,12 +239,17 @@ Implement the Google Drive first slice of document connectors: user-scoped Googl
 - [ ] `attention` BR16a-PROD1 — Production CD finalization remains open after rollback cleanup. Required scope:
   - confirm `main` was rolled back to the parent of the BR-16a merge before reopening this PR;
   - audit the API runtime variables required by the production image and classify them as Google Drive, database/TLS, auth, model-provider, storage, mail/webauthn, or optional;
-  - add a make-only production secret preflight that checks presence without printing secret values;
+  - propose a production secret/readiness control without printing secret values; implementation of a new make-only preflight is not yet approved and must be decided after the audit;
   - update GitHub Actions CD wiring inside BR-16a, not in post-merge fix branches;
   - preserve the Scaleway container runtime contract on deploy/update: port `8787`, public HTTP service, expected scale limits, timeout, memory limit, image tag, and the complete secret environment map;
   - validate production Google OAuth/Picker application configuration (`https://entropic.sent-tech.ca` origin and callback) without recording secret values;
   - document the final production CD contract in `spec/SPEC_EVOL_GOOGLE_DRIVE_CONNECTOR.md`;
   - do not manually deploy production from the branch unless the user explicitly approves that step.
+- [ ] `decision` BR16a-D3 — Production secret/readiness control choice remains open.
+  - Option A: implement a make-only preflight target used by CI/CD before deployment.
+  - Option B: keep checks inside the existing deploy target/workflow steps without adding a dedicated preflight target.
+  - Option C: document the required secret contract only and rely on GitHub/Scaleway deployment errors.
+  - Current status: 1/2/3/5/6/7 validated by user; point 4 is not validated.
 
 ## AI Flaky tests
 - Acceptance rule:
@@ -399,11 +404,11 @@ Implement the Google Drive first slice of document connectors: user-scoped Googl
 - [ ] **Lot 8 — Production CD finalization**
   - [ ] Confirm remote `main` is `7c9c4e367a59b8e6d1e371c34b55a250553d2026` before reopening the BR-16a PR.
   - [ ] Audit API production runtime environment requirements from code/config and classify every required variable in `spec/SPEC_EVOL_GOOGLE_DRIVE_CONNECTOR.md`.
-  - [ ] Add/update a make-only production secret preflight that verifies required GitHub/Scaleway secret presence without printing values.
+  - [ ] Propose the production secret/readiness control after audit and keep implementation blocked until BR16a-D3 is selected.
   - [ ] Wire Google Drive production deployment secrets in `.github/workflows/ci.yml`.
   - [ ] Wire any non-Google runtime secrets required by the API production image in `.github/workflows/ci.yml`.
   - [ ] Ensure deploy/update logic preserves the complete Scaleway container runtime contract instead of replacing the secret map with a partial set.
-  - [ ] Run the production CD preflight through PR CI.
+  - [ ] Run PR CI after CD wiring changes.
   - [ ] Record any unresolved production environment decision in `## Feedback Loop` before merge.
 
 - [ ] **Lot 9 — Final validation**
