@@ -245,6 +245,10 @@ Implement the Google Drive first slice of document connectors: user-scoped Googl
   - document the final production CD contract in `spec/SPEC_EVOL_GOOGLE_DRIVE_CONNECTOR.md`;
   - do not manually deploy production from the branch unless the user explicitly approves that step.
 - [x] `decision` BR16a-D3 — Point 4 is rejected by user. Do not add a new make-only production preflight/readiness-control target in BR-16a.
+- [x] `evidence` BR16a-PROD2 — Production runtime audit completed without reading or printing secret values.
+  - Repository secrets present for the BR-16a CD contract: `DATABASE_URL_PROD`, `DB_SSL_CA_PEM_B64`, provider keys, `TAVILY_API_KEY`, `ADMIN_EMAIL`, `GOOGLE_DRIVE_CLIENT_ID`, `GOOGLE_DRIVE_CLIENT_SECRET`, `GOOGLE_DRIVE_AUTH_CALLBACK_BASE_URL`, `GOOGLE_DRIVE_PICKER_API_KEY`, and `GOOGLE_DRIVE_PICKER_APP_ID`.
+  - Repository secrets not present on 2026-05-04: `JWT_SECRET`, `DOC_STORAGE_BUCKET`, `DOC_STORAGE_ENDPOINT`, `DOC_STORAGE_REGION`, `DOC_STORAGE_ACCESS_KEY`, `DOC_STORAGE_SECRET_KEY`, `MAIL_*`, and `WEBAUTHN_*`.
+  - BR-16a does not inject absent secrets as empty values; local document storage, production mail delivery, WebAuthn production origin, and a non-default production JWT secret remain production-environment provisioning decisions unless these secrets are added before merge.
 
 ## AI Flaky tests
 - Acceptance rule:
@@ -397,13 +401,13 @@ Implement the Google Drive first slice of document connectors: user-scoped Googl
   - [x] Update `BRANCH.md` feedback loop before final validation.
 
 - [ ] **Lot 8 — Production CD finalization**
-  - [ ] Confirm remote `main` is `7c9c4e367a59b8e6d1e371c34b55a250553d2026` before reopening the BR-16a PR.
-  - [ ] Audit API production runtime environment requirements from code/config and classify every required variable in `spec/SPEC_EVOL_GOOGLE_DRIVE_CONNECTOR.md`.
-  - [ ] Wire Google Drive production deployment secrets in `.github/workflows/ci.yml`.
-  - [ ] Wire any non-Google runtime secrets required by the API production image in `.github/workflows/ci.yml`.
-  - [ ] Ensure deploy/update logic preserves the complete Scaleway container runtime contract instead of replacing the secret map with a partial set.
+  - [x] Confirm remote `main` is `7c9c4e367a59b8e6d1e371c34b55a250553d2026` before reopening the BR-16a PR.
+  - [x] Audit API production runtime environment requirements from code/config and classify every required variable in `spec/SPEC_EVOL_GOOGLE_DRIVE_CONNECTOR.md`.
+  - [x] Wire Google Drive production deployment secrets in `.github/workflows/ci.yml`.
+  - [x] Wire available non-Google runtime secrets required by the API production image in `.github/workflows/ci.yml`.
+  - [x] Ensure deploy/update logic preserves the complete Scaleway container runtime contract instead of replacing the secret map with a partial set.
   - [ ] Run PR CI after CD wiring changes.
-  - [ ] Record any unresolved production environment decision in `## Feedback Loop` before merge.
+  - [x] Record any unresolved production environment decision in `## Feedback Loop` before merge.
 
 - [ ] **Lot 9 — Final validation**
   - [x] New/updated tests are implemented and traced in the branch; broad gates are delegated to PR/CI per user instruction.
