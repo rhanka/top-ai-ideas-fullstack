@@ -235,6 +235,16 @@ Implement the Google Drive first slice of document connectors: user-scoped Googl
   - `spec/SPEC_VOL_CHAT_DOCS_LLM_RAG.md` now records that the Google Drive connector portion is absorbed by BR-16a while SharePoint/OneDrive and full RAG remain future work.
   - New and updated test coverage is traceable in branch files for API, UI, e2e, and dev-lane readiness: Google Drive OAuth/accounts/files/documents suites, document tool/queue coverage, shared source-menu utilities, composer/settings document e2e specs, and `e2e/tests/dev/01-google-drive-live-readiness.spec.ts`.
   - Broad final gates will run through PR/CI per user instruction; local broad test campaigns are not repeated in Lot 7.
+- [x] `attention` BR16a-EX9 — Production CD preflight/deploy wiring is allowed for `Makefile` and `.github/workflows/ci.yml`. Reason: BR-16a introduces Google Drive runtime secrets and must carry the production deployment contract in the same PR instead of post-merge hotfix branches. Impact: CD wiring and secret presence checks only; no runtime product behavior change beyond ensuring configured production deployments receive the complete environment. Rollback: revert the Makefile/workflow CD changes while keeping the Google Drive feature code intact.
+- [ ] `attention` BR16a-PROD1 — Production CD finalization remains open after rollback cleanup. Required scope:
+  - confirm `main` was rolled back to the parent of the BR-16a merge before reopening this PR;
+  - audit the API runtime variables required by the production image and classify them as Google Drive, database/TLS, auth, model-provider, storage, mail/webauthn, or optional;
+  - add a make-only production secret preflight that checks presence without printing secret values;
+  - update GitHub Actions CD wiring inside BR-16a, not in post-merge fix branches;
+  - preserve the Scaleway container runtime contract on deploy/update: port `8787`, public HTTP service, expected scale limits, timeout, memory limit, image tag, and the complete secret environment map;
+  - validate production Google OAuth/Picker application configuration (`https://entropic.sent-tech.ca` origin and callback) without recording secret values;
+  - document the final production CD contract in `spec/SPEC_EVOL_GOOGLE_DRIVE_CONNECTOR.md`;
+  - do not manually deploy production from the branch unless the user explicitly approves that step.
 
 ## AI Flaky tests
 - Acceptance rule:
@@ -386,7 +396,17 @@ Implement the Google Drive first slice of document connectors: user-scoped Googl
   - [x] Update existing document connector/RAG specs only if behavior changes.
   - [x] Update `BRANCH.md` feedback loop before final validation.
 
-- [ ] **Lot 8 — Final validation**
+- [ ] **Lot 8 — Production CD finalization**
+  - [ ] Confirm remote `main` is `7c9c4e367a59b8e6d1e371c34b55a250553d2026` before reopening the BR-16a PR.
+  - [ ] Audit API production runtime environment requirements from code/config and classify every required variable in `spec/SPEC_EVOL_GOOGLE_DRIVE_CONNECTOR.md`.
+  - [ ] Add/update a make-only production secret preflight that verifies required GitHub/Scaleway secret presence without printing values.
+  - [ ] Wire Google Drive production deployment secrets in `.github/workflows/ci.yml`.
+  - [ ] Wire any non-Google runtime secrets required by the API production image in `.github/workflows/ci.yml`.
+  - [ ] Ensure deploy/update logic preserves the complete Scaleway container runtime contract instead of replacing the secret map with a partial set.
+  - [ ] Run the production CD preflight through PR CI.
+  - [ ] Record any unresolved production environment decision in `## Feedback Loop` before merge.
+
+- [ ] **Lot 9 — Final validation**
   - [x] New/updated tests are implemented and traced in the branch; broad gates are delegated to PR/CI per user instruction.
   - [ ] `make typecheck-api API_PORT=9080 UI_PORT=5280 MAILDEV_UI_PORT=1180 ENV=test-feat-gdrive-sso-indexing-16a`
   - [ ] `make lint-api API_PORT=9080 UI_PORT=5280 MAILDEV_UI_PORT=1180 ENV=test-feat-gdrive-sso-indexing-16a`
