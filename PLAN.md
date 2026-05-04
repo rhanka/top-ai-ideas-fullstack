@@ -1,6 +1,6 @@
 # PLAN - Orchestrated Roadmap
 
-Status: Updated 2026-04-25 — urgent fix branch `fix/high-vulnerabilities` launched to remove the current API HIGH dependency vulnerability blocking CI/security gates. Existing active scoping remains: Entropic transition, BR-14c (LLM mesh npm library, priority), BR-14a (chat UI SDK), BR-16a (gdrive SSO + Picker search/selection + in-situ `document_summary` indexing). BR-14 split → BR-14a + BR-14b + BR-14c + BR-14d + BR-14e. Selected execution order: PR-117 transition ops → BR-14c → BR-14b → BR-14a → BR-14e → BR-14d. BR-16 split → BR-16a + BR-16b + BR-16c. See §5 Scheduling, `TRANSITION.md`, and `spec/SPEC_EVOL_ENTROPIC_BR14_ORCHESTRATION.md`.
+Status: Updated 2026-05-04 — BR-16a is ready for merge after UAT and green PR CI. Existing active scoping remains: Entropic transition, BR-14c (LLM mesh npm library, priority), BR-14a (chat UI SDK). BR-14 split → BR-14a + BR-14b + BR-14c + BR-14d + BR-14e. Selected execution order: PR-117 transition ops → BR-14c → BR-14b → BR-14a → BR-14e → BR-14d. BR-16 split → BR-16a + BR-16b + BR-16c. See §5 Scheduling, `TRANSITION.md`, and `spec/SPEC_EVOL_ENTROPIC_BR14_ORCHESTRATION.md`.
 
 ## 1) Current state
 
@@ -15,6 +15,7 @@ Status: Updated 2026-04-25 — urgent fix branch `fix/high-vulnerabilities` laun
 - BR-06 `feat/chrome-upstream-v1` — **merged 2026-04-17** (`62de15ad`). Webapp tab_read/tab_action to Chrome tabs via extension + in-memory Tab Registry.
 - BR-08 `feat/model-runtime-claude-mistral-cohere` (scope extended: +Cohere)
 - BR-13 `feat/chrome-plugin-download-distribution`
+- BR-16a `feat/gdrive-sso-indexing` — Google Drive OAuth, Picker import, in-situ `document_summary` indexing, source-aware document tools, and Settings connector lifecycle. Ready for merge in PR #130 after green CI.
 
 **Next branches (explicitly queued):**
 - BR-23 `feat/multi-agent-framework-comparison` — compare LangGraph/Agno/Temporal. See `plan/23-BRANCH_feat-multi-agent-framework-comparison.md`.
@@ -24,7 +25,6 @@ Status: Updated 2026-04-25 — urgent fix branch `fix/high-vulnerabilities` laun
 **Active scoping (Lot 0 in progress):**
 - BR-14c `feat/llm-mesh-sdk` — priority extraction: publishable npm lib `@entropic/llm-mesh`, Vercel AI SDK-like access to GPT/Claude/Gemini/Mistral/Cohere with token and Codex-account modes.
 - BR-14a `feat/chat-ui-sdk` — former BR-14, renamed: chat publishable as npm lib `@entropic/chat`, using the LLM mesh contract rather than application runtime internals.
-- BR-16a `feat/gdrive-sso-indexing` — Google Drive OAuth + Picker search/selection + in-situ `document_summary` indexing (docs stay in Drive). Split from former BR-16.
 - `fix/high-vulnerabilities` — isolated remediation branch for the API HIGH dependency vulnerability currently failing `security-sast-sca` and API image audit gates.
 
 **Pending branches (unblocked):**
@@ -131,7 +131,7 @@ Full spec: `spec/SPEC_EVOL_WORKSPACE_TYPES.md`
 |        |                                                  | per-site API tools (complement to DOM                      |                      |                                |
 |        |                                                  | tab_read/tab_action).                                      |                      |                                |
 +--------+--------------------------------------------------+------------------------------------------------------------+----------------------+--------------------------------+
-| BR-16a | feat/gdrive-sso-indexing                         | Google Drive OAuth (per-user) + Picker search/selection +  | scoping              | BR-04 (low)                    |
+| BR-16a | feat/gdrive-sso-indexing                         | Google Drive OAuth (per-user) + Picker search/selection +  | done                 | BR-04 (low)                    |
 |        |                                                  | in-situ document_summary indexing: docs stay in Drive,     |                      |                                |
 |        |                                                  | summaries/detailed summaries stored in Entropic, retrieval |                      |                                |
 |        |                                                  | via gdrive refs. Google Cloud app provisioned by Codex     |                      |                                |
@@ -271,9 +271,9 @@ graph TD
 
 ## 5) Scheduling post-BR-04
 
-**Wave in progress (2026-04-21)**: this transition branch (README pair, Entropic URL, repo/DNS/SCW plan, BR-14 split, PR-117 transition TODO) ∥ BR-16a Lot 0 (gdrive SSO + document_summary indexing scoping). Planning-only.
+**Wave in progress (2026-05-04)**: BR-14c Lot 0/1 (`@entropic/llm-mesh`) before BR-14a implementation. BR-16a is ready for merge and now unblocks BR-16b/BR-16c/BR-17 planning that depends on source-aware document references.
 **PR-117 release ops**: decide and execute repository rename + public DNS/redirect changes, or explicitly hand off each unchecked item to BR-14d with owner/date.
-**Wave next (priority)**: BR-14c Lot 0/1 (`@entropic/llm-mesh`) before BR-14a implementation. BR-16a Lot 1+ can proceed after Google Cloud app provisioning through Codex Playwright MCP attached to the user's Chromium CDP session.
+**Wave next (priority)**: BR-14c Lot 0/1 (`@entropic/llm-mesh`) before BR-14a implementation.
 **Wave after BR-14c contract**: BR-14b (application LLM runtime migration to the mesh), then BR-14a (chat UI SDK extraction). BR-14a Lot 0 may scope in parallel, but implementation must not define a separate provider/model abstraction.
 **Wave Code Finalization**: BR-14e (non-chat/non-LLM codebase naming sweep, residual-name allowlist, test fixture cleanup) after BR-14a/14b/14c and before BR-14d.
 **Wave A2** (right after BR-04B merge — deferred behind current wave): BR-20 (entity/config refactor follow-up) + BR-22 (rich markdown list stabilization hotfix)
