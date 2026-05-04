@@ -32,6 +32,7 @@ export WEBAUTHN_RP_ID ?= localhost
 export CORS_ALLOWED_ORIGINS ?= http://localhost:$(UI_PORT),http://127.0.0.1:$(UI_PORT),http://ui:5173,https://*.sent-tech.ca,chrome-extension://*,vscode-webview://*
 export DATABASE_URL_PROD ?=
 export DB_SSL_CA_PEM_B64 ?=
+export PGSSLMODE ?= require
 export GOOGLE_DRIVE_CLIENT_ID ?=
 export GOOGLE_DRIVE_CLIENT_SECRET ?=
 export GOOGLE_DRIVE_AUTH_CALLBACK_BASE_URL ?=
@@ -505,7 +506,7 @@ check-scw:
 .PHONY: check-prod-google-drive-secrets
 check-prod-google-drive-secrets:
 	@missing=0; \
-	for var in DATABASE_URL_PROD DB_SSL_CA_PEM_B64 GOOGLE_DRIVE_CLIENT_ID GOOGLE_DRIVE_CLIENT_SECRET GOOGLE_DRIVE_AUTH_CALLBACK_BASE_URL GOOGLE_DRIVE_PICKER_API_KEY; do \
+	for var in DATABASE_URL_PROD DB_SSL_CA_PEM_B64 PGSSLMODE GOOGLE_DRIVE_CLIENT_ID GOOGLE_DRIVE_CLIENT_SECRET GOOGLE_DRIVE_AUTH_CALLBACK_BASE_URL GOOGLE_DRIVE_PICKER_API_KEY; do \
 		if [ -z "$${!var:-}" ]; then \
 			echo "❌ Error: $$var must be set before deploying the production API container"; \
 			missing=1; \
@@ -526,19 +527,21 @@ deploy-api-container-init: check-scw check-prod-google-drive-secrets
 			"secret-environment-variables.0.value=$${DATABASE_URL_PROD}" \
 			"secret-environment-variables.1.key=DB_SSL_CA_PEM_B64" \
 			"secret-environment-variables.1.value=$${DB_SSL_CA_PEM_B64}" \
-			"secret-environment-variables.2.key=GOOGLE_DRIVE_CLIENT_ID" \
-			"secret-environment-variables.2.value=$${GOOGLE_DRIVE_CLIENT_ID}" \
-			"secret-environment-variables.3.key=GOOGLE_DRIVE_CLIENT_SECRET" \
-			"secret-environment-variables.3.value=$${GOOGLE_DRIVE_CLIENT_SECRET}" \
-			"secret-environment-variables.4.key=GOOGLE_DRIVE_AUTH_CALLBACK_BASE_URL" \
-			"secret-environment-variables.4.value=$${GOOGLE_DRIVE_AUTH_CALLBACK_BASE_URL}" \
-			"secret-environment-variables.5.key=GOOGLE_DRIVE_PICKER_API_KEY" \
-			"secret-environment-variables.5.value=$${GOOGLE_DRIVE_PICKER_API_KEY}" \
+			"secret-environment-variables.2.key=PGSSLMODE" \
+			"secret-environment-variables.2.value=$${PGSSLMODE}" \
+			"secret-environment-variables.3.key=GOOGLE_DRIVE_CLIENT_ID" \
+			"secret-environment-variables.3.value=$${GOOGLE_DRIVE_CLIENT_ID}" \
+			"secret-environment-variables.4.key=GOOGLE_DRIVE_CLIENT_SECRET" \
+			"secret-environment-variables.4.value=$${GOOGLE_DRIVE_CLIENT_SECRET}" \
+			"secret-environment-variables.5.key=GOOGLE_DRIVE_AUTH_CALLBACK_BASE_URL" \
+			"secret-environment-variables.5.value=$${GOOGLE_DRIVE_AUTH_CALLBACK_BASE_URL}" \
+			"secret-environment-variables.6.key=GOOGLE_DRIVE_PICKER_API_KEY" \
+			"secret-environment-variables.6.value=$${GOOGLE_DRIVE_PICKER_API_KEY}" \
 		); \
 		if [ -n "$${GOOGLE_DRIVE_PICKER_APP_ID:-}" ]; then \
 			SCW_SECRET_ENV_ARGS+=( \
-				"secret-environment-variables.6.key=GOOGLE_DRIVE_PICKER_APP_ID" \
-				"secret-environment-variables.6.value=$${GOOGLE_DRIVE_PICKER_APP_ID}" \
+				"secret-environment-variables.7.key=GOOGLE_DRIVE_PICKER_APP_ID" \
+				"secret-environment-variables.7.value=$${GOOGLE_DRIVE_PICKER_APP_ID}" \
 			); \
 		fi; \
 		scw container container create \
@@ -565,19 +568,21 @@ deploy-api-container: check-scw check-prod-google-drive-secrets
 		"secret-environment-variables.0.value=$${DATABASE_URL_PROD}" \
 		"secret-environment-variables.1.key=DB_SSL_CA_PEM_B64" \
 		"secret-environment-variables.1.value=$${DB_SSL_CA_PEM_B64}" \
-		"secret-environment-variables.2.key=GOOGLE_DRIVE_CLIENT_ID" \
-		"secret-environment-variables.2.value=$${GOOGLE_DRIVE_CLIENT_ID}" \
-		"secret-environment-variables.3.key=GOOGLE_DRIVE_CLIENT_SECRET" \
-		"secret-environment-variables.3.value=$${GOOGLE_DRIVE_CLIENT_SECRET}" \
-		"secret-environment-variables.4.key=GOOGLE_DRIVE_AUTH_CALLBACK_BASE_URL" \
-		"secret-environment-variables.4.value=$${GOOGLE_DRIVE_AUTH_CALLBACK_BASE_URL}" \
-		"secret-environment-variables.5.key=GOOGLE_DRIVE_PICKER_API_KEY" \
-		"secret-environment-variables.5.value=$${GOOGLE_DRIVE_PICKER_API_KEY}" \
+		"secret-environment-variables.2.key=PGSSLMODE" \
+		"secret-environment-variables.2.value=$${PGSSLMODE}" \
+		"secret-environment-variables.3.key=GOOGLE_DRIVE_CLIENT_ID" \
+		"secret-environment-variables.3.value=$${GOOGLE_DRIVE_CLIENT_ID}" \
+		"secret-environment-variables.4.key=GOOGLE_DRIVE_CLIENT_SECRET" \
+		"secret-environment-variables.4.value=$${GOOGLE_DRIVE_CLIENT_SECRET}" \
+		"secret-environment-variables.5.key=GOOGLE_DRIVE_AUTH_CALLBACK_BASE_URL" \
+		"secret-environment-variables.5.value=$${GOOGLE_DRIVE_AUTH_CALLBACK_BASE_URL}" \
+		"secret-environment-variables.6.key=GOOGLE_DRIVE_PICKER_API_KEY" \
+		"secret-environment-variables.6.value=$${GOOGLE_DRIVE_PICKER_API_KEY}" \
 	); \
 	if [ -n "$${GOOGLE_DRIVE_PICKER_APP_ID:-}" ]; then \
 		SCW_SECRET_ENV_ARGS+=( \
-			"secret-environment-variables.6.key=GOOGLE_DRIVE_PICKER_APP_ID" \
-			"secret-environment-variables.6.value=$${GOOGLE_DRIVE_PICKER_APP_ID}" \
+			"secret-environment-variables.7.key=GOOGLE_DRIVE_PICKER_APP_ID" \
+			"secret-environment-variables.7.value=$${GOOGLE_DRIVE_PICKER_APP_ID}" \
 		); \
 	fi; \
 	scw container container update "$${API_CONTAINER_ID}" registry-image="$(REGISTRY)/$(API_IMAGE_NAME):$(API_VERSION)" "$${SCW_SECRET_ENV_ARGS[@]}" > .deploy_output.log
