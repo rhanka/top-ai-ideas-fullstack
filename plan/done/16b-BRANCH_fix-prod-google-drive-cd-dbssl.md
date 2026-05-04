@@ -67,7 +67,8 @@ Fix the production API deployment wiring so Google Drive secrets are deployed wi
 
 - [ ] **Lot N — Final validation**
   - [x] `git diff --check`
-  - [ ] Create PR using `BRANCH.md` text as PR body.
+  - [x] Create PR using `BRANCH.md` text as PR body.
+  - [x] Remove `BRANCH.md`, archive this plan to `plan/done/16b-BRANCH_fix-prod-google-drive-cd-dbssl.md`, and push.
   - [ ] Verify branch CI.
-  - [ ] Remove `BRANCH.md`, archive this plan to `plan/done/16b-BRANCH_fix-prod-google-drive-cd-dbssl.md`, push, merge.
+  - [ ] Merge PR.
   - [ ] Supervise main CD and verify Scaleway secret names plus `ready` status.
