@@ -69,9 +69,9 @@ Fix the production API CD runtime so the Scaleway container starts with explicit
   - [x] Confirm the existing Google Drive connector spec is updated directly; no separate `SPEC_EVOL` consolidation remains.
 
 - [ ] **Lot N — Final validation**
-  - [ ] Create/update PR using `BRANCH.md` text as PR body.
-  - [ ] Verify branch CI on the PR and resolve blockers.
-  - [ ] Commit removal/archive of `BRANCH.md` once CI is green.
+  - [x] Create/update PR using `BRANCH.md` text as PR body.
+  - [x] Verify branch CI on the PR and resolve blockers.
+  - [x] Commit removal/archive of `BRANCH.md` once CI is green.
   - [ ] Merge PR.
   - [ ] Monitor main CD.
   - [ ] Verify the Scaleway API container is `ready` and has the expected secret env keys without printing values.
