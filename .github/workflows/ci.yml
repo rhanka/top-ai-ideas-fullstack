@@ -538,6 +538,7 @@ jobs:
     if: ( needs.changes.outputs.api == 'true' || needs.changes.outputs.global == 'true' ) && github.ref == 'refs/heads/main'
     env:
       DATABASE_URL_PROD: ${{ secrets.DATABASE_URL_PROD }}
+      DB_SSL_CA_PEM_B64: ${{ secrets.DB_SSL_CA_PEM_B64 }}
       GOOGLE_DRIVE_CLIENT_ID: ${{ secrets.GOOGLE_DRIVE_CLIENT_ID }}
       GOOGLE_DRIVE_CLIENT_SECRET: ${{ secrets.GOOGLE_DRIVE_CLIENT_SECRET }}
       GOOGLE_DRIVE_AUTH_CALLBACK_BASE_URL: ${{ secrets.GOOGLE_DRIVE_AUTH_CALLBACK_BASE_URL }}

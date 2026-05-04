@@ -31,6 +31,7 @@ export WEBAUTHN_ORIGIN ?= http://localhost:$(UI_PORT)
 export WEBAUTHN_RP_ID ?= localhost
 export CORS_ALLOWED_ORIGINS ?= http://localhost:$(UI_PORT),http://127.0.0.1:$(UI_PORT),http://ui:5173,https://*.sent-tech.ca,chrome-extension://*,vscode-webview://*
 export DATABASE_URL_PROD ?=
+export DB_SSL_CA_PEM_B64 ?=
 export GOOGLE_DRIVE_CLIENT_ID ?=
 export GOOGLE_DRIVE_CLIENT_SECRET ?=
 export GOOGLE_DRIVE_AUTH_CALLBACK_BASE_URL ?=
@@ -504,7 +505,7 @@ check-scw:
 .PHONY: check-prod-google-drive-secrets
 check-prod-google-drive-secrets:
 	@missing=0; \
-	for var in DATABASE_URL_PROD GOOGLE_DRIVE_CLIENT_ID GOOGLE_DRIVE_CLIENT_SECRET GOOGLE_DRIVE_AUTH_CALLBACK_BASE_URL GOOGLE_DRIVE_PICKER_API_KEY; do \
+	for var in DATABASE_URL_PROD DB_SSL_CA_PEM_B64 GOOGLE_DRIVE_CLIENT_ID GOOGLE_DRIVE_CLIENT_SECRET GOOGLE_DRIVE_AUTH_CALLBACK_BASE_URL GOOGLE_DRIVE_PICKER_API_KEY; do \
 		if [ -z "$${!var:-}" ]; then \
 			echo "❌ Error: $$var must be set before deploying the production API container"; \
 			missing=1; \
@@ -523,19 +524,21 @@ deploy-api-container-init: check-scw check-prod-google-drive-secrets
 		SCW_SECRET_ENV_ARGS=( \
 			"secret-environment-variables.0.key=DATABASE_URL" \
 			"secret-environment-variables.0.value=$${DATABASE_URL_PROD}" \
-			"secret-environment-variables.1.key=GOOGLE_DRIVE_CLIENT_ID" \
-			"secret-environment-variables.1.value=$${GOOGLE_DRIVE_CLIENT_ID}" \
-			"secret-environment-variables.2.key=GOOGLE_DRIVE_CLIENT_SECRET" \
-			"secret-environment-variables.2.value=$${GOOGLE_DRIVE_CLIENT_SECRET}" \
-			"secret-environment-variables.3.key=GOOGLE_DRIVE_AUTH_CALLBACK_BASE_URL" \
-			"secret-environment-variables.3.value=$${GOOGLE_DRIVE_AUTH_CALLBACK_BASE_URL}" \
-			"secret-environment-variables.4.key=GOOGLE_DRIVE_PICKER_API_KEY" \
-			"secret-environment-variables.4.value=$${GOOGLE_DRIVE_PICKER_API_KEY}" \
+			"secret-environment-variables.1.key=DB_SSL_CA_PEM_B64" \
+			"secret-environment-variables.1.value=$${DB_SSL_CA_PEM_B64}" \
+			"secret-environment-variables.2.key=GOOGLE_DRIVE_CLIENT_ID" \
+			"secret-environment-variables.2.value=$${GOOGLE_DRIVE_CLIENT_ID}" \
+			"secret-environment-variables.3.key=GOOGLE_DRIVE_CLIENT_SECRET" \
+			"secret-environment-variables.3.value=$${GOOGLE_DRIVE_CLIENT_SECRET}" \
+			"secret-environment-variables.4.key=GOOGLE_DRIVE_AUTH_CALLBACK_BASE_URL" \
+			"secret-environment-variables.4.value=$${GOOGLE_DRIVE_AUTH_CALLBACK_BASE_URL}" \
+			"secret-environment-variables.5.key=GOOGLE_DRIVE_PICKER_API_KEY" \
+			"secret-environment-variables.5.value=$${GOOGLE_DRIVE_PICKER_API_KEY}" \
 		); \
 		if [ -n "$${GOOGLE_DRIVE_PICKER_APP_ID:-}" ]; then \
 			SCW_SECRET_ENV_ARGS+=( \
-				"secret-environment-variables.5.key=GOOGLE_DRIVE_PICKER_APP_ID" \
-				"secret-environment-variables.5.value=$${GOOGLE_DRIVE_PICKER_APP_ID}" \
+				"secret-environment-variables.6.key=GOOGLE_DRIVE_PICKER_APP_ID" \
+				"secret-environment-variables.6.value=$${GOOGLE_DRIVE_PICKER_APP_ID}" \
 			); \
 		fi; \
 		scw container container create \
@@ -560,19 +563,21 @@ deploy-api-container: check-scw check-prod-google-drive-secrets
 	SCW_SECRET_ENV_ARGS=( \
 		"secret-environment-variables.0.key=DATABASE_URL" \
 		"secret-environment-variables.0.value=$${DATABASE_URL_PROD}" \
-		"secret-environment-variables.1.key=GOOGLE_DRIVE_CLIENT_ID" \
-		"secret-environment-variables.1.value=$${GOOGLE_DRIVE_CLIENT_ID}" \
-		"secret-environment-variables.2.key=GOOGLE_DRIVE_CLIENT_SECRET" \
-		"secret-environment-variables.2.value=$${GOOGLE_DRIVE_CLIENT_SECRET}" \
-		"secret-environment-variables.3.key=GOOGLE_DRIVE_AUTH_CALLBACK_BASE_URL" \
-		"secret-environment-variables.3.value=$${GOOGLE_DRIVE_AUTH_CALLBACK_BASE_URL}" \
-		"secret-environment-variables.4.key=GOOGLE_DRIVE_PICKER_API_KEY" \
-		"secret-environment-variables.4.value=$${GOOGLE_DRIVE_PICKER_API_KEY}" \
+		"secret-environment-variables.1.key=DB_SSL_CA_PEM_B64" \
+		"secret-environment-variables.1.value=$${DB_SSL_CA_PEM_B64}" \
+		"secret-environment-variables.2.key=GOOGLE_DRIVE_CLIENT_ID" \
+		"secret-environment-variables.2.value=$${GOOGLE_DRIVE_CLIENT_ID}" \
+		"secret-environment-variables.3.key=GOOGLE_DRIVE_CLIENT_SECRET" \
+		"secret-environment-variables.3.value=$${GOOGLE_DRIVE_CLIENT_SECRET}" \
+		"secret-environment-variables.4.key=GOOGLE_DRIVE_AUTH_CALLBACK_BASE_URL" \
+		"secret-environment-variables.4.value=$${GOOGLE_DRIVE_AUTH_CALLBACK_BASE_URL}" \
+		"secret-environment-variables.5.key=GOOGLE_DRIVE_PICKER_API_KEY" \
+		"secret-environment-variables.5.value=$${GOOGLE_DRIVE_PICKER_API_KEY}" \
 	); \
 	if [ -n "$${GOOGLE_DRIVE_PICKER_APP_ID:-}" ]; then \
 		SCW_SECRET_ENV_ARGS+=( \
-			"secret-environment-variables.5.key=GOOGLE_DRIVE_PICKER_APP_ID" \
-			"secret-environment-variables.5.value=$${GOOGLE_DRIVE_PICKER_APP_ID}" \
+			"secret-environment-variables.6.key=GOOGLE_DRIVE_PICKER_APP_ID" \
+			"secret-environment-variables.6.value=$${GOOGLE_DRIVE_PICKER_APP_ID}" \
 		); \
 	fi; \
 	scw container container update "$${API_CONTAINER_ID}" registry-image="$(REGISTRY)/$(API_IMAGE_NAME):$(API_VERSION)" "$${SCW_SECRET_ENV_ARGS[@]}" > .deploy_output.log
@@ -580,13 +585,24 @@ deploy-api-container: check-scw check-prod-google-drive-secrets
 
 wait-for-container: check-scw
 	@printf "⌛ Waiting for container to become ready.."
-	@API_CONTAINER_STATUS="pending"; \
-	while [ "$${API_CONTAINER_STATUS}" != "ready" ]; do \
+	@API_CONTAINER_ID=$$(scw container container list | awk '($$2=="$(API_IMAGE_NAME)"){print $$1}'); \
+	API_CONTAINER_STATUS="pending"; \
+	for attempt in $$(seq 1 600); do \
 		API_CONTAINER_STATUS=$$(scw container container list | awk '($$2=="$(API_IMAGE_NAME)"){print $$4}'); \
+		if [ "$${API_CONTAINER_STATUS}" = "ready" ]; then \
+			printf "\n✅ New container is ready.\n"; \
+			exit 0; \
+		fi; \
+		if [ "$${API_CONTAINER_STATUS}" = "error" ]; then \
+			ERROR_MESSAGE=$$(scw container container get "$${API_CONTAINER_ID}" -o json | jq -r '.error_message // "unknown error"'); \
+			printf "\n❌ Container entered error state: %s\n" "$${ERROR_MESSAGE}"; \
+			exit 1; \
+		fi; \
 		printf "."; \
 		sleep 1; \
 	done; \
-	printf "\n✅ New container is ready.\n"
+	printf "\n❌ Timed out waiting for container readiness. Last status: %s\n" "$${API_CONTAINER_STATUS}"; \
+	exit 1
 
 deploy-api: deploy-api-container wait-for-container
 
