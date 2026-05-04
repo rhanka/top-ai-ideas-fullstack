@@ -540,6 +540,13 @@ jobs:
       DATABASE_URL_PROD: ${{ secrets.DATABASE_URL_PROD }}
       DB_SSL_CA_PEM_B64: ${{ secrets.DB_SSL_CA_PEM_B64 }}
       PGSSLMODE: require
+      ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
+      COHERE_API_KEY: ${{ secrets.COHERE_API_KEY }}
+      TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
       GOOGLE_DRIVE_CLIENT_ID: ${{ secrets.GOOGLE_DRIVE_CLIENT_ID }}
       GOOGLE_DRIVE_CLIENT_SECRET: ${{ secrets.GOOGLE_DRIVE_CLIENT_SECRET }}
       GOOGLE_DRIVE_AUTH_CALLBACK_BASE_URL: ${{ secrets.GOOGLE_DRIVE_AUTH_CALLBACK_BASE_URL }}

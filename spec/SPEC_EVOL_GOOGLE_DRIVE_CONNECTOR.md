@@ -157,8 +157,9 @@ Local runtime note:
 
 Production runtime note:
 
-- BR-16b-fix wires the same runtime contract into CD. The `deploy-api` GitHub Actions job must expose `DATABASE_URL_PROD`, `DB_SSL_CA_PEM_B64`, `PGSSLMODE=require`, `GOOGLE_DRIVE_CLIENT_ID`, `GOOGLE_DRIVE_CLIENT_SECRET`, `GOOGLE_DRIVE_AUTH_CALLBACK_BASE_URL`, `GOOGLE_DRIVE_PICKER_API_KEY`, and optional `GOOGLE_DRIVE_PICKER_APP_ID` to `make deploy-api`.
-- `make deploy-api` updates the Scaleway API container with a complete secret environment variable set. The Scaleway key `DATABASE_URL` is populated from GitHub secret `DATABASE_URL_PROD`; `DB_SSL_CA_PEM_B64` mirrors the production backup/smoke-restore TLS path; `PGSSLMODE=require` forces the API startup DB client onto the SSL path before migrations run; Google Drive keys keep their runtime names.
+- BR-16b-fix wires the same runtime contract into CD. The `deploy-api` GitHub Actions job must expose `DATABASE_URL_PROD`, `DB_SSL_CA_PEM_B64`, `PGSSLMODE=require`, `ADMIN_EMAIL`, provider runtime keys (`OPENAI_API_KEY`, `GEMINI_API_KEY`, `ANTHROPIC_API_KEY`, `MISTRAL_API_KEY`, `COHERE_API_KEY`, `TAVILY_API_KEY`), `GOOGLE_DRIVE_CLIENT_ID`, `GOOGLE_DRIVE_CLIENT_SECRET`, `GOOGLE_DRIVE_AUTH_CALLBACK_BASE_URL`, `GOOGLE_DRIVE_PICKER_API_KEY`, and optional `GOOGLE_DRIVE_PICKER_APP_ID` to `make deploy-api`.
+- `make deploy-api` updates the Scaleway API container with a complete secret environment variable set. The Scaleway key `DATABASE_URL` is populated from GitHub secret `DATABASE_URL_PROD`; `DB_SSL_CA_PEM_B64` mirrors the production backup/smoke-restore TLS path; `PGSSLMODE=require` forces the API startup DB client onto the SSL path before migrations run; provider keys keep model/tool execution available; Google Drive keys keep their runtime names.
+- Existing Scaleway API containers must be reconciled on every deploy with the same runtime settings used by creation: port `8787`, min scale `0`, max scale `1`, memory `2048 MB`, CPU `1000 mvCPU`, timeout `5m`, public privacy, `http1`, and explicit redeploy. This prevents old containers created with lower limits or partial env maps from surviving a CD fix.
 - Deployment must fail before touching Scaleway when any required value is missing. This prevents a successful image rollout that silently leaves production Google Drive misconfigured.
 
 Traceable proof commands on a target runtime:

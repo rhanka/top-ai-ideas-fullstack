@@ -33,11 +33,21 @@ export CORS_ALLOWED_ORIGINS ?= http://localhost:$(UI_PORT),http://127.0.0.1:$(UI
 export DATABASE_URL_PROD ?=
 export DB_SSL_CA_PEM_B64 ?=
 export PGSSLMODE ?= require
+export ADMIN_EMAIL ?=
+export OPENAI_API_KEY ?=
+export GEMINI_API_KEY ?=
+export ANTHROPIC_API_KEY ?=
+export MISTRAL_API_KEY ?=
+export COHERE_API_KEY ?=
+export TAVILY_API_KEY ?=
 export GOOGLE_DRIVE_CLIENT_ID ?=
 export GOOGLE_DRIVE_CLIENT_SECRET ?=
 export GOOGLE_DRIVE_AUTH_CALLBACK_BASE_URL ?=
 export GOOGLE_DRIVE_PICKER_API_KEY ?=
 export GOOGLE_DRIVE_PICKER_APP_ID ?=
+export API_CONTAINER_MEMORY_LIMIT ?= 2048
+export API_CONTAINER_CPU_LIMIT ?= 1000
+export API_CONTAINER_TIMEOUT ?= 5m
 
 export API_VERSION    ?= $(shell echo "api/src api/tests/utils api/package.json api/package-lock.json api/Dockerfile api/tsconfig.json api/tsconfig.build.json" | tr ' ' '\n' | xargs -I '{}' find {} -type f | LC_ALL=C sort | xargs cat | sha1sum - | sed 's/\(......\).*/\1/')
 export UI_VERSION     ?= $(shell echo "ui/src ui/package.json ui/package-lock.json ui/Dockerfile ui/tsconfig.json ui/vite.config.ts ui/svelte.config.js ui/postcss.config.cjs ui/tailwind.config.cjs" | tr ' ' '\n' | xargs -I '{}' find {} -type f | LC_ALL=C sort | xargs cat | sha1sum - | sed 's/\(......\).*/\1/')
@@ -503,10 +513,10 @@ check-scw:
 		echo "✅ Scaleway CLI installed. You might need to start a new shell for it to be in your PATH."; \
 	fi
 
-.PHONY: check-prod-google-drive-secrets
-check-prod-google-drive-secrets:
+.PHONY: check-prod-api-secrets
+check-prod-api-secrets:
 	@missing=0; \
-	for var in DATABASE_URL_PROD DB_SSL_CA_PEM_B64 PGSSLMODE GOOGLE_DRIVE_CLIENT_ID GOOGLE_DRIVE_CLIENT_SECRET GOOGLE_DRIVE_AUTH_CALLBACK_BASE_URL GOOGLE_DRIVE_PICKER_API_KEY; do \
+	for var in DATABASE_URL_PROD DB_SSL_CA_PEM_B64 PGSSLMODE ADMIN_EMAIL OPENAI_API_KEY GEMINI_API_KEY ANTHROPIC_API_KEY MISTRAL_API_KEY COHERE_API_KEY TAVILY_API_KEY GOOGLE_DRIVE_CLIENT_ID GOOGLE_DRIVE_CLIENT_SECRET GOOGLE_DRIVE_AUTH_CALLBACK_BASE_URL GOOGLE_DRIVE_PICKER_API_KEY; do \
 		if [ -z "$${!var:-}" ]; then \
 			echo "❌ Error: $$var must be set before deploying the production API container"; \
 			missing=1; \
@@ -516,7 +526,10 @@ check-prod-google-drive-secrets:
 		exit 1; \
 	fi
 
-deploy-api-container-init: check-scw check-prod-google-drive-secrets
+.PHONY: check-prod-google-drive-secrets
+check-prod-google-drive-secrets: check-prod-api-secrets
+
+deploy-api-container-init: check-scw check-prod-api-secrets
 	@echo "▶️ Creating container $(API_IMAGE_NAME) in namespace $(SCW_NAMESPACE_ID)..."
 	@API_CONTAINER_ID=$$(scw container container list | awk '($$2=="$(API_IMAGE_NAME)"){print $$1}'); \
 	if [ -n "$${API_CONTAINER_ID}" ]; then \
@@ -529,19 +542,33 @@ deploy-api-container-init: check-scw check-prod-google-drive-secrets
 			"secret-environment-variables.1.value=$${DB_SSL_CA_PEM_B64}" \
 			"secret-environment-variables.2.key=PGSSLMODE" \
 			"secret-environment-variables.2.value=$${PGSSLMODE}" \
-			"secret-environment-variables.3.key=GOOGLE_DRIVE_CLIENT_ID" \
-			"secret-environment-variables.3.value=$${GOOGLE_DRIVE_CLIENT_ID}" \
-			"secret-environment-variables.4.key=GOOGLE_DRIVE_CLIENT_SECRET" \
-			"secret-environment-variables.4.value=$${GOOGLE_DRIVE_CLIENT_SECRET}" \
-			"secret-environment-variables.5.key=GOOGLE_DRIVE_AUTH_CALLBACK_BASE_URL" \
-			"secret-environment-variables.5.value=$${GOOGLE_DRIVE_AUTH_CALLBACK_BASE_URL}" \
-			"secret-environment-variables.6.key=GOOGLE_DRIVE_PICKER_API_KEY" \
-			"secret-environment-variables.6.value=$${GOOGLE_DRIVE_PICKER_API_KEY}" \
+			"secret-environment-variables.3.key=ADMIN_EMAIL" \
+			"secret-environment-variables.3.value=$${ADMIN_EMAIL}" \
+			"secret-environment-variables.4.key=OPENAI_API_KEY" \
+			"secret-environment-variables.4.value=$${OPENAI_API_KEY}" \
+			"secret-environment-variables.5.key=GEMINI_API_KEY" \
+			"secret-environment-variables.5.value=$${GEMINI_API_KEY}" \
+			"secret-environment-variables.6.key=ANTHROPIC_API_KEY" \
+			"secret-environment-variables.6.value=$${ANTHROPIC_API_KEY}" \
+			"secret-environment-variables.7.key=MISTRAL_API_KEY" \
+			"secret-environment-variables.7.value=$${MISTRAL_API_KEY}" \
+			"secret-environment-variables.8.key=COHERE_API_KEY" \
+			"secret-environment-variables.8.value=$${COHERE_API_KEY}" \
+			"secret-environment-variables.9.key=TAVILY_API_KEY" \
+			"secret-environment-variables.9.value=$${TAVILY_API_KEY}" \
+			"secret-environment-variables.10.key=GOOGLE_DRIVE_CLIENT_ID" \
+			"secret-environment-variables.10.value=$${GOOGLE_DRIVE_CLIENT_ID}" \
+			"secret-environment-variables.11.key=GOOGLE_DRIVE_CLIENT_SECRET" \
+			"secret-environment-variables.11.value=$${GOOGLE_DRIVE_CLIENT_SECRET}" \
+			"secret-environment-variables.12.key=GOOGLE_DRIVE_AUTH_CALLBACK_BASE_URL" \
+			"secret-environment-variables.12.value=$${GOOGLE_DRIVE_AUTH_CALLBACK_BASE_URL}" \
+			"secret-environment-variables.13.key=GOOGLE_DRIVE_PICKER_API_KEY" \
+			"secret-environment-variables.13.value=$${GOOGLE_DRIVE_PICKER_API_KEY}" \
 		); \
 		if [ -n "$${GOOGLE_DRIVE_PICKER_APP_ID:-}" ]; then \
 			SCW_SECRET_ENV_ARGS+=( \
-				"secret-environment-variables.7.key=GOOGLE_DRIVE_PICKER_APP_ID" \
-				"secret-environment-variables.7.value=$${GOOGLE_DRIVE_PICKER_APP_ID}" \
+				"secret-environment-variables.14.key=GOOGLE_DRIVE_PICKER_APP_ID" \
+				"secret-environment-variables.14.value=$${GOOGLE_DRIVE_PICKER_APP_ID}" \
 			); \
 		fi; \
 		scw container container create \
@@ -551,16 +578,16 @@ deploy-api-container-init: check-scw check-prod-google-drive-secrets
 			port=8787 \
 			min-scale=0 \
 			max-scale=1 \
-			memory-limit=2048 \
-			cpu-limit=1000 \
-			timeout=5m \
+			memory-limit=$(API_CONTAINER_MEMORY_LIMIT) \
+			cpu-limit=$(API_CONTAINER_CPU_LIMIT) \
+			timeout=$(API_CONTAINER_TIMEOUT) \
 			privacy=public \
 			protocol=http1 \
 			"$${SCW_SECRET_ENV_ARGS[@]}" && \
 		echo "✅ Container $(API_IMAGE_NAME) created successfully"; \
 	fi
 
-deploy-api-container: check-scw check-prod-google-drive-secrets
+deploy-api-container: check-scw check-prod-api-secrets
 	@echo "▶️ Updating new container $(REGISTRY)/$(API_IMAGE_NAME):$(API_VERSION) to Scaleway..."
 	@API_CONTAINER_ID=$$(scw container container list | awk '($$2=="$(API_IMAGE_NAME)"){print $$1}'); \
 	SCW_SECRET_ENV_ARGS=( \
@@ -570,22 +597,47 @@ deploy-api-container: check-scw check-prod-google-drive-secrets
 		"secret-environment-variables.1.value=$${DB_SSL_CA_PEM_B64}" \
 		"secret-environment-variables.2.key=PGSSLMODE" \
 		"secret-environment-variables.2.value=$${PGSSLMODE}" \
-		"secret-environment-variables.3.key=GOOGLE_DRIVE_CLIENT_ID" \
-		"secret-environment-variables.3.value=$${GOOGLE_DRIVE_CLIENT_ID}" \
-		"secret-environment-variables.4.key=GOOGLE_DRIVE_CLIENT_SECRET" \
-		"secret-environment-variables.4.value=$${GOOGLE_DRIVE_CLIENT_SECRET}" \
-		"secret-environment-variables.5.key=GOOGLE_DRIVE_AUTH_CALLBACK_BASE_URL" \
-		"secret-environment-variables.5.value=$${GOOGLE_DRIVE_AUTH_CALLBACK_BASE_URL}" \
-		"secret-environment-variables.6.key=GOOGLE_DRIVE_PICKER_API_KEY" \
-		"secret-environment-variables.6.value=$${GOOGLE_DRIVE_PICKER_API_KEY}" \
+		"secret-environment-variables.3.key=ADMIN_EMAIL" \
+		"secret-environment-variables.3.value=$${ADMIN_EMAIL}" \
+		"secret-environment-variables.4.key=OPENAI_API_KEY" \
+		"secret-environment-variables.4.value=$${OPENAI_API_KEY}" \
+		"secret-environment-variables.5.key=GEMINI_API_KEY" \
+		"secret-environment-variables.5.value=$${GEMINI_API_KEY}" \
+		"secret-environment-variables.6.key=ANTHROPIC_API_KEY" \
+		"secret-environment-variables.6.value=$${ANTHROPIC_API_KEY}" \
+		"secret-environment-variables.7.key=MISTRAL_API_KEY" \
+		"secret-environment-variables.7.value=$${MISTRAL_API_KEY}" \
+		"secret-environment-variables.8.key=COHERE_API_KEY" \
+		"secret-environment-variables.8.value=$${COHERE_API_KEY}" \
+		"secret-environment-variables.9.key=TAVILY_API_KEY" \
+		"secret-environment-variables.9.value=$${TAVILY_API_KEY}" \
+		"secret-environment-variables.10.key=GOOGLE_DRIVE_CLIENT_ID" \
+		"secret-environment-variables.10.value=$${GOOGLE_DRIVE_CLIENT_ID}" \
+		"secret-environment-variables.11.key=GOOGLE_DRIVE_CLIENT_SECRET" \
+		"secret-environment-variables.11.value=$${GOOGLE_DRIVE_CLIENT_SECRET}" \
+		"secret-environment-variables.12.key=GOOGLE_DRIVE_AUTH_CALLBACK_BASE_URL" \
+		"secret-environment-variables.12.value=$${GOOGLE_DRIVE_AUTH_CALLBACK_BASE_URL}" \
+		"secret-environment-variables.13.key=GOOGLE_DRIVE_PICKER_API_KEY" \
+		"secret-environment-variables.13.value=$${GOOGLE_DRIVE_PICKER_API_KEY}" \
 	); \
 	if [ -n "$${GOOGLE_DRIVE_PICKER_APP_ID:-}" ]; then \
 		SCW_SECRET_ENV_ARGS+=( \
-			"secret-environment-variables.7.key=GOOGLE_DRIVE_PICKER_APP_ID" \
-			"secret-environment-variables.7.value=$${GOOGLE_DRIVE_PICKER_APP_ID}" \
+			"secret-environment-variables.14.key=GOOGLE_DRIVE_PICKER_APP_ID" \
+			"secret-environment-variables.14.value=$${GOOGLE_DRIVE_PICKER_APP_ID}" \
 		); \
 	fi; \
-	scw container container update "$${API_CONTAINER_ID}" registry-image="$(REGISTRY)/$(API_IMAGE_NAME):$(API_VERSION)" "$${SCW_SECRET_ENV_ARGS[@]}" > .deploy_output.log
+	scw container container update "$${API_CONTAINER_ID}" \
+		registry-image="$(REGISTRY)/$(API_IMAGE_NAME):$(API_VERSION)" \
+		port=8787 \
+		min-scale=0 \
+		max-scale=1 \
+		memory-limit=$(API_CONTAINER_MEMORY_LIMIT) \
+		cpu-limit=$(API_CONTAINER_CPU_LIMIT) \
+		timeout=$(API_CONTAINER_TIMEOUT) \
+		privacy=public \
+		protocol=http1 \
+		redeploy=true \
+		"$${SCW_SECRET_ENV_ARGS[@]}" > .deploy_output.log
 	@echo "✅ New container deployment initiated."
 
 wait-for-container: check-scw
