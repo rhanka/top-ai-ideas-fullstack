@@ -155,6 +155,12 @@ Local runtime note:
 
 - The live UAT runtime must pass these values into the API container explicitly. In the current local setup, that means `docker-compose.yml` must forward `GOOGLE_DRIVE_*` plus `AUTH_CALLBACK_BASE_URL`; otherwise the branch code compiles but the live OAuth/Pickers paths stay untestable.
 
+Production runtime note:
+
+- BR-16b-fix wires the same runtime contract into CD. The `deploy-api` GitHub Actions job must expose `DATABASE_URL_PROD`, `GOOGLE_DRIVE_CLIENT_ID`, `GOOGLE_DRIVE_CLIENT_SECRET`, `GOOGLE_DRIVE_AUTH_CALLBACK_BASE_URL`, `GOOGLE_DRIVE_PICKER_API_KEY`, and optional `GOOGLE_DRIVE_PICKER_APP_ID` to `make deploy-api`.
+- `make deploy-api` updates the Scaleway API container with a complete secret environment variable set. The Scaleway key `DATABASE_URL` is populated from GitHub secret `DATABASE_URL_PROD`; Google Drive keys keep their runtime names.
+- Deployment must fail before touching Scaleway when any required value is missing. This prevents a successful image rollout that silently leaves production Google Drive misconfigured.
+
 Traceable proof commands on a target runtime:
 
 1. Record authenticated Playwright state against the runtime with a verified user:

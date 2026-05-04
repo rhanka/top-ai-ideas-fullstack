@@ -30,6 +30,12 @@ export PLAYWRIGHT_MAILDEV_API_URL ?=
 export WEBAUTHN_ORIGIN ?= http://localhost:$(UI_PORT)
 export WEBAUTHN_RP_ID ?= localhost
 export CORS_ALLOWED_ORIGINS ?= http://localhost:$(UI_PORT),http://127.0.0.1:$(UI_PORT),http://ui:5173,https://*.sent-tech.ca,chrome-extension://*,vscode-webview://*
+export DATABASE_URL_PROD ?=
+export GOOGLE_DRIVE_CLIENT_ID ?=
+export GOOGLE_DRIVE_CLIENT_SECRET ?=
+export GOOGLE_DRIVE_AUTH_CALLBACK_BASE_URL ?=
+export GOOGLE_DRIVE_PICKER_API_KEY ?=
+export GOOGLE_DRIVE_PICKER_APP_ID ?=
 
 export API_VERSION    ?= $(shell echo "api/src api/tests/utils api/package.json api/package-lock.json api/Dockerfile api/tsconfig.json api/tsconfig.build.json" | tr ' ' '\n' | xargs -I '{}' find {} -type f | LC_ALL=C sort | xargs cat | sha1sum - | sed 's/\(......\).*/\1/')
 export UI_VERSION     ?= $(shell echo "ui/src ui/package.json ui/package-lock.json ui/Dockerfile ui/tsconfig.json ui/vite.config.ts ui/svelte.config.js ui/postcss.config.cjs ui/tailwind.config.cjs" | tr ' ' '\n' | xargs -I '{}' find {} -type f | LC_ALL=C sort | xargs cat | sha1sum - | sed 's/\(......\).*/\1/')
@@ -495,12 +501,43 @@ check-scw:
 		echo "✅ Scaleway CLI installed. You might need to start a new shell for it to be in your PATH."; \
 	fi
 
-deploy-api-container-init: check-scw
+.PHONY: check-prod-google-drive-secrets
+check-prod-google-drive-secrets:
+	@missing=0; \
+	for var in DATABASE_URL_PROD GOOGLE_DRIVE_CLIENT_ID GOOGLE_DRIVE_CLIENT_SECRET GOOGLE_DRIVE_AUTH_CALLBACK_BASE_URL GOOGLE_DRIVE_PICKER_API_KEY; do \
+		if [ -z "$${!var:-}" ]; then \
+			echo "❌ Error: $$var must be set before deploying the production API container"; \
+			missing=1; \
+		fi; \
+	done; \
+	if [ "$$missing" -ne 0 ]; then \
+		exit 1; \
+	fi
+
+deploy-api-container-init: check-scw check-prod-google-drive-secrets
 	@echo "▶️ Creating container $(API_IMAGE_NAME) in namespace $(SCW_NAMESPACE_ID)..."
 	@API_CONTAINER_ID=$$(scw container container list | awk '($$2=="$(API_IMAGE_NAME)"){print $$1}'); \
 	if [ -n "$${API_CONTAINER_ID}" ]; then \
 		echo "✅ Container $(API_IMAGE_NAME) already exists (ID: $${API_CONTAINER_ID})"; \
 	else \
+		SCW_SECRET_ENV_ARGS=( \
+			"secret-environment-variables.0.key=DATABASE_URL" \
+			"secret-environment-variables.0.value=$${DATABASE_URL_PROD}" \
+			"secret-environment-variables.1.key=GOOGLE_DRIVE_CLIENT_ID" \
+			"secret-environment-variables.1.value=$${GOOGLE_DRIVE_CLIENT_ID}" \
+			"secret-environment-variables.2.key=GOOGLE_DRIVE_CLIENT_SECRET" \
+			"secret-environment-variables.2.value=$${GOOGLE_DRIVE_CLIENT_SECRET}" \
+			"secret-environment-variables.3.key=GOOGLE_DRIVE_AUTH_CALLBACK_BASE_URL" \
+			"secret-environment-variables.3.value=$${GOOGLE_DRIVE_AUTH_CALLBACK_BASE_URL}" \
+			"secret-environment-variables.4.key=GOOGLE_DRIVE_PICKER_API_KEY" \
+			"secret-environment-variables.4.value=$${GOOGLE_DRIVE_PICKER_API_KEY}" \
+		); \
+		if [ -n "$${GOOGLE_DRIVE_PICKER_APP_ID:-}" ]; then \
+			SCW_SECRET_ENV_ARGS+=( \
+				"secret-environment-variables.5.key=GOOGLE_DRIVE_PICKER_APP_ID" \
+				"secret-environment-variables.5.value=$${GOOGLE_DRIVE_PICKER_APP_ID}" \
+			); \
+		fi; \
 		scw container container create \
 			name=$(API_IMAGE_NAME) \
 			namespace-id=$(SCW_NAMESPACE_ID) \
@@ -512,14 +549,33 @@ deploy-api-container-init: check-scw
 			cpu-limit=1000 \
 			timeout=5m \
 			privacy=public \
-			protocol=http1 && \
+			protocol=http1 \
+			"$${SCW_SECRET_ENV_ARGS[@]}" && \
 		echo "✅ Container $(API_IMAGE_NAME) created successfully"; \
 	fi
 
-deploy-api-container: check-scw
+deploy-api-container: check-scw check-prod-google-drive-secrets
 	@echo "▶️ Updating new container $(REGISTRY)/$(API_IMAGE_NAME):$(API_VERSION) to Scaleway..."
 	@API_CONTAINER_ID=$$(scw container container list | awk '($$2=="$(API_IMAGE_NAME)"){print $$1}'); \
-	scw container container update $${API_CONTAINER_ID} registry-image="$(REGISTRY)/$(API_IMAGE_NAME):$(API_VERSION)" > .deploy_output.log
+	SCW_SECRET_ENV_ARGS=( \
+		"secret-environment-variables.0.key=DATABASE_URL" \
+		"secret-environment-variables.0.value=$${DATABASE_URL_PROD}" \
+		"secret-environment-variables.1.key=GOOGLE_DRIVE_CLIENT_ID" \
+		"secret-environment-variables.1.value=$${GOOGLE_DRIVE_CLIENT_ID}" \
+		"secret-environment-variables.2.key=GOOGLE_DRIVE_CLIENT_SECRET" \
+		"secret-environment-variables.2.value=$${GOOGLE_DRIVE_CLIENT_SECRET}" \
+		"secret-environment-variables.3.key=GOOGLE_DRIVE_AUTH_CALLBACK_BASE_URL" \
+		"secret-environment-variables.3.value=$${GOOGLE_DRIVE_AUTH_CALLBACK_BASE_URL}" \
+		"secret-environment-variables.4.key=GOOGLE_DRIVE_PICKER_API_KEY" \
+		"secret-environment-variables.4.value=$${GOOGLE_DRIVE_PICKER_API_KEY}" \
+	); \
+	if [ -n "$${GOOGLE_DRIVE_PICKER_APP_ID:-}" ]; then \
+		SCW_SECRET_ENV_ARGS+=( \
+			"secret-environment-variables.5.key=GOOGLE_DRIVE_PICKER_APP_ID" \
+			"secret-environment-variables.5.value=$${GOOGLE_DRIVE_PICKER_APP_ID}" \
+		); \
+	fi; \
+	scw container container update "$${API_CONTAINER_ID}" registry-image="$(REGISTRY)/$(API_IMAGE_NAME):$(API_VERSION)" "$${SCW_SECRET_ENV_ARGS[@]}" > .deploy_output.log
 	@echo "✅ New container deployment initiated."
 
 wait-for-container: check-scw
