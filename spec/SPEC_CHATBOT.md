@@ -356,8 +356,9 @@ The chatbot data model enables:
 - Allow session replay
 - Stream responses in real time via PostgreSQL LISTEN/NOTIFY
 
-#### Context document tables (to add)
-- `context_documents`: id, context_type (organization|folder|usecase), context_id, filename, mime_type, size_bytes, storage_key (S3/MinIO), status (`uploaded|processing|ready|failed`), summary, summary_lang, prompt_id/prompt_version_id for the summary, optional `data.indexingSkipped` / `data.indexingSkipReason` flags for download-only archives, created_at/updated_at, version.
+#### Context document tables
+- `context_documents`: id, context_type (organization|folder|initiative|chat_session), context_id, filename, mime_type, size_bytes, nullable storage_key for local S3/MinIO documents, source_type (`local|google_drive`), optional connector account/source metadata in `data.source`, status (`uploaded|processing|ready|failed`), summary, summary_lang, prompt_id/prompt_version_id for the summary, optional `data.indexingSkipped` / `data.indexingSkipReason` flags for download-only archives, created_at/updated_at, version.
+- `document_connector_accounts`: user/workspace-scoped connector account state for document sources such as Google Drive, including provider, status, account email/subject, scopes, encrypted token material reference, timestamps, and sanitized last_error.
 - `context_document_versions` (optional): file/summary history (document_id, version, summary, storage_key, created_at).
 - Traceability: `document_added` / `document_summarized` events in `context_modification_history` (with summary prompt_version_id and summary job_id).
 
@@ -373,12 +374,13 @@ See `spec/DATA_MODEL.md` (section **Chat / streaming / tracing**): the ERD is ce
 - [x] `chat_contexts`
 - [x] `chat_stream_events`
 - [x] `context_modification_history`
+- [x] `context_documents`
+- [x] `document_connector_accounts`
 
 #### Planned tables (not created)
 - [ ] `structured_generation_runs` (classic generations tracked via `chat_stream_events` with `message_id=null`)
 - [ ] `prompts` (prompts currently in `settings.prompts` JSON)
 - [ ] `prompt_versions` (prompts currently in `settings.prompts` JSON)
-- [ ] `context_documents` (planned Lot B)
 
 #### `chat_sessions`
 Main table for user chat sessions.
@@ -642,10 +644,12 @@ const replay = await replayChatSession('session-789');
 
 #### Context documents
 1. **Upload** → POST `/api/documents` (context_type/id, file) → S3/MinIO storage, `context_documents` record. Standard explorable documents start at `status=uploaded`; download-only archives (`.zip`, `.tar.gz`, `.tgz`) are persisted directly as `status=ready` with `data.indexingSkipped=true`.
-2. **Auto summary** → “document_summary” queue job launched immediately only for explorable documents (versioned summary prompt, 0.1k token/page, configurable language, default FR) → update `context_documents` (status=processing→ready/failed, summary, prompt_version_id, job_id) + event `document_summarized`
-3. **Consultation** → GET `/api/documents?context_type=&context_id=` + GET `/api/documents/:id` (metadata + summary). Download-only archives remain listed and downloadable through GET `/api/documents/:id/content`, but expose no summary affordance and must resolve to an effective `ready` status even for legacy skipped-index rows.
-4. **Notifications** → AI is notified on upload for acknowledgement; any use‑case processing depending on the doc waits for status ready only for explorable documents. Download-only archives do not enter indexing/exploration flows.
-5. **Traceability** → `context_modification_history` events `document_added` / `document_summarized` with `prompt_version_id` and `job_id`
+2. **Google Drive import** → user connects Google Drive in Settings, selects files through Google Picker from chat/entity document surfaces, then POST `/api/documents/google-drive` stores source-aware `context_documents` rows with `source_type=google_drive`, nullable `storage_key`, connector account linkage, external file metadata, and pending sync status. The source document remains in Google Drive.
+3. **Auto summary** → “document_summary” queue job launched immediately only for explorable documents (versioned summary prompt, 0.1k token/page, configurable language, default FR) → source-aware loading from S3 or Google Drive export/download → update `context_documents` (status=processing→ready/failed, summary, prompt_version_id, job_id) + event `document_summarized`.
+4. **Consultation** → GET `/api/documents?context_type=&context_id=` + GET `/api/documents/:id` (metadata + summary). Download-only archives remain listed and downloadable through GET `/api/documents/:id/content`, but expose no summary affordance and must resolve to an effective `ready` status even for legacy skipped-index rows.
+5. **Downloads** → local documents download from S3/MinIO. Google Drive binaries download from Drive. Native Google Workspace files export to reusable Office formats for users: Docs to DOCX, Sheets to XLSX, Slides to PPTX, while ingestion may use text-first exports for summary/tool use.
+6. **Notifications** → AI is notified on upload for acknowledgement; any use-case processing depending on the doc waits for status ready only for explorable documents. Download-only archives do not enter indexing/exploration flows.
+7. **Traceability** → `context_modification_history` events `document_added` / `document_summarized` with `prompt_version_id` and `job_id`
 
 ## Technical impact study (API/UI/DB/queue anchor)
 
@@ -718,6 +722,7 @@ const replay = await replayChatSession('session-789');
 **Implemented (partial)**:
 - [x] Chat session documents (upload/list/delete, auto summary, tool `documents`).
 - [x] Download-only archive uploads (`.zip`, `.tar.gz`, `.tgz`) on object documents blocks: stored like standard documents, downloadable, excluded from summary/indexing/tool exploration, and surfaced as `ready`.
+- [x] Google Drive connector first slice: user-scoped OAuth, Settings connector lifecycle, Picker-based selection from chat/entity document surfaces, source-aware `context_documents`, in-situ summary indexing, Drive/native Workspace downloads, and unified `documents` API/tool access.
 
 **To implement**:
 - [ ] API: POST `/api/documents` (upload + context_type/id); GET `/api/documents?context_type=&context_id=` (list); GET `/api/documents/:id` (meta+summary); GET `/api/documents/:id/content` (download)
