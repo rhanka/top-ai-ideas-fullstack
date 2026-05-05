@@ -114,8 +114,9 @@ Use these Google Auth Platform values for BR-16a provisioning:
 - Temporary support email fallback only if the Google Console selector does not expose `admin@sent-tech.ca`: `fabien.antoine@gmail.com`.
 - Test user while the app is in Testing mode: `fabien.antoine@gmail.com`.
 - Authorized domain: `sent-tech.ca`.
-- Production JavaScript origin: `https://entropic.sent-tech.ca`.
-- Production redirect URI: `https://entropic.sent-tech.ca/api/v1/google-drive/oauth/callback`.
+- Current production JavaScript origin: `https://top-ai-ideas.sent-tech.ca`.
+- Current production redirect URI: `https://top-ai-ideas-api.sent-tech.ca/api/v1/google-drive/oauth/callback`.
+- Future canonical `entropic.sent-tech.ca` hostnames remain part of the BR-14d DNS/runtime transition and must not be used by BR-16a CD until they resolve and route to the app/API.
 - Root local dev/UAT JavaScript origin: `http://localhost:5173`.
 - Root local dev/UAT redirect URI: `http://localhost:8787/api/v1/google-drive/oauth/callback`.
 - BR-16a five-slot sub-agent JavaScript origins: `http://localhost:5280` through `http://localhost:5284`.
@@ -137,7 +138,7 @@ Provisioning result on 2026-04-22 for Google Cloud project `sent-tech`:
 - OAuth web client created: `Entropic Web App`.
 - OAuth client ID: `924600787940-bc4tfvq52lseekjr090ic2e6k4gl4r8f.apps.googleusercontent.com`.
 - API key created: `Entropic Google Picker`; the key value is not recorded in repository docs.
-- API key restrictions: HTTP referrers `https://entropic.sent-tech.ca/*`, `http://localhost:5173/*`, and `http://localhost:5280/*` through `http://localhost:5284/*`.
+- API key restrictions: HTTP referrers `https://top-ai-ideas.sent-tech.ca/*`, future `https://entropic.sent-tech.ca/*` once BR-14d activates DNS/routing, `http://localhost:5173/*`, and `http://localhost:5280/*` through `http://localhost:5284/*`.
 - API key API restrictions: Google Drive API and Google Picker API.
 - Obsolete local port entries `http://localhost:5116`, `http://localhost:8716/api/v1/google-drive/oauth/callback`, and `http://localhost:5116/*` were removed from Google Cloud on 2026-04-22.
 
@@ -157,20 +158,11 @@ Local runtime note:
 
 Production runtime note:
 
-- BR-16a owns the production CD wiring for the Google Drive connector. The `deploy-api` GitHub Actions job exposes the production API runtime contract to `make deploy-api`: `DATABASE_URL_PROD`, `DB_SSL_CA_PEM_B64`, `PGSSLMODE=require`, `AUTH_CALLBACK_BASE_URL=https://entropic.sent-tech.ca`, `ADMIN_EMAIL`, provider keys (`OPENAI_API_KEY`, `GEMINI_API_KEY`, `ANTHROPIC_API_KEY`, `MISTRAL_API_KEY`, `COHERE_API_KEY`), `TAVILY_API_KEY`, `GOOGLE_DRIVE_CLIENT_ID`, `GOOGLE_DRIVE_CLIENT_SECRET`, `GOOGLE_DRIVE_AUTH_CALLBACK_BASE_URL`, `GOOGLE_DRIVE_PICKER_API_KEY`, and optional `GOOGLE_DRIVE_PICKER_APP_ID`.
+- BR-16a owns the production CD wiring for the Google Drive connector. The `deploy-api` GitHub Actions job exposes the production API runtime contract to `make deploy-api`: `DATABASE_URL_PROD`, `DB_SSL_CA_PEM_B64`, `PGSSLMODE=require`, `AUTH_CALLBACK_BASE_URL=https://top-ai-ideas.sent-tech.ca`, `ADMIN_EMAIL`, provider keys (`OPENAI_API_KEY`, `GEMINI_API_KEY`, `ANTHROPIC_API_KEY`, `MISTRAL_API_KEY`, `COHERE_API_KEY`), `TAVILY_API_KEY`, `GOOGLE_DRIVE_CLIENT_ID`, `GOOGLE_DRIVE_CLIENT_SECRET`, `GOOGLE_DRIVE_AUTH_CALLBACK_BASE_URL=https://top-ai-ideas-api.sent-tech.ca`, `GOOGLE_DRIVE_PICKER_API_KEY`, and optional `GOOGLE_DRIVE_PICKER_APP_ID`.
 - `make deploy-api` reconciles the Scaleway API container with a complete runtime secret map for the variables listed above. The Scaleway key `DATABASE_URL` is populated from GitHub secret `DATABASE_URL_PROD`; Google Drive keys keep their runtime names; `AUTH_CALLBACK_BASE_URL` keeps OAuth completion redirects on the web app host instead of the API host.
 - Existing Scaleway API containers are reconciled on every deploy with the same runtime settings used at creation: port `8787`, min scale `0`, max scale `1`, memory `2048 MB`, CPU `1000 mvCPU`, timeout `5m`, public privacy, `http1`, and explicit redeploy.
 - The 2026-05-04 GitHub secret-name audit found no repository secrets named `JWT_SECRET`, `DOC_STORAGE_BUCKET`, `DOC_STORAGE_ENDPOINT`, `DOC_STORAGE_REGION`, `DOC_STORAGE_ACCESS_KEY`, `DOC_STORAGE_SECRET_KEY`, `MAIL_*`, or `WEBAUTHN_*`. BR-16a does not inject empty placeholders for absent secrets. Local document storage, production mail delivery, WebAuthn production origin, and a non-default production JWT secret remain separate production-environment provisioning decisions unless those secrets are added before merge.
 - Per user decision BR16a-D3, BR-16a does not add a new production secret preflight/readiness-control target.
-
-Manual out-of-CD production validation on 2026-05-05:
-
-- The existing production API container was temporarily updated image-only to `rg.fr-par.scw.cloud/nc-reg/top-ai-ideas-api:93dac4`, preserving the current secret map and runtime settings.
-- The BR-16a image reached `ready` and `/api/v1/health` returned `200`.
-- Google Drive runtime secret keys were present in the container secret map; secret values were not read or recorded.
-- Authenticated Google Drive OAuth/Picker validation did not complete because the production browser session had no app session. WebAuthn required passkey interaction outside CDP, and the email fallback failed because production `MAIL_*` secrets are not provisioned.
-- The container was rolled back image-only to `rg.fr-par.scw.cloud/nc-reg/top-ai-ideas-api:880b05`, reached `ready`, and `/api/v1/health` returned `200`.
-- This validation proves image boot and Google Drive secret-key presence on the production container. It does not prove authenticated production OAuth/Picker behavior until production auth/bootstrap prerequisites are available.
 
 Traceable proof commands on a target runtime:
 

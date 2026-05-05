@@ -241,7 +241,7 @@ Implement the Google Drive first slice of document connectors: user-scoped Googl
   - audit the API runtime variables required by the production image and classify them as Google Drive, database/TLS, auth, model-provider, storage, mail/webauthn, or optional;
   - update GitHub Actions CD wiring inside BR-16a, not in post-merge fix branches;
   - preserve the Scaleway container runtime contract on deploy/update: port `8787`, public HTTP service, expected scale limits, timeout, memory limit, image tag, and the complete secret environment map;
-  - validate production Google OAuth/Picker application configuration (`https://entropic.sent-tech.ca` origin and callback) without recording secret values;
+  - validate production Google OAuth/Picker application configuration against the currently routed production hosts without recording secret values;
   - document the final production CD contract in `spec/SPEC_EVOL_GOOGLE_DRIVE_CONNECTOR.md`;
   - do not manually deploy production from the branch unless the user explicitly approves that step.
 - [x] `decision` BR16a-D3 — Point 4 is rejected by user. Do not add a new make-only production preflight/readiness-control target in BR-16a.
@@ -249,13 +249,14 @@ Implement the Google Drive first slice of document connectors: user-scoped Googl
   - Repository secrets present for the BR-16a CD contract: `DATABASE_URL_PROD`, `DB_SSL_CA_PEM_B64`, provider keys, `TAVILY_API_KEY`, `ADMIN_EMAIL`, `GOOGLE_DRIVE_CLIENT_ID`, `GOOGLE_DRIVE_CLIENT_SECRET`, `GOOGLE_DRIVE_AUTH_CALLBACK_BASE_URL`, `GOOGLE_DRIVE_PICKER_API_KEY`, and `GOOGLE_DRIVE_PICKER_APP_ID`.
   - Repository secrets not present on 2026-05-04: `JWT_SECRET`, `DOC_STORAGE_BUCKET`, `DOC_STORAGE_ENDPOINT`, `DOC_STORAGE_REGION`, `DOC_STORAGE_ACCESS_KEY`, `DOC_STORAGE_SECRET_KEY`, `MAIL_*`, and `WEBAUTHN_*`.
   - BR-16a does not inject absent secrets as empty values; local document storage, production mail delivery, WebAuthn production origin, and a non-default production JWT secret remain production-environment provisioning decisions unless these secrets are added before merge.
-- [x] `evidence` BR16a-PROD3 — User-approved out-of-CD production image smoke was executed and rolled back on 2026-05-05.
-  - Deployed image-only to the existing Scaleway production API container with BR-16a image `rg.fr-par.scw.cloud/nc-reg/top-ai-ideas-api:93dac4`, preserving the current secret map and runtime settings.
-  - Verified container readiness and API health (`200`) while the branch image was active.
-  - Confirmed Google Drive runtime secret keys are present in the container secret map; secret values were not read or recorded.
-  - Authenticated Google Drive OAuth/Picker validation could not be completed in CDP because the production browser session had no app session. WebAuthn required passkey interaction outside CDP, and the email fallback failed because `MAIL_*` secrets are not provisioned for production.
-  - This is an authentication/bootstrap blocker, not evidence of a Google Drive secret failure.
-  - Rolled the production API container back image-only to `rg.fr-par.scw.cloud/nc-reg/top-ai-ideas-api:880b05`, waited for readiness, and verified API health (`200`).
+- [x] `evidence` BR16a-PROD3 — User-approved out-of-CD production validation completed on 2026-05-05 with rollback images identified.
+  - Final smoke image: `rg.fr-par.scw.cloud/nc-reg/top-ai-ideas-api:7841a8`.
+  - Immediate rollback image: `rg.fr-par.scw.cloud/nc-reg/top-ai-ideas-api:dd611a`; pre-smoke rollback image: `rg.fr-par.scw.cloud/nc-reg/top-ai-ideas-api:93dac4`.
+  - `https://entropic.sent-tech.ca` did not resolve from the validation environment; BR-16a CD now uses current routed production hosts until BR-14d performs the DNS/runtime transition.
+  - Google OAuth client was updated to authorize `https://top-ai-ideas-api.sent-tech.ca/api/v1/google-drive/oauth/callback`.
+  - Production OAuth start emits `redirect_uri` on `https://top-ai-ideas-api.sent-tech.ca/api/v1/google-drive/oauth/callback`, not localhost.
+  - Full OAuth consent completed in CDP and returned to `https://top-ai-ideas.sent-tech.ca/settings` with `google_drive=connected`.
+  - Production readiness proof: authenticated session `200`, Google Drive connection `connected`, Picker config `200` with client id, developer key, app id, and OAuth token present. Secret values and tokens were not recorded.
 
 ## AI Flaky tests
 - Acceptance rule:
@@ -418,7 +419,6 @@ Implement the Google Drive first slice of document connectors: user-scoped Googl
 
 - [ ] **Lot 9 — Final validation**
   - [x] New/updated tests are implemented and traced in the branch; broad gates are delegated to PR/CI per user instruction.
-  - [x] Out-of-CD production image smoke executed with rollback; end-to-end production Google Drive validation remains blocked by production auth/bootstrap prerequisites documented in `BR16a-PROD3`.
   - [ ] `make typecheck-api API_PORT=9080 UI_PORT=5280 MAILDEV_UI_PORT=1180 ENV=test-feat-gdrive-sso-indexing-16a`
   - [ ] `make lint-api API_PORT=9080 UI_PORT=5280 MAILDEV_UI_PORT=1180 ENV=test-feat-gdrive-sso-indexing-16a`
   - [ ] `make test-api-unit API_PORT=9080 UI_PORT=5280 MAILDEV_UI_PORT=1180 ENV=test-feat-gdrive-sso-indexing-16a`
