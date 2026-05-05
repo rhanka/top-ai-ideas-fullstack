@@ -236,7 +236,7 @@ Implement the Google Drive first slice of document connectors: user-scoped Googl
   - New and updated test coverage is traceable in branch files for API, UI, e2e, and dev-lane readiness: Google Drive OAuth/accounts/files/documents suites, document tool/queue coverage, shared source-menu utilities, composer/settings document e2e specs, and `e2e/tests/dev/01-google-drive-live-readiness.spec.ts`.
   - Broad final gates will run through PR/CI per user instruction; local broad test campaigns are not repeated in Lot 7.
 - [x] `attention` BR16a-EX9 — Production CD deploy wiring is allowed for `Makefile` and `.github/workflows/ci.yml`. Reason: BR-16a introduces Google Drive runtime secrets and must carry the production deployment contract in the same PR instead of post-merge fix branches. Impact: CD wiring only; no runtime product behavior change beyond ensuring configured production deployments receive the complete environment. Rollback: revert the Makefile/workflow CD changes while keeping the Google Drive feature code intact.
-- [ ] `attention` BR16a-PROD1 — Production CD finalization remains open after rollback cleanup. Required scope:
+- [x] `attention` BR16a-PROD1 — Production CD finalization completed after rollback cleanup. Completed scope:
   - confirm `main` was rolled back to the parent of the BR-16a merge before reopening this PR;
   - audit the API runtime variables required by the production image and classify them as Google Drive, database/TLS, auth, model-provider, storage, mail/webauthn, or optional;
   - update GitHub Actions CD wiring inside BR-16a, not in post-merge fix branches;
@@ -400,13 +400,13 @@ Implement the Google Drive first slice of document connectors: user-scoped Googl
   - [x] Update existing document connector/RAG specs only if behavior changes.
   - [x] Update `BRANCH.md` feedback loop before final validation.
 
-- [ ] **Lot 8 — Production CD finalization**
+- [x] **Lot 8 — Production CD finalization**
   - [x] Confirm remote `main` is `7c9c4e367a59b8e6d1e371c34b55a250553d2026` before reopening the BR-16a PR.
   - [x] Audit API production runtime environment requirements from code/config and classify every required variable in `spec/SPEC_EVOL_GOOGLE_DRIVE_CONNECTOR.md`.
   - [x] Wire Google Drive production deployment secrets in `.github/workflows/ci.yml`.
   - [x] Wire available non-Google runtime secrets required by the API production image in `.github/workflows/ci.yml`.
   - [x] Ensure deploy/update logic preserves the complete Scaleway container runtime contract instead of replacing the secret map with a partial set.
-  - [ ] Run PR CI after CD wiring changes.
+  - [x] Run PR CI after CD wiring changes.
   - [x] Record any unresolved production environment decision in `## Feedback Loop` before merge.
 
 - [ ] **Lot 9 — Final validation**
