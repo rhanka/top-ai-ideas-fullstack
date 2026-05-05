@@ -163,6 +163,15 @@ Production runtime note:
 - The 2026-05-04 GitHub secret-name audit found no repository secrets named `JWT_SECRET`, `DOC_STORAGE_BUCKET`, `DOC_STORAGE_ENDPOINT`, `DOC_STORAGE_REGION`, `DOC_STORAGE_ACCESS_KEY`, `DOC_STORAGE_SECRET_KEY`, `MAIL_*`, or `WEBAUTHN_*`. BR-16a does not inject empty placeholders for absent secrets. Local document storage, production mail delivery, WebAuthn production origin, and a non-default production JWT secret remain separate production-environment provisioning decisions unless those secrets are added before merge.
 - Per user decision BR16a-D3, BR-16a does not add a new production secret preflight/readiness-control target.
 
+Manual out-of-CD production validation on 2026-05-05:
+
+- The existing production API container was temporarily updated image-only to `rg.fr-par.scw.cloud/nc-reg/top-ai-ideas-api:93dac4`, preserving the current secret map and runtime settings.
+- The BR-16a image reached `ready` and `/api/v1/health` returned `200`.
+- Google Drive runtime secret keys were present in the container secret map; secret values were not read or recorded.
+- Authenticated Google Drive OAuth/Picker validation did not complete because the production browser session had no app session. WebAuthn required passkey interaction outside CDP, and the email fallback failed because production `MAIL_*` secrets are not provisioned.
+- The container was rolled back image-only to `rg.fr-par.scw.cloud/nc-reg/top-ai-ideas-api:880b05`, reached `ready`, and `/api/v1/health` returned `200`.
+- This validation proves image boot and Google Drive secret-key presence on the production container. It does not prove authenticated production OAuth/Picker behavior until production auth/bootstrap prerequisites are available.
+
 Traceable proof commands on a target runtime:
 
 1. Record authenticated Playwright state against the runtime with a verified user:
