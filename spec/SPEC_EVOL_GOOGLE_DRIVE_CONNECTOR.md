@@ -155,6 +155,14 @@ Local runtime note:
 
 - The live UAT runtime must pass these values into the API container explicitly. In the current local setup, that means `docker-compose.yml` must forward `GOOGLE_DRIVE_*` plus `AUTH_CALLBACK_BASE_URL`; otherwise the branch code compiles but the live OAuth/Pickers paths stay untestable.
 
+Production runtime note:
+
+- BR-16a owns the production CD wiring for the Google Drive connector. The `deploy-api` GitHub Actions job exposes the production API runtime contract to `make deploy-api`: `DATABASE_URL_PROD`, `DB_SSL_CA_PEM_B64`, `PGSSLMODE=require`, `AUTH_CALLBACK_BASE_URL=https://entropic.sent-tech.ca`, `ADMIN_EMAIL`, provider keys (`OPENAI_API_KEY`, `GEMINI_API_KEY`, `ANTHROPIC_API_KEY`, `MISTRAL_API_KEY`, `COHERE_API_KEY`), `TAVILY_API_KEY`, `GOOGLE_DRIVE_CLIENT_ID`, `GOOGLE_DRIVE_CLIENT_SECRET`, `GOOGLE_DRIVE_AUTH_CALLBACK_BASE_URL`, `GOOGLE_DRIVE_PICKER_API_KEY`, and optional `GOOGLE_DRIVE_PICKER_APP_ID`.
+- `make deploy-api` reconciles the Scaleway API container with a complete runtime secret map for the variables listed above. The Scaleway key `DATABASE_URL` is populated from GitHub secret `DATABASE_URL_PROD`; Google Drive keys keep their runtime names; `AUTH_CALLBACK_BASE_URL` keeps OAuth completion redirects on the web app host instead of the API host.
+- Existing Scaleway API containers are reconciled on every deploy with the same runtime settings used at creation: port `8787`, min scale `0`, max scale `1`, memory `2048 MB`, CPU `1000 mvCPU`, timeout `5m`, public privacy, `http1`, and explicit redeploy.
+- The 2026-05-04 GitHub secret-name audit found no repository secrets named `JWT_SECRET`, `DOC_STORAGE_BUCKET`, `DOC_STORAGE_ENDPOINT`, `DOC_STORAGE_REGION`, `DOC_STORAGE_ACCESS_KEY`, `DOC_STORAGE_SECRET_KEY`, `MAIL_*`, or `WEBAUTHN_*`. BR-16a does not inject empty placeholders for absent secrets. Local document storage, production mail delivery, WebAuthn production origin, and a non-default production JWT secret remain separate production-environment provisioning decisions unless those secrets are added before merge.
+- Per user decision BR16a-D3, BR-16a does not add a new production secret preflight/readiness-control target.
+
 Traceable proof commands on a target runtime:
 
 1. Record authenticated Playwright state against the runtime with a verified user:
