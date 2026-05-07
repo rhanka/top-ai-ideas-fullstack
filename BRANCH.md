@@ -1,10 +1,11 @@
 # Feature: BR-14c LLM Mesh SDK
 
 ## Objective
-Create the first publishable Entropic package, `@entropic/llm-mesh`, as a provider-agnostic model access SDK for OpenAI, Anthropic/Claude, Google/Gemini, Mistral, and Cohere. Freeze the public mesh contract before BR-14b migrates the application runtime and before BR-14a extracts chat UI.
+Create the first publishable Entropic package, `@entropic/llm-mesh`, as a provider-agnostic model access SDK for OpenAI, Anthropic/Claude, Google/Gemini, Mistral, and Cohere, then cut the application LLM runtime over to that package in the same branch. BR-14c must be a refactor/isolate/publish branch, not a parallel proof-only branch.
 
 ## Scope / Guardrails
-- Scope limited to the LLM mesh package boundary, public TypeScript contract, provider capability model, provider adapter scaffold, authentication mode contract, package tests, and a thin application proof path.
+- Scope includes the LLM mesh package boundary, public TypeScript contract, provider capability model, provider adapters, authentication mode contract, package tests, and strict application runtime cutover to `@entropic/llm-mesh`.
+- No double runtime path: once a runtime responsibility is imported from `@entropic/llm-mesh`, the replaced app-local implementation must be removed in the same branch. No feature flag, no compatibility bridge, no fallback alias.
 - One migration max in `api/drizzle/*.sql` (not expected for this branch).
 - Make-only workflow, no direct Docker commands.
 - Root workspace `/home/antoinefa/src/entropic` is reserved for user work and must remain stable.
@@ -13,7 +14,7 @@ Create the first publishable Entropic package, `@entropic/llm-mesh`, as a provid
 - UAT qualification branch/worktree must be commit-identical to the branch under qualification.
 - In every `make` command, `ENV=<env>` must be passed as the last argument.
 - All new text in English.
-- BR-14c owns the model-access contract only; BR-14b owns the full application runtime migration; BR-14a owns chat UI extraction; BR-14d owns operational transition; BR-14e owns final naming sweep.
+- BR-14c owns the model-access contract and the application LLM runtime cutover. BR-14b owns the remaining chat-service modularization above the model runtime, including reasoning/tool loop extraction where needed. BR-14a owns chat UI extraction; BR-14d owns operational transition; BR-14e owns final naming sweep.
 
 ## Branch Scope Boundaries (MANDATORY)
 - **Allowed Paths (implementation scope)**:
@@ -49,7 +50,7 @@ Create the first publishable Entropic package, `@entropic/llm-mesh`, as a provid
   - `ui/src/lib/components/**`
   - `ui/src/routes/**`
   - `plan/14a-BRANCH_*.md`
-  - `plan/14b-BRANCH_*.md`
+  - `plan/14b-BRANCH_*.md` except `plan/14b-BRANCH_refacto-chat-service-core.md` covered by `BR14c-EX5`
   - `plan/14d-BRANCH_*.md`
   - `plan/14e-BRANCH_*.md`
 - **Conditional Paths (allowed only with explicit exception when not already listed in Allowed Paths)**:
@@ -65,6 +66,8 @@ Create the first publishable Entropic package, `@entropic/llm-mesh`, as a provid
   - `package.json`
   - `package-lock.json`
   - `PLAN.md`
+  - `plan/14b-BRANCH_refacto-chat-service-core.md`
+  - `plan/14c-BRANCH_feat-llm-mesh-sdk.md`
   - `plan/14g-BRANCH_feat-model-catalog-gpt55-opus47.md`
 - **Exception process**:
   - Declare exception ID `BR14c-EXn` in `## Feedback Loop` before touching any conditional/forbidden path.
@@ -73,11 +76,13 @@ Create the first publishable Entropic package, `@entropic/llm-mesh`, as a provid
 
 ## Feedback Loop
 - [x] `attention` BR14c-EX1 — Conditional `Makefile`, `api/package.json`, `api/package-lock.json`, `api/tsconfig.json`, and `api/vitest.config.ts` changes are allowed only if Lot 1 proves the package cannot be typechecked/tested through existing targets. Reason: a publishable package needs deterministic make-backed build/test targets. Impact: build/test scaffolding only, no runtime behavior. Rollback: remove package-specific targets/config and keep package tests under existing API targets.
-- [ ] `attention` BR14c-EX2 — `spec/SPEC_EVOL_LLM_MESH.md` owns the reusable function classification, Graphify-backed usage audit, external framework benchmark, and public package contract. Reason: the public package contract must be reviewable before implementation and must not bloat `BRANCH.md`. Impact: specification only. Rollback: consolidate final decisions into `SPEC_EVOL_ENTROPIC_BR14_ORCHESTRATION.md` and delete the branch spec.
+- [x] `attention` BR14c-EX2 — `spec/SPEC_EVOL_LLM_MESH.md` owns the reusable function classification, Graphify-backed usage audit, external framework benchmark, public package contract, and strict runtime cutover rules. Reason: the public package and runtime migration contract must be reviewable before implementation and must not bloat `BRANCH.md`. Impact: specification only. Rollback: consolidate final decisions into `SPEC_EVOL_ENTROPIC_BR14_ORCHESTRATION.md` and delete the branch spec.
 - [x] `attention` BR14c-EX3 — Conditional `PLAN.md` and `plan/14g-BRANCH_feat-model-catalog-gpt55-opus47.md` changes are allowed only to schedule the user-requested downstream model catalog pivot after BR-14c. Reason: GPT-5.5 and Claude Opus 4.7 should be applied after the mesh contract is frozen, not mixed into the current package extraction. Impact: roadmap/spec planning only, no runtime model catalog changes in BR-14c. Rollback: remove BR-14g from `PLAN.md` and delete the branch pointer.
 - [x] `attention` BR14c-EX4 — Conditional `.dockerignore` changes are allowed to keep BR-14c root workspace Docker builds from sending local assistant, Playwright, dependency, data, and image artifacts in the build context. Reason: BR-14f moved API/UI builds to the repository root context, and BR-14c root UAT exposed multi-GB local context transfer from untracked state. Impact: Docker build context hygiene only, no runtime behavior. Rollback: delete `.dockerignore`.
+- [x] `attention` BR14c-EX5 — Conditional `plan/14b-BRANCH_refacto-chat-service-core.md` and `plan/14c-BRANCH_feat-llm-mesh-sdk.md` changes are allowed only to align downstream branch planning with the strict BR-14c runtime cutover decision. Reason: BR-14c now owns model-runtime migration, so BR-14b must be re-scoped before implementation continues. Impact: planning only, no runtime behavior. Rollback: restore the previous branch pointer files and BR-14b runtime wording from `main`.
 - [x] `clarification` BR14c-R1 — Strategic review accepted on 2026-04-22. BR-14c must add package-specific make gates, a minimal `createLlmMesh` facade, model-profile-first capabilities with `supported/unsupported/partial/unknown`, server-only secret material separated from redacted auth descriptors, and a richer tool/result lifecycle compatible with MCP-style content and streamed tool arguments.
-- [x] `resolved` BR14c-B1 — The thin API proof path is now exercised through `api/src/services/llm-runtime/mesh-contract-proof.ts` and `api/tests/unit/provider-mesh-contract-proof.test.ts`. Resolution: BR-14f exposes the workspace root to the API test container, so BR-14c can import the mesh source contract without changing the live chat runtime. Impact: proof-only API boundary, no runtime migration. Rollback: remove the proof module and proof test.
+- [x] `decision` BR14c-R2 — User clarification on 2026-05-07: BR-14c must not stop at a proof-only package. It must import `@entropic/llm-mesh` as the real workspace package and migrate the application LLM runtime in strict cutover mode. Any app-local provider/runtime function replaced by the package must be deleted in the same branch. BR-14b is re-scoped to chat-service modularization above the LLM runtime.
+- [ ] `blocked` BR14c-B1 — Current proof path is insufficient: `api/src/services/llm-runtime/mesh-contract-proof.ts` imports `../../../../packages/llm-mesh/src/index.js` instead of `@entropic/llm-mesh`, and the live runtime still uses the app-local `llm-runtime` dispatch. Resolution required before PR: declare package dependency/resolution, import `@entropic/llm-mesh`, migrate runtime dispatch, and remove the replaced app-local implementation.
 
 ## AI Flaky tests
 - Acceptance rule:
@@ -90,10 +95,10 @@ Create the first publishable Entropic package, `@entropic/llm-mesh`, as a provid
 ## Orchestration Mode (AI-selected)
 - [x] **Mono-branch + cherry-pick** (default for orthogonal tasks; single final test cycle)
 - [ ] **Multi-branch** (only if sub-workstreams require independent CI or long-running validation)
-- Rationale: BR-14c is one package contract branch with a single ownership boundary. BR-14b/14a/14d/14e are separate downstream branches, so this branch must freeze the mesh contract without parallel implementation sub-branches.
+- Rationale: BR-14c is one package plus runtime cutover branch with a single ownership boundary: model access. BR-14b/14a/14d/14e remain separate downstream branches, but BR-14c must finish the model-runtime migration so functional UAT validates the package and not only app startup.
 
 ## UAT Management (in orchestration context)
-- **Mono-branch**: UAT is performed on the integrated branch only after package proof integration exists.
+- **Mono-branch**: UAT is performed on the integrated branch only after the live application runtime uses `@entropic/llm-mesh`.
 - UAT checkpoints must be listed as checkboxes inside each relevant lot.
 - Execution flow:
   - Develop and run tests in `tmp/feat-llm-mesh-sdk`.
@@ -152,7 +157,7 @@ Create the first publishable Entropic package, `@entropic/llm-mesh`, as a provid
   - [x] Add package adapters or adapter interfaces for OpenAI, Anthropic/Claude, Google/Gemini, Mistral, and Cohere.
   - [x] Keep provider SDK calls deterministic under unit tests with mocked clients.
   - [x] Normalize provider errors with retryability metadata.
-  - [x] Preserve existing application provider behavior until BR-14b performs full migration.
+  - [x] Preserve existing application provider behavior before the strict BR-14c runtime cutover lot.
   - [x] Lot gate:
     - [x] `make typecheck-api API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
     - [x] `make lint-api API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
@@ -187,61 +192,75 @@ Create the first publishable Entropic package, `@entropic/llm-mesh`, as a provid
     - [x] **E2E tests**
       - [x] No E2E test updates expected in Lot 3.
 
-- [x] **Lot 4 — Thin application proof path**
+- [ ] **Lot 4 — Application runtime cutover**
   - [x] Add minimal SDK facade: `createLlmMesh({ registry, authResolver, hooks })`, `mesh.generate()`, and `mesh.stream()`.
   - [x] Support `provider:model` aliases and explicit `{ providerId, modelId }` selection.
   - [x] Validate requested features against model profile capabilities before adapter execution.
-  - [x] Add a thin application import path or proof adapter showing the API runtime can consume the mesh contract without completing BR-14b migration.
-  - [x] Avoid moving chat service behavior into the package in this branch.
+  - [ ] Declare `@entropic/llm-mesh` as a real workspace package dependency for the API and update lockfiles consistently.
+  - [ ] Replace the relative proof import with `@entropic/llm-mesh`.
+  - [ ] Migrate `api/src/services/llm-runtime/**` dispatch to `@entropic/llm-mesh`.
+  - [ ] Delete app-local provider/runtime code that is replaced by the package. No double run, no feature flag, no fallback alias.
+  - [ ] Preserve provider credential precedence, quota checks, retry behavior, streaming event order, tool-call continuation, reasoning controls, trace/audit metadata, and live AI command behavior.
+  - [ ] Keep chat orchestration behavior in `chat-service.ts`; BR-14c may update call sites but must not modularize the whole chat-service reasoning/tool loop.
   - [x] Avoid defining any chat SDK provider abstraction in this branch.
-  - [x] Keep all existing API behavior stable.
-  - [x] Lot gate:
-    - [x] `make typecheck-api API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
-    - [x] `make lint-api API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
-    - [x] **Package/API tests**
-      - [x] Add or update `api/tests/unit/llm-runtime-stream.test.ts`.
-      - [x] Add `api/tests/unit/provider-mesh-contract-proof.test.ts`.
-      - [x] Add or update `api/tests/unit/chat-service-tools.test.ts` only if the proof path changes tool-call runtime wiring.
-      - [x] Scoped run: `make test-api-unit SCOPE=tests/unit/llm-runtime-stream.test.ts API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`.
-      - [x] Scoped run: `make test-api-unit SCOPE=tests/unit/provider-mesh-contract-proof.test.ts API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`.
+  - [ ] Keep all existing API behavior stable after cutover.
+  - [ ] Lot gate:
+    - [ ] `make typecheck-llm-mesh API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
+    - [ ] `make test-llm-mesh API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
+    - [ ] `make typecheck-api API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
+    - [ ] `make lint-api API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
+    - [ ] **Package/API tests**
+      - [ ] Update `api/tests/unit/llm-runtime-stream.test.ts` for mesh-backed runtime dispatch.
+      - [ ] Update `api/tests/unit/provider-mesh-contract-proof.test.ts` to assert package import/resolution through `@entropic/llm-mesh`.
+      - [ ] Add or update `api/tests/unit/chat-service-tools.test.ts` because the runtime cutover changes tool-call runtime wiring.
+      - [ ] Re-run provider tests affected by deleted app-local provider code.
+      - [ ] Scoped run: `make test-api-unit SCOPE=tests/unit/llm-runtime-stream.test.ts API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`.
+      - [ ] Scoped run: `make test-api-unit SCOPE=tests/unit/provider-mesh-contract-proof.test.ts API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`.
+      - [ ] Scoped run: `make test-api-unit SCOPE=tests/unit/chat-service-tools.test.ts API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`.
     - [x] **UI tests (TypeScript only)**
       - [x] No UI test updates expected.
-    - [x] **E2E tests**
-      - [x] No E2E test updates expected unless the proof path changes externally visible chat behavior.
+    - [ ] **E2E tests**
+      - [ ] No E2E updates expected by default, but root UAT must validate real chat streaming because runtime dispatch changes.
 
-- [x] **Lot 5 — Live-provider split strategy**
+- [ ] **Lot 5 — Live-provider split strategy**
   - [x] Document live provider commands and credential requirements.
     - [x] Provider split command form: `make test-api-ai SCOPE=tests/ai/chat-sync.test.ts TEST_MODEL=<provider-model-id> API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`.
     - [x] Provider split command form: `make test-api-ai SCOPE=tests/ai/chat-tools.test.ts TEST_MODEL=<provider-model-id> API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`.
     - [x] Credential gate: run a provider split only when the branch test environment has that provider credential or account transport configured.
   - [x] Keep deterministic package/API tests independent from live credentials.
   - [x] Split live tests by provider so one failed provider does not hide another provider status.
-  - [x] Run live AI tests only when credentials are available.
-  - [x] Lot gate:
-    - [x] `make test-api-ai SCOPE=tests/ai/chat-sync.test.ts API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk` — default OpenAI test model passed: 4 tests.
-    - [x] `make test-api-ai SCOPE=tests/ai/chat-tools.test.ts API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk` — default OpenAI test model passed: 6 tests.
-    - [x] Record provider-specific pass/fail/flaky signatures in this file: OpenAI/default `gpt-4.1-nano` passed; no flaky signature accepted.
+  - [ ] Run live AI tests after runtime cutover when credentials are available.
+  - [ ] Lot gate:
+    - [ ] `make test-api-ai SCOPE=tests/ai/chat-sync.test.ts API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
+    - [ ] `make test-api-ai SCOPE=tests/ai/chat-tools.test.ts API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
+    - [ ] Record provider-specific pass/fail/flaky signatures in this file after the mesh runtime cutover.
 
-- [x] **Lot 6 — Docs consolidation**
-  - [x] Update `spec/SPEC_EVOL_ENTROPIC_BR14_ORCHESTRATION.md` with final BR-14c contract only if behavior changed from the initial orchestration spec.
-  - [x] Consolidate `spec/SPEC_EVOL_LLM_MESH.md` into permanent specs if still branch-specific after implementation.
-  - [x] Delete temporary branch-only spec files after consolidation if applicable.
-  - [x] Update `BRANCH.md` checklist and feedback loop before final validation.
+- [ ] **Lot 6 — Docs consolidation**
+  - [ ] Update `spec/SPEC_EVOL_ENTROPIC_BR14_ORCHESTRATION.md` with the strict BR-14c runtime cutover decision.
+  - [ ] Consolidate `spec/SPEC_EVOL_LLM_MESH.md` into permanent specs after runtime cutover.
+  - [ ] Re-scope BR-14b in `PLAN.md` / orchestration specs to chat-service modularization above the LLM runtime.
+  - [ ] Delete temporary branch-only spec files after consolidation if applicable.
+  - [ ] Update `BRANCH.md` checklist and feedback loop before final validation.
 
 - [ ] **Lot 7 — Final validation**
-  - [x] Package gates:
-    - [x] `make typecheck-llm-mesh API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
-    - [x] `make test-llm-mesh API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk` — 9 tests passed.
-  - [x] Typecheck & lint:
-    - [x] `make typecheck-api API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
-    - [x] `make lint-api API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk` — 184 warnings, 0 errors.
-  - [x] Retest API:
-    - [x] `make test-api-unit API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk` — 472 passed, 8 skipped.
-    - [x] `make test-api-endpoints API_TEST_WORKERS=1 API_PORT=8717 UI_PORT=5117 MAILDEV_UI_PORT=1017 ENV=test-feat-llm-mesh-sdk-serial` — 438 passed. This mirrors CI endpoint serialization; local default workers exposed pre-existing cross-file state coupling outside BR-14c scope.
-  - [x] Build gate:
-    - [x] `make build-api API_PORT=8717 UI_PORT=5117 MAILDEV_UI_PORT=1017 ENV=test-feat-llm-mesh-sdk-serial`
-  - [x] Retest live AI flaky tests only under acceptance rule and document pass/fail signatures: Lot 5 OpenAI/default live AI passed; no flaky signature accepted.
-  - [x] Record explicit user sign-off if any AI flaky test is accepted: not applicable, no AI flaky accepted.
+  - [ ] Package gates:
+    - [x] Pre-cutover: `make typecheck-llm-mesh API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
+    - [x] Pre-cutover: `make test-llm-mesh API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk` — 9 tests passed.
+    - [ ] Post-cutover rerun required.
+  - [ ] Typecheck & lint:
+    - [x] Pre-cutover: `make typecheck-api API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
+    - [x] Pre-cutover: `make lint-api API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk` — 184 warnings, 0 errors.
+    - [ ] Post-cutover rerun required.
+  - [ ] Retest API:
+    - [x] Pre-cutover: `make test-api-unit API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk` — 472 passed, 8 skipped.
+    - [x] Pre-cutover: `make test-api-endpoints API_TEST_WORKERS=1 API_PORT=8717 UI_PORT=5117 MAILDEV_UI_PORT=1017 ENV=test-feat-llm-mesh-sdk-serial` — 438 passed. This mirrors CI endpoint serialization; local default workers exposed pre-existing cross-file state coupling outside BR-14c scope.
+    - [ ] Post-cutover rerun required.
+  - [ ] Build gate:
+    - [x] Pre-cutover: `make build-api API_PORT=8717 UI_PORT=5117 MAILDEV_UI_PORT=1017 ENV=test-feat-llm-mesh-sdk-serial`
+    - [ ] Post-cutover rerun required.
+  - [ ] Retest live AI flaky tests only under acceptance rule and document pass/fail signatures after runtime cutover.
+  - [ ] Root UAT: chat streaming and AI settings must exercise the mesh-backed runtime, not only prove app startup.
+  - [ ] Record explicit user sign-off if any AI flaky test is accepted.
   - [ ] Final gate step 1: create/update PR using `BRANCH.md` text as PR body.
   - [ ] Final gate step 2: run/verify branch CI on that PR and resolve remaining blockers.
   - [ ] Final gate step 3: once UAT + CI are both `OK`, commit removal of `BRANCH.md`, push, and merge.

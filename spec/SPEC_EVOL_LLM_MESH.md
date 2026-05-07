@@ -1,6 +1,6 @@
 # SPEC EVOL - LLM Mesh
 
-Status: Implemented for BR-14c; retained as BR-14b/BR-14g evolution input.
+Status: In progress for BR-14c; runtime cutover scope reopened on 2026-05-07.
 
 Owner branch: `feat/llm-mesh-sdk`.
 
@@ -8,13 +8,13 @@ Related orchestration spec: `spec/SPEC_EVOL_ENTROPIC_BR14_ORCHESTRATION.md`.
 
 ## Objective
 
-Define `@entropic/llm-mesh`, the first standalone Entropic npm service. The package must provide a provider-agnostic model access contract for OpenAI, Anthropic/Claude, Google/Gemini, Mistral, and Cohere while preserving a clean handoff to BR-14b for application runtime migration.
+Define `@entropic/llm-mesh`, the first standalone Entropic npm service. The package must provide a provider-agnostic model access contract for OpenAI, Anthropic/Claude, Google/Gemini, Mistral, and Cohere, then become the application LLM runtime in BR-14c through a strict cutover.
 
-This spec owns the durable classification of reusable LLM runtime functions, current code usage validation, external framework comparison, and scope decisions for BR-14c. After BR-14c, it remains the transition reference for the application runtime migration in BR-14b and the model catalog pivot in BR-14g.
+This spec owns the durable classification of reusable LLM runtime functions, current code usage validation, external framework comparison, and scope decisions for BR-14c. After BR-14c, it remains the transition reference for the model catalog pivot in BR-14g and chat-service modularization above the runtime in BR-14b.
 
 ## BR-14c Implementation Snapshot
 
-BR-14c establishes `packages/llm-mesh` as a contract-first TypeScript package with:
+BR-14c currently establishes `packages/llm-mesh` as a contract-first TypeScript package with:
 
 - Public provider and model identifiers for OpenAI, Google Gemini, Anthropic Claude, Mistral, and Cohere.
 - Model-profile-first capabilities using explicit `supported`, `unsupported`, `partial`, and `unknown` states.
@@ -23,19 +23,33 @@ BR-14c establishes `packages/llm-mesh` as a contract-first TypeScript package wi
 - Codex account auth represented as an account transport, with Gemini Code Assist and Claude Code left as planned extension hooks.
 - Deterministic provider adapter scaffolds with injected clients.
 - A minimal `createLlmMesh` facade with registry, auth resolver, hooks, `generate()`, and `stream()`.
-- A thin API proof path in `api/src/services/llm-runtime/mesh-contract-proof.ts` demonstrating that the API runtime boundary can consume the mesh contract without migrating chat dispatch in BR-14c.
+- A thin API proof path in `api/src/services/llm-runtime/mesh-contract-proof.ts`.
+
+Current gap before BR-14c can proceed to PR:
+
+- `api/src/services/llm-runtime/mesh-contract-proof.ts` imports the package source by relative path instead of importing `@entropic/llm-mesh`.
+- `api/src/services/llm-runtime/index.ts` still owns live runtime dispatch.
+- App-local runtime/provider functions replaced by the mesh have not yet been deleted.
+
+BR-14c must now:
+
+- Import `@entropic/llm-mesh` as a real workspace package from the API.
+- Migrate `api/src/services/llm-runtime/**` to the mesh-backed runtime.
+- Delete replaced app-local provider/runtime implementations in the same branch.
+- Preserve provider credential precedence, quota logic, retry behavior, streaming order, tool-call continuation, reasoning controls, trace/audit metadata, and live AI behavior.
+- Keep chat-service orchestration above the model runtime; BR-14c may update call sites but must not modularize the full chat-service reasoning/tool loop.
 
 BR-14c intentionally does not:
 
-- Migrate `api/src/services/llm-runtime/index.ts` to the mesh facade.
-- Move chat-service behavior into `packages/llm-mesh`.
-- Replace provider credential precedence, quota logic, retry behavior, or account enrollment flows.
+- Extract chat UI behavior. BR-14a owns `@entropic/chat`.
+- Modularize the full chat-service reasoning/tool loop. BR-14b owns chat-service core modularization above the mesh runtime.
 - Update GPT-5.4 / Claude Opus 4.6 catalog versions; BR-14g owns the GPT-5.5 / Opus 4.7 pivot.
 
 ## Non-Goals
 
 - Do not extract chat UI behavior. BR-14a owns `@entropic/chat`.
-- Do not fully migrate the current application runtime. BR-14b owns application runtime migration to the mesh contract.
+- Do not keep dual runtime paths. BR-14c owns strict application runtime migration to the mesh contract.
+- Do not modularize the full chat-service reasoning/tool loop. BR-14b owns that higher-level chat-service extraction.
 - Do not execute operational DNS, repository, Scaleway, registry, or secret transitions. BR-14d owns transition operations.
 - Do not complete the final codebase naming sweep. BR-14e owns final naming cleanup.
 - Do not build a FinOps platform inside the MVP package.
@@ -84,7 +98,7 @@ Graphify review analysis for provider adapters returned:
 Interpretation:
 
 - `@entropic/llm-mesh` is not a shallow type extraction. The current code mixes provider contracts, provider SDK adapters, credential resolution, Codex account transport, model selection, schema transforms, streaming normalization, and chat/application orchestration.
-- BR-14c should first define the stable package contract and extract reusable primitives. It should avoid broad app rewiring until BR-14b.
+- BR-14c should define the stable package contract, extract reusable primitives, and cut over the application LLM runtime to those primitives. It should avoid broad chat-service rewiring, but it must not leave a duplicate model runtime behind.
 - Graphify did not surface every exported function by name. For example, `resolveProviderCredential` was not directly matched as a node, so direct source inspection remains required for function-level precision.
 
 ## Current Runtime Inventory
@@ -144,7 +158,7 @@ Reusable in `@entropic/llm-mesh`:
 - Provider/model listing contract.
 - Provider resolution semantics.
 
-App-specific until BR-14b:
+App-local until BR-14c runtime cutover:
 
 - Singleton construction.
 - Direct dependency on app provider classes.
@@ -175,10 +189,10 @@ Reusable in `@entropic/llm-mesh`:
 - Capability matrix.
 - Reasoning support detection.
 
-App-specific until BR-14b:
+App-specific compatibility layer:
 
 - `settingsService` dependency.
-- Legacy cutover policy.
+- Legacy cutover policy until BR-14g updates model versions.
 - API response snake_case mapping.
 - Current app contexts.
 
@@ -205,7 +219,7 @@ Reusable in `@entropic/llm-mesh`:
 - Error normalization patterns.
 - Mocked-client test patterns.
 
-App-specific until BR-14b:
+App-local until BR-14c runtime cutover:
 
 - Imports from `../../config/env`.
 - OpenAI Codex fetch wiring embedded inside the OpenAI provider.
@@ -243,7 +257,7 @@ Reusable in `@entropic/llm-mesh`:
 - Provider-specific stream mappers.
 - `call` and `stream` facade shape.
 
-App-specific until BR-14b:
+App-local until BR-14c runtime cutover:
 
 - Chat message conversion tied to OpenAI Chat Completions shapes.
 - Runtime selection from user/workspace settings.
@@ -283,7 +297,7 @@ Reusable in `@entropic/llm-mesh`:
 - Transport mode distinction.
 - Future account-provider extension point.
 
-App-specific until BR-14b or BR-14d:
+App-specific after BR-14c package cutover:
 
 - Encrypted settings storage.
 - Workspace/user lookup.
@@ -644,7 +658,9 @@ BR-14c does not need to implement a full MCP client. It must avoid freezing a co
 - Correlation IDs and per-call lifecycle events.
 - Usage metadata envelope with provider-native raw usage preserved.
 - Deterministic unit tests for contracts and stream normalization.
-- Thin application proof path only.
+- Real application runtime cutover to `@entropic/llm-mesh`.
+- Deletion of replaced app-local provider/runtime implementation.
+- Runtime UAT proving chat generation uses the mesh-backed path.
 
 ### BR-14c Interfaces Only
 
@@ -660,10 +676,10 @@ BR-14c does not need to implement a full MCP client. It must avoid freezing a co
 
 ### BR-14b
 
-- Replace application provider dispatch with the mesh.
-- Wire Entropic settings, encrypted credentials, user/workspace keys, and Codex transport into mesh auth resolvers.
-- Preserve quotas, retries, streaming, audit, and chat behavior.
-- Move provider-specific request compilation into mesh adapters where appropriate.
+- Modularize chat-service behavior above the mesh runtime.
+- Extract reasoning-loop, tool-loop, continuation, cancellation, and retry orchestration boundaries where they are reusable.
+- Preserve chat streaming, local-tool handoff, tool-result continuation, cancellation, checkpoints, traces, audit, and current API behavior.
+- Avoid redefining provider/model access; all model access must continue through `@entropic/llm-mesh`.
 
 ### BR-14d
 
@@ -699,10 +715,11 @@ BR-14c does not need to implement a full MCP client. It must avoid freezing a co
 
 ## Current Recommendation
 
-Use BR-14c to build a small SDK core, not a gateway:
+Use BR-14c to build a small SDK core and cut the current app runtime over to it, not to build a gateway:
 
 - Core API: normalized generation, streaming, tools, structured output, reasoning controls, provider/model registry, capability matrix, auth hooks.
 - Optional hooks: observability, usage, cost metadata, routing policy, retry/fallback policy, redaction policy.
+- Strict cutover: API imports `@entropic/llm-mesh`; replaced app-local runtime code is removed in the same branch.
 - Deferred systems: SSO, managed virtual keys, budgets, dashboards, persistent traces, billing, and gateway deployment.
 
 This keeps `@entropic/llm-mesh` useful as an npm library while leaving enough contract surface for later FinOps and observability without forcing those systems into the MVP.

@@ -10,9 +10,9 @@ Branch:
 
 Ordering rule:
 
-- BR-14g starts after BR-14c freezes the `@entropic/llm-mesh` public model-profile contract.
-- BR-14g must land before BR-14b migrates the application runtime onto the mesh contract.
-- BR-14g must not perform the BR-14b runtime migration or the BR-14a chat extraction.
+- BR-14g starts after BR-14c freezes and activates the `@entropic/llm-mesh` public model-profile contract in the live application runtime.
+- BR-14g must land before BR-14b modularizes chat-service behavior above the mesh runtime.
+- BR-14g must not perform runtime dispatch migration or chat extraction; BR-14c owns runtime migration and BR-14a owns chat extraction.
 
 Scope summary:
 
