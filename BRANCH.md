@@ -166,24 +166,24 @@ Create the first publishable Entropic package, `@entropic/llm-mesh`, as a provid
     - [x] **E2E tests**
       - [x] No E2E test updates expected in Lot 2.
 
-- [ ] **Lot 3 — Auth modes and account transports**
-  - [ ] Model direct token, user token, workspace token, environment token, and Codex account as explicit auth sources.
-  - [ ] Keep existing Codex account transport behavior behind a mesh-compatible interface.
-  - [ ] Document future Gemini Code Assist and Claude Code account transport hooks.
-  - [ ] Preserve current provider credential precedence.
-  - [ ] Lot gate:
-    - [ ] `make typecheck-api API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
-    - [ ] `make lint-api API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
-    - [ ] **Package/API tests**
-      - [ ] Add or update `api/tests/unit/provider-credentials.test.ts`.
-      - [ ] Add or update `api/tests/api/provider-connections-admin.test.ts`.
-      - [ ] Add or update `api/tests/api/ai-settings.test.ts`.
-      - [ ] Scoped run: `make test-api-unit SCOPE=tests/unit/provider-credentials.test.ts API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`.
-      - [ ] Scoped run: `make test-api-endpoints SCOPE=tests/api/provider-connections-admin.test.ts API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`.
-    - [ ] **UI tests (TypeScript only)**
-      - [ ] No UI test updates expected unless API schema changes force model display updates.
-    - [ ] **E2E tests**
-      - [ ] No E2E test updates expected in Lot 3.
+- [x] **Lot 3 — Auth modes and account transports**
+  - [x] Model direct token, user token, workspace token, environment token, and Codex account as explicit auth sources.
+  - [x] Keep existing Codex account transport behavior behind a mesh-compatible interface.
+  - [x] Document future Gemini Code Assist and Claude Code account transport hooks.
+  - [x] Preserve current provider credential precedence.
+  - [x] Lot gate:
+    - [x] `make typecheck-api API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
+    - [x] `make lint-api API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
+    - [x] **Package/API tests**
+      - [x] Add or update `api/tests/unit/provider-credentials.test.ts`.
+      - [x] Add or update `api/tests/api/provider-connections-admin.test.ts`.
+      - [x] Add or update `api/tests/api/ai-settings.test.ts`.
+      - [x] Scoped run: `make test-api-unit SCOPE=tests/unit/provider-credentials.test.ts API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`.
+      - [x] Scoped run: `make test-api-endpoints SCOPE=tests/api/provider-connections-admin.test.ts API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`.
+    - [x] **UI tests (TypeScript only)**
+      - [x] No UI test updates expected unless API schema changes force model display updates.
+    - [x] **E2E tests**
+      - [x] No E2E test updates expected in Lot 3.
 
   - [ ] **Lot 4 — Thin application proof path**
   - [x] Add minimal SDK facade: `createLlmMesh({ registry, authResolver, hooks })`, `mesh.generate()`, and `mesh.stream()`.
