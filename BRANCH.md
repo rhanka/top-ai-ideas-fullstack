@@ -227,14 +227,19 @@ Create the first publishable Entropic package, `@entropic/llm-mesh`, as a provid
   - [x] Update `BRANCH.md` checklist and feedback loop before final validation.
 
 - [ ] **Lot 7 — Final validation**
-  - [ ] Typecheck & lint:
-    - [ ] `make typecheck-api API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
-    - [ ] `make lint-api API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
-  - [ ] Retest API:
-    - [ ] `make test-api-unit API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
-    - [ ] `make test-api-endpoints API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
-  - [ ] Retest live AI flaky tests only under acceptance rule and document pass/fail signatures.
-  - [ ] Record explicit user sign-off if any AI flaky test is accepted.
+  - [x] Package gates:
+    - [x] `make typecheck-llm-mesh API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
+    - [x] `make test-llm-mesh API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk` — 9 tests passed.
+  - [x] Typecheck & lint:
+    - [x] `make typecheck-api API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
+    - [x] `make lint-api API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk` — 184 warnings, 0 errors.
+  - [x] Retest API:
+    - [x] `make test-api-unit API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk` — 472 passed, 8 skipped.
+    - [x] `make test-api-endpoints API_TEST_WORKERS=1 API_PORT=8717 UI_PORT=5117 MAILDEV_UI_PORT=1017 ENV=test-feat-llm-mesh-sdk-serial` — 438 passed. This mirrors CI endpoint serialization; local default workers exposed pre-existing cross-file state coupling outside BR-14c scope.
+  - [x] Build gate:
+    - [x] `make build-api API_PORT=8717 UI_PORT=5117 MAILDEV_UI_PORT=1017 ENV=test-feat-llm-mesh-sdk-serial`
+  - [x] Retest live AI flaky tests only under acceptance rule and document pass/fail signatures: Lot 5 OpenAI/default live AI passed; no flaky signature accepted.
+  - [x] Record explicit user sign-off if any AI flaky test is accepted: not applicable, no AI flaky accepted.
   - [ ] Final gate step 1: create/update PR using `BRANCH.md` text as PR body.
   - [ ] Final gate step 2: run/verify branch CI on that PR and resolve remaining blockers.
   - [ ] Final gate step 3: once UAT + CI are both `OK`, commit removal of `BRANCH.md`, push, and merge.
