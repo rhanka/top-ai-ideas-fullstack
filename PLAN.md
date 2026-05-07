@@ -1,6 +1,6 @@
 # PLAN - Orchestrated Roadmap
 
-Status: Updated 2026-05-06 — BR-14f (Node workspace monorepo infra) is ready to merge on PR #125: CI is green after rerunning external-network failures, isolated branch dev-stack startup is validated on `API_PORT=8715 UI_PORT=5115 MAILDEV_UI_PORT=1015 ENV=chore-node-workspace-monorepo-14f`, and root user smoke UAT is validated on `ENV=dev` with user data. Existing active scoping remains: Entropic transition, BR-14c (LLM mesh npm library, priority), BR-14a (chat UI SDK), BR-16 follow-ups. BR-14 split → BR-14a + BR-14b + BR-14c + BR-14d + BR-14e + BR-14f. Selected execution order: PR-117 transition ops → BR-14f → BR-14c → BR-14b → BR-14a → BR-14e → BR-14d. BR-16 split → BR-16a + BR-16b + BR-16c. See §5 Scheduling, `TRANSITION.md`, and `spec/SPEC_EVOL_ENTROPIC_BR14_ORCHESTRATION.md`.
+Status: Updated 2026-05-07 — BR-14f (Node workspace monorepo infra) is merged on PR #125, `main` is aligned with `origin/main`, and BR-14c (`feat/llm-mesh-sdk`) has been rebased on the current main. Active execution is now BR-14c only. BR-14g is added as the post-BR14c model catalog pivot for GPT-5.5 and Claude Opus 4.7 before BR-14b migrates application runtime consumption. Selected execution order: PR-117 transition ops → BR-14f → BR-14c → BR-14g → BR-14b → BR-14a → BR-14e → BR-14d. BR-16 split → BR-16a + BR-16b + BR-16c. See §5 Scheduling, `TRANSITION.md`, and `spec/SPEC_EVOL_ENTROPIC_BR14_ORCHESTRATION.md`.
 
 ## 1) Current state
 
@@ -15,9 +15,10 @@ Status: Updated 2026-05-06 — BR-14f (Node workspace monorepo infra) is ready t
 - BR-06 `feat/chrome-upstream-v1` — **merged 2026-04-17** (`62de15ad`). Webapp tab_read/tab_action to Chrome tabs via extension + in-memory Tab Registry.
 - BR-08 `feat/model-runtime-claude-mistral-cohere` (scope extended: +Cohere)
 - BR-13 `feat/chrome-plugin-download-distribution`
+- BR-14f `chore/node-workspace-monorepo-14f` — **merged 2026-05-07** (`358e62ef`). Root Node workspace + full-repo container mounts; CI/CD green.
 
 **Ready to merge:**
-- BR-14f `chore/node-workspace-monorepo-14f` — PR #125 (`e7ff9880`). Root Node workspace + full-repo container mounts; CI green and root smoke UAT validated 2026-05-06.
+- None.
 
 **Next branches (explicitly queued):**
 - BR-23 `feat/multi-agent-framework-comparison` — compare LangGraph/Agno/Temporal. See `plan/23-BRANCH_feat-multi-agent-framework-comparison.md`.
@@ -26,12 +27,9 @@ Status: Updated 2026-05-06 — BR-14f (Node workspace monorepo infra) is ready t
 
 **Active scoping (Lot 0 in progress):**
 - BR-14c `feat/llm-mesh-sdk` — priority extraction: publishable npm lib `@entropic/llm-mesh`, Vercel AI SDK-like access to GPT/Claude/Gemini/Mistral/Cohere with token and Codex-account modes.
-- BR-14a `feat/chat-ui-sdk` — former BR-14, renamed: chat publishable as npm lib `@entropic/chat`, using the LLM mesh contract rather than application runtime internals.
-- BR-16a `feat/gdrive-sso-indexing` — Google Drive OAuth + Picker search/selection + in-situ `document_summary` indexing (docs stay in Drive). Split from former BR-16.
-- `fix/high-vulnerabilities` — isolated remediation branch for the API HIGH dependency vulnerability currently failing `security-sast-sca` and API image audit gates.
 
 **Pending branches (unblocked):**
-- BR-07, BR-10, BR-11, BR-12, BR-14b (after BR-14c contract), BR-14e (codebase finalization after 14a/14b/14c), BR-14d (mandatory transition ops after PR-117 release and BR-14e), BR-15, BR-16b, BR-16c, BR-17, BR-18, BR-19, BR-20, BR-21a, BR-21, BR-22, BR-24 — see §3 catalog for descriptions, dependencies, and priorities.
+- BR-07, BR-10, BR-11, BR-12, BR-14g (after BR-14c contract), BR-14b (after BR-14g), BR-14a, BR-14e, BR-14d, BR-15, BR-16b, BR-16c, BR-17, BR-18, BR-19, BR-20, BR-21, BR-22, BR-23, BR-24, BR-25 — see §3 catalog for descriptions, dependencies, and priorities.
 
 **Deferred:**
 - BR-09 `feat/sso-google` — deferred post-refacto (OOM resolution required before SSO Google work; exact target TBD by conductor).
@@ -40,7 +38,8 @@ Status: Updated 2026-05-06 — BR-14f (Node workspace monorepo infra) is ready t
 - PR-117 release ops decide/execute repo rename + DNS/redirect, or hand off remaining operational work to BR-14d.
 - BR-14f lands first if the repo still mounts `api`/`ui` as isolated containers and cannot consume internal packages from root. It adds the Node workspace / full-repo mount baseline only; BR-14c keeps ownership of the mesh contract and thin proof path.
 - BR-14c is the first BR-14 package/product branch because `@entropic/llm-mesh` owns the public model-access contract.
-- BR-14b migrates the application LLM runtime onto that contract.
+- BR-14g pivots the model catalog to GPT-5.5 and Claude Opus 4.7 after BR-14c freezes the package contract; GPT-5.4 Nano remains unchanged.
+- BR-14b migrates the application LLM runtime onto the BR-14c/BR-14g contract.
 - BR-14a extracts `@entropic/chat` after the mesh contract; Lot 0 may scope in parallel only.
 - BR-14e performs the final non-chat/non-LLM codebase naming sweep and residual-name report.
 - BR-14d executes remaining transition ops and is mandatory unless all repo/DNS/Scaleway/workflow rename items are complete during PR-117 release.
@@ -122,7 +121,10 @@ Full spec: `spec/SPEC_EVOL_WORKSPACE_TYPES.md`
 |        |                                                  | to GPT/Claude/Gemini/Mistral/Cohere, token auth, Codex     |                      |                                |
 |        |                                                  | account mode, later Gemini Code Assist / Claude Code.      |                      |                                |
 +--------+--------------------------------------------------+------------------------------------------------------------+----------------------+--------------------------------+
-| BR-14b | refacto/llm-runtime-core                         | Migrate the application LLM runtime onto the mesh:          | plan (after BR-14c   | BR-08, BR-14c                  |
+| BR-14g | feat/model-catalog-gpt55-opus47                  | Pivot model catalog defaults and compatibility rules to     | plan (after BR-14c)  | BR-14c                         |
+|        |                                                  | GPT-5.5 and Claude Opus 4.7 while keeping GPT-5.4 Nano.    |                      |                                |
++--------+--------------------------------------------------+------------------------------------------------------------+----------------------+--------------------------------+
+| BR-14b | refacto/llm-runtime-core                         | Migrate the application LLM runtime onto the mesh:          | plan (after BR-14g   | BR-08, BR-14c, BR-14g          |
 |        |                                                  | provider contracts, capability matrix, streaming           | contract)            |                                |
 |        |                                                  | normalization, retries, quotas.                            |                      |                                |
 +--------+--------------------------------------------------+------------------------------------------------------------+----------------------+--------------------------------+
@@ -213,6 +215,7 @@ graph TD
   BR13[BR-13 chrome download ✓]
   BR14f[BR-14f node workspace monorepo ⚡]
   BR14c[BR-14c llm mesh sdk ⚡]
+  BR14g[BR-14g model catalog GPT-5.5 + Opus 4.7]
   BR14b[BR-14b llm runtime core]
   BR14a[BR-14a chat ui sdk]
   BR14e[BR-14e codebase finalization]
@@ -259,7 +262,8 @@ graph TD
   BR14f -.->|low churn rebase| BR21
   BR01 --> BR14c
   BR08 --> BR14c
-  BR14c --> BR14b
+  BR14c --> BR14g
+  BR14g --> BR14b
   BR14c --> BR14a
   BR14b -.->|runtime handoff| BR14a
   BR04 -.->|low| BR14a
@@ -290,7 +294,7 @@ graph TD
 **PR-117 release ops**: decide and execute repository rename + public DNS/redirect changes, or explicitly hand off each unchecked item to BR-14d with owner/date.
 **Wave next (priority)**: BR-14f (root Node workspace + full-repo mounts) before the BR-14c thin proof path. BR-14f must re-validate on the post-BR16a/BR21a baseline now present on `main`.
 **BR-14f activation contract**: BR-14f has value only if the next branches exercise it. BR-14c must create the first reusable package under `packages/*` and prove `api/` consumes it through the root workspace. BR-14b must then migrate application LLM runtime consumption to that package contract. BR-14a must consume the mesh contract instead of defining a competing provider/model layer. If BR-14c cannot import and test `@entropic/llm-mesh` from `api/` through workspace wiring, BR-14f is incomplete.
-**Wave after BR-14f**: BR-14c Lot 0/1 (`@entropic/llm-mesh`) with an API proof path on top of the new workspace baseline, then BR-14b (application LLM runtime migration to the mesh), then BR-14a (chat UI SDK extraction). BR-14a Lot 0 may scope in parallel, but implementation must not define a separate provider/model abstraction.
+**Wave after BR-14f**: BR-14c Lot 0/1 (`@entropic/llm-mesh`) with an API proof path on top of the new workspace baseline, then BR-14g (model catalog pivot to GPT-5.5 and Claude Opus 4.7 while keeping GPT-5.4 Nano), then BR-14b (application LLM runtime migration to the mesh), then BR-14a (chat UI SDK extraction). BR-14a Lot 0 may scope in parallel, but implementation must not define a separate provider/model abstraction.
 **Wave Code Finalization**: BR-14e (non-chat/non-LLM codebase naming sweep, residual-name allowlist, test fixture cleanup) after BR-14a/14b/14c and before BR-14d.
 **Wave A2** (right after BR-04B merge — deferred behind current wave): BR-20 (entity/config refactor follow-up) + BR-22 (rich markdown list stabilization hotfix)
 **Platform wave**: BR-24 (Node 24 GitHub Actions compatibility) should run before the GitHub-hosted runner Node 24 cutover and can proceed in parallel with product work because it is workflow/infra-only.
@@ -324,6 +328,7 @@ User UAT on root workspace (`ENV=dev`). Branch development and automated tests r
 - `plan/14a-BRANCH_feat-chat-ui-sdk.md` (BR-14a branch pointer)
 - `plan/14b-BRANCH_refacto-llm-runtime-core.md` (BR-14b branch pointer)
 - `plan/14c-BRANCH_feat-llm-mesh-sdk.md` (BR-14c branch pointer)
+- `plan/14g-BRANCH_feat-model-catalog-gpt55-opus47.md` (BR-14g branch pointer)
 - `plan/done/14f-BRANCH_chore-node-workspace-monorepo.md` (BR-14f archived branch pointer)
 - `plan/14d-BRANCH_chore-entropic-transition-ops.md` (BR-14d branch pointer)
 - `plan/14e-BRANCH_chore-entropic-codebase-finalization.md` (BR-14e branch pointer)

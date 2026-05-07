@@ -63,6 +63,8 @@ Create the first publishable Entropic package, `@entropic/llm-mesh`, as a provid
   - `e2e/**`
   - `package.json`
   - `package-lock.json`
+  - `PLAN.md`
+  - `plan/14g-BRANCH_feat-model-catalog-gpt55-opus47.md`
 - **Exception process**:
   - Declare exception ID `BR14c-EXn` in `## Feedback Loop` before touching any conditional/forbidden path.
   - Include reason, impact, and rollback strategy.
@@ -71,6 +73,7 @@ Create the first publishable Entropic package, `@entropic/llm-mesh`, as a provid
 ## Feedback Loop
 - [x] `attention` BR14c-EX1 — Conditional `Makefile`, `api/package.json`, `api/package-lock.json`, `api/tsconfig.json`, and `api/vitest.config.ts` changes are allowed only if Lot 1 proves the package cannot be typechecked/tested through existing targets. Reason: a publishable package needs deterministic make-backed build/test targets. Impact: build/test scaffolding only, no runtime behavior. Rollback: remove package-specific targets/config and keep package tests under existing API targets.
 - [ ] `attention` BR14c-EX2 — `spec/SPEC_EVOL_LLM_MESH.md` owns the reusable function classification, Graphify-backed usage audit, external framework benchmark, and public package contract. Reason: the public package contract must be reviewable before implementation and must not bloat `BRANCH.md`. Impact: specification only. Rollback: consolidate final decisions into `SPEC_EVOL_ENTROPIC_BR14_ORCHESTRATION.md` and delete the branch spec.
+- [x] `attention` BR14c-EX3 — Conditional `PLAN.md` and `plan/14g-BRANCH_feat-model-catalog-gpt55-opus47.md` changes are allowed only to schedule the user-requested downstream model catalog pivot after BR-14c. Reason: GPT-5.5 and Claude Opus 4.7 should be applied after the mesh contract is frozen, not mixed into the current package extraction. Impact: roadmap/spec planning only, no runtime model catalog changes in BR-14c. Rollback: remove BR-14g from `PLAN.md` and delete the branch pointer.
 - [x] `clarification` BR14c-R1 — Strategic review accepted on 2026-04-22. BR-14c must add package-specific make gates, a minimal `createLlmMesh` facade, model-profile-first capabilities with `supported/unsupported/partial/unknown`, server-only secret material separated from redacted auth descriptors, and a richer tool/result lifecycle compatible with MCP-style content and streamed tool arguments.
 - [ ] `blocked` BR14c-B1 — The thin API proof path cannot be exercised through current `make`/Docker targets because the `api` container mounts only `./api:/app` and cannot import `packages/llm-mesh/**` from the worktree root. Reason: any API-side proof test or runtime adapter import fails with module resolution before code execution. Impact: Lot 4 can ship the executable package facade, but the API consumption proof remains blocked until a dedicated packaging/workspace exposure decision. Rollback: none; this is an environment limitation, not a runtime regression.
 

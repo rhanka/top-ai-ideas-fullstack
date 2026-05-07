@@ -9,16 +9,17 @@ Execution order is not alphabetical:
 1. **PR-117 release actions** — confirm and execute the repository rename and public DNS/redirect plan, or explicitly defer execution to BR-14d with an owner and date.
 2. **BR-14f `chore/node-workspace-monorepo-14f`** — introduce the root Node workspace and full-repo container mounts if the repo still isolates `api` and `ui` from future internal packages. This branch owns the repo/tooling baseline only, not the LLM mesh contract itself.
 3. **BR-14c `feat/llm-mesh-sdk`** — first package/product branch. Publish the standalone LLM mesh library contract and consume the BR-14f baseline for the thin API proof path.
-4. **BR-14b `refacto/llm-runtime-core`** — migrate the application LLM runtime onto the BR-14c mesh contract.
-5. **BR-14a `feat/chat-ui-sdk`** — extract the chat UI SDK after the mesh contract is frozen. Lot 0 may scope in parallel, but implementation must not invent a separate provider abstraction.
-6. **BR-14e `chore/entropic-codebase-finalization`** — final codebase sweep for non-chat and non-LLM application names, tests, public API labels, and compatibility decisions.
-7. **BR-14d `chore/entropic-transition-ops`** — real transition branch for remaining repo/DNS/redirect/Scaleway/container/registry/secret/workflow rename work. This branch is mandatory unless every operational item is completed during PR-117 release.
+4. **BR-14g `feat/model-catalog-gpt55-opus47`** — pivot model catalog defaults and compatibility rules to GPT-5.5 and Claude Opus 4.7, while keeping GPT-5.4 Nano unchanged. This runs after BR-14c so the change lands against the mesh model-profile contract, and before BR-14b so the application runtime migration consumes the new catalog.
+5. **BR-14b `refacto/llm-runtime-core`** — migrate the application LLM runtime onto the BR-14c/BR-14g mesh contract.
+6. **BR-14a `feat/chat-ui-sdk`** — extract the chat UI SDK after the mesh contract is frozen. Lot 0 may scope in parallel, but implementation must not invent a separate provider abstraction.
+7. **BR-14e `chore/entropic-codebase-finalization`** — final codebase sweep for non-chat and non-LLM application names, tests, public API labels, and compatibility decisions.
+8. **BR-14d `chore/entropic-transition-ops`** — real transition branch for remaining repo/DNS/redirect/Scaleway/container/registry/secret/workflow rename work. This branch is mandatory unless every operational item is completed during PR-117 release.
 
 ## Options Considered
 
 | Option | Order | Decision | Rationale |
 | --- | --- | --- | --- |
-| A | BR-14f -> BR-14c -> BR-14b -> BR-14a -> BR-14e -> BR-14d | Selected | Adds the minimal repo/tooling baseline first when internal packages cannot yet be consumed from API/UI containers, then keeps the original contract-first ordering for extracted packages. |
+| A | BR-14f -> BR-14c -> BR-14g -> BR-14b -> BR-14a -> BR-14e -> BR-14d | Selected | Adds the minimal repo/tooling baseline first when internal packages cannot yet be consumed from API/UI containers, then freezes the mesh contract before applying the requested model catalog pivot and migrating application runtime consumption. |
 | B | BR-14c -> BR-14b -> BR-14a -> BR-14e -> BR-14d | Rejected as current-state default | This was correct only if the existing repo already behaved like a Node workspace monorepo. It does not when `api`/`ui` are mounted as isolated containers, so BR-14c cannot prove a thin app consumption path cleanly. |
 | C | BR-14a -> BR-14b -> BR-14c -> BR-14e -> BR-14d | Rejected | Repeats the current problem: chat SDK would define transport/provider seams before the reusable LLM mesh contract exists. |
 | D | BR-14d -> BR-14f -> BR-14c -> BR-14b -> BR-14a -> BR-14e | Rejected as default | Renaming all operational objects before package boundaries and code names are stable creates repeated DNS/container/secret churn. Can be used only if repo/DNS changes block development. |
@@ -61,7 +62,8 @@ Activation plan:
 
 - BR-14f is not a product branch. It is accepted only if it preserves CI, branch dev-stack capacity, and root user UAT capacity while enabling workspace package consumption.
 - BR-14c is the first mandatory activation branch: create `packages/llm-mesh`, expose the `@entropic/llm-mesh` package, and prove API consumption through the root workspace without copy steps, path hacks, or direct app-root package coupling.
-- BR-14b is the runtime activation branch: migrate application provider dispatch to the BR-14c mesh package and keep quotas, retries, streaming, structured output, tool calling, and audit behavior explicit.
+- BR-14g is the model catalog activation branch: move the OpenAI default from GPT-5.4 to GPT-5.5, keep GPT-5.4 Nano available, move Claude Opus 4.6 to Opus 4.7, and update compatibility/default rules against the mesh model-profile contract.
+- BR-14b is the runtime activation branch: migrate application provider dispatch to the BR-14c/BR-14g mesh package and keep quotas, retries, streaming, structured output, tool calling, and audit behavior explicit.
 - BR-14a is the UI/package activation branch: extract `@entropic/chat` while consuming provider/model behavior through the mesh contract or a narrow mesh-compatible interface.
 - BR-14e and BR-14d are not activation substitutes. They close codebase naming and operational transition after the package/runtime/chat boundaries have been exercised.
 - If BR-14c cannot consume a package from `packages/*` directly from `api/` under the BR-14f workspace wiring, BR-14f is incomplete and must be fixed before package extraction continues.
@@ -87,6 +89,29 @@ Exit criteria:
 - Package boundary and public API documented.
 - Existing app can call through the mesh in a thin integration path or proof branch.
 - No chat UI extraction starts a competing provider abstraction.
+
+## BR-14g — Model Catalog GPT-5.5 / Opus 4.7 Pivot
+
+Branch: `feat/model-catalog-gpt55-opus47`
+
+Goal: update the model catalog and compatibility rules after the mesh contract is frozen, without mixing provider version churn into BR-14c package extraction.
+
+Minimum contract:
+
+- OpenAI default reasoning model pivots from GPT-5.4 to GPT-5.5.
+- GPT-5.4 Nano remains available and must not be migrated to GPT-5.5.
+- Anthropic Claude Opus pivots from Opus 4.6 to Opus 4.7.
+- Provider API model identifiers must be verified at branch start before code changes; labels alone are not sufficient.
+- Model profile capabilities, reasoning tiers, context budgets, defaults, legacy cutover rules, API tests, package catalog tests, and chat display labels must remain consistent.
+- BR-14g must not migrate runtime dispatch; BR-14b owns runtime migration.
+
+Exit criteria:
+
+- `@entropic/llm-mesh` and application model catalogs expose the new model profiles consistently.
+- Legacy defaults that pointed to GPT-5.4 are intentionally mapped to GPT-5.5 where appropriate.
+- GPT-5.4 Nano remains selectable and unchanged.
+- Claude Opus 4.6 references are removed or documented as compatibility aliases.
+- Unit/API tests cover model listing, defaults, and legacy cutover behavior.
 
 ## BR-14b — Runtime Core Migration
 
