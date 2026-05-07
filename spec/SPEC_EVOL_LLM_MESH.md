@@ -1,6 +1,6 @@
 # SPEC EVOL - LLM Mesh
 
-Status: Draft for BR-14c Lot 0.
+Status: Implemented for BR-14c; retained as BR-14b/BR-14g evolution input.
 
 Owner branch: `feat/llm-mesh-sdk`.
 
@@ -10,7 +10,27 @@ Related orchestration spec: `spec/SPEC_EVOL_ENTROPIC_BR14_ORCHESTRATION.md`.
 
 Define `@entropic/llm-mesh`, the first standalone Entropic npm service. The package must provide a provider-agnostic model access contract for OpenAI, Anthropic/Claude, Google/Gemini, Mistral, and Cohere while preserving a clean handoff to BR-14b for application runtime migration.
 
-This spec owns the durable classification of reusable LLM runtime functions, current code usage validation, external framework comparison, and scope decisions for BR-14c.
+This spec owns the durable classification of reusable LLM runtime functions, current code usage validation, external framework comparison, and scope decisions for BR-14c. After BR-14c, it remains the transition reference for the application runtime migration in BR-14b and the model catalog pivot in BR-14g.
+
+## BR-14c Implementation Snapshot
+
+BR-14c establishes `packages/llm-mesh` as a contract-first TypeScript package with:
+
+- Public provider and model identifiers for OpenAI, Google Gemini, Anthropic Claude, Mistral, and Cohere.
+- Model-profile-first capabilities using explicit `supported`, `unsupported`, `partial`, and `unknown` states.
+- Normalized request, response, streaming, tool-use, structured-output, retryable-error, and auth contracts.
+- Redacted `AuthDescriptor` surfaces separated from server-only `SecretAuthMaterial`.
+- Codex account auth represented as an account transport, with Gemini Code Assist and Claude Code left as planned extension hooks.
+- Deterministic provider adapter scaffolds with injected clients.
+- A minimal `createLlmMesh` facade with registry, auth resolver, hooks, `generate()`, and `stream()`.
+- A thin API proof path in `api/src/services/llm-runtime/mesh-contract-proof.ts` demonstrating that the API runtime boundary can consume the mesh contract without migrating chat dispatch in BR-14c.
+
+BR-14c intentionally does not:
+
+- Migrate `api/src/services/llm-runtime/index.ts` to the mesh facade.
+- Move chat-service behavior into `packages/llm-mesh`.
+- Replace provider credential precedence, quota logic, retry behavior, or account enrollment flows.
+- Update GPT-5.4 / Claude Opus 4.6 catalog versions; BR-14g owns the GPT-5.5 / Opus 4.7 pivot.
 
 ## Non-Goals
 

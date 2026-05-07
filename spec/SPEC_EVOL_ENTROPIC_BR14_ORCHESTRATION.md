@@ -90,6 +90,14 @@ Exit criteria:
 - Existing app can call through the mesh in a thin integration path or proof branch.
 - No chat UI extraction starts a competing provider abstraction.
 
+BR-14c implementation snapshot:
+
+- `packages/llm-mesh` defines the public contract, static model/provider profiles, capability statuses, normalized generation and stream events, tool/result payloads, error normalization, auth descriptors, and deterministic adapter scaffolds.
+- `createLlmMesh({ registry, authResolver, hooks })` provides the minimal facade for `generate()` and `stream()` without migrating the application chat runtime.
+- `api/src/services/llm-runtime/mesh-contract-proof.ts` proves API-side consumption of the mesh contract under the BR-14f workspace baseline.
+- Live AI validation remains split by command and credential gate; the BR-14c default OpenAI test model passed `chat-sync` and `chat-tools` on the branch test environment.
+- BR-14c leaves the model-version pivot to BR-14g and full runtime dispatch migration to BR-14b.
+
 ## BR-14g — Model Catalog GPT-5.5 / Opus 4.7 Pivot
 
 Branch: `feat/model-catalog-gpt55-opus47`

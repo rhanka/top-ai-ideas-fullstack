@@ -220,11 +220,11 @@ Create the first publishable Entropic package, `@entropic/llm-mesh`, as a provid
     - [x] `make test-api-ai SCOPE=tests/ai/chat-tools.test.ts API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk` — default OpenAI test model passed: 6 tests.
     - [x] Record provider-specific pass/fail/flaky signatures in this file: OpenAI/default `gpt-4.1-nano` passed; no flaky signature accepted.
 
-- [ ] **Lot 6 — Docs consolidation**
-  - [ ] Update `spec/SPEC_EVOL_ENTROPIC_BR14_ORCHESTRATION.md` with final BR-14c contract only if behavior changed from the initial orchestration spec.
-  - [ ] Consolidate `spec/SPEC_EVOL_LLM_MESH.md` into permanent specs if still branch-specific after implementation.
-  - [ ] Delete temporary branch-only spec files after consolidation if applicable.
-  - [ ] Update `BRANCH.md` checklist and feedback loop before final validation.
+- [x] **Lot 6 — Docs consolidation**
+  - [x] Update `spec/SPEC_EVOL_ENTROPIC_BR14_ORCHESTRATION.md` with final BR-14c contract only if behavior changed from the initial orchestration spec.
+  - [x] Consolidate `spec/SPEC_EVOL_LLM_MESH.md` into permanent specs if still branch-specific after implementation.
+  - [x] Delete temporary branch-only spec files after consolidation if applicable.
+  - [x] Update `BRANCH.md` checklist and feedback loop before final validation.
 
 - [ ] **Lot 7 — Final validation**
   - [ ] Typecheck & lint:
