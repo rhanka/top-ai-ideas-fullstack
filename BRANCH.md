@@ -116,7 +116,7 @@ Create the first publishable Entropic package, `@entropic/llm-mesh`, as a provid
   - [x] Decide whether `@entropic/llm-mesh` can be tested through existing API targets or needs BR14c-EX1.
   - [x] Complete external framework benchmark in `spec/SPEC_EVOL_LLM_MESH.md` before Lot 1 implementation.
 
-- [ ] **Lot 1 — Public package contract**
+- [x] **Lot 1 — Public package contract**
   - [x] Create `packages/llm-mesh` package boundary.
   - [x] Define public provider IDs, model IDs, model capability matrix, provider capability matrix, and reasoning tiers.
   - [x] Refine capability statuses to avoid provider-wide optimistic claims; model profiles must carry `supported`, `unsupported`, `partial`, or `unknown` feature states.
@@ -128,42 +128,42 @@ Create the first publishable Entropic package, `@entropic/llm-mesh`, as a provid
   - [x] Define auth modes: direct token, user token, workspace token, environment token, Codex account.
   - [x] Separate server-only `SecretAuthMaterial` from redacted `AuthDescriptor` used by events, traces, UI, and browser-safe package surfaces.
   - [x] Prepare future account auth extension points for Gemini Code Assist and Claude Code without implementing live flows.
-  - [ ] Lot gate:
+  - [x] Lot gate:
     - [x] `make typecheck-llm-mesh API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
     - [x] `make test-llm-mesh API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
     - [x] `make typecheck-api API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
     - [x] `make lint-api API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
-    - [ ] **Package/API tests**
+    - [x] **Package/API tests**
       - [x] Add or update `packages/llm-mesh/tests/*.test.ts` if BR14c-EX1 is used.
-      - [ ] Add or update `api/tests/unit/provider-registry-expansion.test.ts`.
-      - [ ] Add or update `api/tests/unit/model-selection-legacy.test.ts`.
-      - [ ] Add or update `api/tests/api/models.test.ts`.
-      - [ ] Scoped run: `make test-api-unit SCOPE=tests/unit/provider-registry-expansion.test.ts API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`.
-      - [ ] Scoped run: `make test-api-endpoints SCOPE=tests/api/models.test.ts API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`.
-    - [ ] **UI tests (TypeScript only)**
+      - [x] Add or update `api/tests/unit/provider-registry-expansion.test.ts`.
+      - [x] Add or update `api/tests/unit/model-selection-legacy.test.ts`.
+      - [x] Add or update `api/tests/api/models.test.ts`.
+      - [x] Scoped run: `make test-api-unit SCOPE=tests/unit/provider-registry-expansion.test.ts API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`.
+      - [x] Scoped run: `make test-api-endpoints SCOPE=tests/api/models.test.ts API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`.
+    - [x] **UI tests (TypeScript only)**
       - [x] No UI test updates expected in Lot 1.
-    - [ ] **E2E tests**
+    - [x] **E2E tests**
       - [x] No E2E test updates expected in Lot 1.
 
-- [ ] **Lot 2 — Provider adapters and capability matrix**
+- [x] **Lot 2 — Provider adapters and capability matrix**
   - [x] Move reusable provider descriptors and model catalog data into the package contract.
   - [x] Add package adapters or adapter interfaces for OpenAI, Anthropic/Claude, Google/Gemini, Mistral, and Cohere.
   - [x] Keep provider SDK calls deterministic under unit tests with mocked clients.
   - [x] Normalize provider errors with retryability metadata.
   - [x] Preserve existing application provider behavior until BR-14b performs full migration.
-  - [ ] Lot gate:
+  - [x] Lot gate:
     - [x] `make typecheck-api API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
     - [x] `make lint-api API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
-    - [ ] **Package/API tests**
-      - [ ] Add or update `api/tests/unit/claude-provider.test.ts`.
-      - [ ] Add or update `api/tests/unit/gemini-provider-sse.test.ts`.
-      - [ ] Add or update `api/tests/unit/mistral-provider.test.ts`.
-      - [ ] Add or update `api/tests/unit/cohere-provider.test.ts`.
-      - [ ] Add or update `api/tests/unit/llm-runtime-stream.test.ts`.
-      - [ ] Scoped run: `make test-api-unit SCOPE=tests/unit/llm-runtime-stream.test.ts API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`.
-    - [ ] **UI tests (TypeScript only)**
+    - [x] **Package/API tests**
+      - [x] Add or update `api/tests/unit/claude-provider.test.ts`.
+      - [x] Add or update `api/tests/unit/gemini-provider-sse.test.ts`.
+      - [x] Add or update `api/tests/unit/mistral-provider.test.ts`.
+      - [x] Add or update `api/tests/unit/cohere-provider.test.ts`.
+      - [x] Add or update `api/tests/unit/llm-runtime-stream.test.ts`.
+      - [x] Scoped run: `make test-api-unit SCOPE=tests/unit/llm-runtime-stream.test.ts API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`.
+    - [x] **UI tests (TypeScript only)**
       - [x] No UI test updates expected in Lot 2.
-    - [ ] **E2E tests**
+    - [x] **E2E tests**
       - [x] No E2E test updates expected in Lot 2.
 
 - [ ] **Lot 3 — Auth modes and account transports**
