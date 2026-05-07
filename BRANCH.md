@@ -207,15 +207,18 @@ Create the first publishable Entropic package, `@entropic/llm-mesh`, as a provid
     - [x] **E2E tests**
       - [x] No E2E test updates expected unless the proof path changes externally visible chat behavior.
 
-- [ ] **Lot 5 — Live-provider split strategy**
-  - [ ] Document live provider commands and credential requirements.
-  - [ ] Keep deterministic package/API tests independent from live credentials.
-  - [ ] Split live tests by provider so one failed provider does not hide another provider status.
-  - [ ] Run live AI tests only when credentials are available.
-  - [ ] Lot gate:
-    - [ ] `make test-api-ai SCOPE=tests/ai/chat-sync.test.ts API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
-    - [ ] `make test-api-ai SCOPE=tests/ai/chat-tools.test.ts API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
-    - [ ] Record provider-specific pass/fail/flaky signatures in this file.
+- [x] **Lot 5 — Live-provider split strategy**
+  - [x] Document live provider commands and credential requirements.
+    - [x] Provider split command form: `make test-api-ai SCOPE=tests/ai/chat-sync.test.ts TEST_MODEL=<provider-model-id> API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`.
+    - [x] Provider split command form: `make test-api-ai SCOPE=tests/ai/chat-tools.test.ts TEST_MODEL=<provider-model-id> API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`.
+    - [x] Credential gate: run a provider split only when the branch test environment has that provider credential or account transport configured.
+  - [x] Keep deterministic package/API tests independent from live credentials.
+  - [x] Split live tests by provider so one failed provider does not hide another provider status.
+  - [x] Run live AI tests only when credentials are available.
+  - [x] Lot gate:
+    - [x] `make test-api-ai SCOPE=tests/ai/chat-sync.test.ts API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk` — default OpenAI test model passed: 4 tests.
+    - [x] `make test-api-ai SCOPE=tests/ai/chat-tools.test.ts API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk` — default OpenAI test model passed: 6 tests.
+    - [x] Record provider-specific pass/fail/flaky signatures in this file: OpenAI/default `gpt-4.1-nano` passed; no flaky signature accepted.
 
 - [ ] **Lot 6 — Docs consolidation**
   - [ ] Update `spec/SPEC_EVOL_ENTROPIC_BR14_ORCHESTRATION.md` with final BR-14c contract only if behavior changed from the initial orchestration spec.
