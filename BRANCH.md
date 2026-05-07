@@ -75,7 +75,7 @@ Create the first publishable Entropic package, `@entropic/llm-mesh`, as a provid
 - [ ] `attention` BR14c-EX2 — `spec/SPEC_EVOL_LLM_MESH.md` owns the reusable function classification, Graphify-backed usage audit, external framework benchmark, and public package contract. Reason: the public package contract must be reviewable before implementation and must not bloat `BRANCH.md`. Impact: specification only. Rollback: consolidate final decisions into `SPEC_EVOL_ENTROPIC_BR14_ORCHESTRATION.md` and delete the branch spec.
 - [x] `attention` BR14c-EX3 — Conditional `PLAN.md` and `plan/14g-BRANCH_feat-model-catalog-gpt55-opus47.md` changes are allowed only to schedule the user-requested downstream model catalog pivot after BR-14c. Reason: GPT-5.5 and Claude Opus 4.7 should be applied after the mesh contract is frozen, not mixed into the current package extraction. Impact: roadmap/spec planning only, no runtime model catalog changes in BR-14c. Rollback: remove BR-14g from `PLAN.md` and delete the branch pointer.
 - [x] `clarification` BR14c-R1 — Strategic review accepted on 2026-04-22. BR-14c must add package-specific make gates, a minimal `createLlmMesh` facade, model-profile-first capabilities with `supported/unsupported/partial/unknown`, server-only secret material separated from redacted auth descriptors, and a richer tool/result lifecycle compatible with MCP-style content and streamed tool arguments.
-- [ ] `blocked` BR14c-B1 — The thin API proof path cannot be exercised through current `make`/Docker targets because the `api` container mounts only `./api:/app` and cannot import `packages/llm-mesh/**` from the worktree root. Reason: any API-side proof test or runtime adapter import fails with module resolution before code execution. Impact: Lot 4 can ship the executable package facade, but the API consumption proof remains blocked until a dedicated packaging/workspace exposure decision. Rollback: none; this is an environment limitation, not a runtime regression.
+- [x] `resolved` BR14c-B1 — The thin API proof path is now exercised through `api/src/services/llm-runtime/mesh-contract-proof.ts` and `api/tests/unit/provider-mesh-contract-proof.test.ts`. Resolution: BR-14f exposes the workspace root to the API test container, so BR-14c can import the mesh source contract without changing the live chat runtime. Impact: proof-only API boundary, no runtime migration. Rollback: remove the proof module and proof test.
 
 ## AI Flaky tests
 - Acceptance rule:
@@ -185,25 +185,27 @@ Create the first publishable Entropic package, `@entropic/llm-mesh`, as a provid
     - [x] **E2E tests**
       - [x] No E2E test updates expected in Lot 3.
 
-  - [ ] **Lot 4 — Thin application proof path**
+- [x] **Lot 4 — Thin application proof path**
   - [x] Add minimal SDK facade: `createLlmMesh({ registry, authResolver, hooks })`, `mesh.generate()`, and `mesh.stream()`.
   - [x] Support `provider:model` aliases and explicit `{ providerId, modelId }` selection.
   - [x] Validate requested features against model profile capabilities before adapter execution.
-  - [ ] Add a thin application import path or proof adapter showing the API runtime can consume the mesh contract without completing BR-14b migration.
-  - [ ] Avoid moving chat service behavior into the package in this branch.
-  - [ ] Avoid defining any chat SDK provider abstraction in this branch.
-  - [ ] Keep all existing API behavior stable.
-  - [ ] Lot gate:
-    - [ ] `make typecheck-api API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
-    - [ ] `make lint-api API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
-    - [ ] **Package/API tests**
-      - [ ] Add or update `api/tests/unit/llm-runtime-stream.test.ts`.
-      - [ ] Add or update `api/tests/unit/chat-service-tools.test.ts` only if the proof path changes tool-call runtime wiring.
-      - [ ] Scoped run: `make test-api-unit SCOPE=tests/unit/llm-runtime-stream.test.ts API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`.
-    - [ ] **UI tests (TypeScript only)**
-      - [ ] No UI test updates expected.
-    - [ ] **E2E tests**
-      - [ ] No E2E test updates expected unless the proof path changes externally visible chat behavior.
+  - [x] Add a thin application import path or proof adapter showing the API runtime can consume the mesh contract without completing BR-14b migration.
+  - [x] Avoid moving chat service behavior into the package in this branch.
+  - [x] Avoid defining any chat SDK provider abstraction in this branch.
+  - [x] Keep all existing API behavior stable.
+  - [x] Lot gate:
+    - [x] `make typecheck-api API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
+    - [x] `make lint-api API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
+    - [x] **Package/API tests**
+      - [x] Add or update `api/tests/unit/llm-runtime-stream.test.ts`.
+      - [x] Add `api/tests/unit/provider-mesh-contract-proof.test.ts`.
+      - [x] Add or update `api/tests/unit/chat-service-tools.test.ts` only if the proof path changes tool-call runtime wiring.
+      - [x] Scoped run: `make test-api-unit SCOPE=tests/unit/llm-runtime-stream.test.ts API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`.
+      - [x] Scoped run: `make test-api-unit SCOPE=tests/unit/provider-mesh-contract-proof.test.ts API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`.
+    - [x] **UI tests (TypeScript only)**
+      - [x] No UI test updates expected.
+    - [x] **E2E tests**
+      - [x] No E2E test updates expected unless the proof path changes externally visible chat behavior.
 
 - [ ] **Lot 5 — Live-provider split strategy**
   - [ ] Document live provider commands and credential requirements.
