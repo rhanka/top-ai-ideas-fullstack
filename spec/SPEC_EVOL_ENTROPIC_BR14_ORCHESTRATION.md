@@ -8,7 +8,7 @@ Execution order is not alphabetical:
 
 1. **PR-117 release actions** — confirm and execute the repository rename and public DNS/redirect plan, or explicitly defer execution to BR-14d with an owner and date.
 2. **BR-14f `chore/node-workspace-monorepo-14f`** — introduce the root Node workspace and full-repo container mounts if the repo still isolates `api` and `ui` from future internal packages. This branch owns the repo/tooling baseline only, not the LLM mesh contract itself.
-3. **BR-14c `feat/llm-mesh-sdk`** — first package/product branch. Publish the standalone LLM mesh library and cut the application LLM runtime over to it in the same branch. This is a refactor/isolate/publish cutover, not a proof-only branch.
+3. **BR-14c `feat/llm-mesh-sdk`** — first package/product branch. Publish the standalone LLM mesh library to npm and cut the application LLM runtime over to it in the same branch. This is a refactor/isolate/publish cutover, not a proof-only branch.
 4. **BR-14g `feat/model-catalog-gpt55-opus47`** — pivot model catalog defaults and compatibility rules to GPT-5.5 and Claude Opus 4.7, while keeping GPT-5.4 Nano unchanged. This runs after BR-14c so the change lands against the live mesh-backed model-profile contract.
 5. **BR-14b `refacto/chat-service-core`** — modularize the chat-service logic above the LLM runtime: reasoning loop, tool loop, continuation boundaries, and reusable chat orchestration pieces that do not belong in `@entropic/llm-mesh`.
 6. **BR-14a `feat/chat-ui-sdk`** — extract the chat UI SDK after the mesh contract is frozen. Lot 0 may scope in parallel, but implementation must not invent a separate provider abstraction.
@@ -19,7 +19,7 @@ Execution order is not alphabetical:
 
 | Option | Order | Decision | Rationale |
 | --- | --- | --- | --- |
-| A | BR-14f -> BR-14c -> BR-14g -> BR-14b -> BR-14a -> BR-14e -> BR-14d | Selected | Adds the minimal repo/tooling baseline first when internal packages cannot yet be consumed from API/UI containers. BR-14c then publishes the mesh package and performs the strict runtime cutover in one branch, BR-14g updates model versions against the live mesh contract, and BR-14b modularizes chat-service logic above the runtime. |
+| A | BR-14f -> BR-14c -> BR-14g -> BR-14b -> BR-14a -> BR-14e -> BR-14d | Selected | Adds the minimal repo/tooling baseline first when internal packages cannot yet be consumed from API/UI containers. BR-14c then publishes the mesh package to npm and performs the strict runtime cutover in one branch, BR-14g updates model versions against the live mesh contract, and BR-14b modularizes chat-service logic above the runtime. |
 | B | BR-14c -> BR-14b -> BR-14a -> BR-14e -> BR-14d | Rejected as current-state default | This was correct only if the existing repo already behaved like a Node workspace monorepo. It does not when `api`/`ui` are mounted as isolated containers, so BR-14c cannot prove a thin app consumption path cleanly. |
 | C | BR-14a -> BR-14b -> BR-14c -> BR-14e -> BR-14d | Rejected | Repeats the current problem: chat SDK would define transport/provider seams before the reusable LLM mesh contract exists. |
 | D | BR-14d -> BR-14f -> BR-14c -> BR-14b -> BR-14a -> BR-14e | Rejected as default | Renaming all operational objects before package boundaries and code names are stable creates repeated DNS/container/secret churn. Can be used only if repo/DNS changes block development. |
@@ -61,7 +61,7 @@ Impact notes:
 Activation plan:
 
 - BR-14f is not a product branch. It is accepted only if it preserves CI, branch dev-stack capacity, and root user UAT capacity while enabling workspace package consumption.
-- BR-14c is the first mandatory activation branch: create `packages/llm-mesh`, expose the `@entropic/llm-mesh` package, migrate the application LLM runtime to that package, and delete the app-local runtime code it replaces. No double runtime path, feature flag, compatibility bridge, fallback alias, copy step, path hack, or direct app-root package coupling is allowed.
+- BR-14c is the first mandatory activation branch: create `packages/llm-mesh`, expose the `@entropic/llm-mesh` package, publish it to npm through CI/CD, migrate the application LLM runtime to that package, and delete the app-local runtime code it replaces. No double runtime path, feature flag, compatibility bridge, fallback alias, copy step, path hack, or direct app-root package coupling is allowed.
 - BR-14g is the model catalog activation branch: move the OpenAI default from GPT-5.4 to GPT-5.5, keep GPT-5.4 Nano available, move Claude Opus 4.6 to Opus 4.7, and update compatibility/default rules against the mesh model-profile contract.
 - BR-14b is the chat-service modularization branch above the model runtime: extract and stabilize reasoning-loop, tool-loop, continuation, and orchestration boundaries after BR-14c has already moved model access to the mesh.
 - BR-14a is the UI/package activation branch: extract `@entropic/chat` while consuming provider/model behavior through the mesh contract or a narrow mesh-compatible interface.
@@ -72,7 +72,7 @@ Activation plan:
 
 Branch: `feat/llm-mesh-sdk`
 
-Goal: publish `@entropic/llm-mesh`, an open Vercel AI SDK-like model-access layer, and migrate the application LLM runtime to it in a strict cutover.
+Goal: publish `@entropic/llm-mesh` to npm, an open Vercel AI SDK-like model-access layer, and migrate the application LLM runtime to it in a strict cutover.
 
 Minimum contract:
 
@@ -86,11 +86,13 @@ Minimum contract:
 - API runtime imports `@entropic/llm-mesh` as a workspace package.
 - Application LLM runtime dispatch uses the mesh package.
 - Replaced app-local provider/runtime functions are deleted in the same branch.
+- CI/CD validates, packs, and publishes `@entropic/llm-mesh` as the first `@entropic` npm library.
 - Current behavior is preserved for credential precedence, quotas, retries, streaming order, tool-call continuation, reasoning controls, traces/audit metadata, and live AI tests.
 
 Exit criteria:
 
 - Package boundary and public API documented.
+- Package metadata, README, dist build, pack check, and CI npm publish lane are ready before merge.
 - Existing app calls through the mesh in the live runtime path.
 - No duplicated legacy runtime path remains for responsibilities moved into `@entropic/llm-mesh`.
 - No chat UI extraction starts a competing provider abstraction.
@@ -100,6 +102,7 @@ BR-14c implementation snapshot:
 - `packages/llm-mesh` defines the public contract, static model/provider profiles, capability statuses, normalized generation and stream events, tool/result payloads, error normalization, auth descriptors, and deterministic adapter scaffolds.
 - `createLlmMesh({ registry, authResolver, hooks })` provides the minimal facade for `generate()` and `stream()`.
 - Current gap to close before PR: `api/src/services/llm-runtime/mesh-contract-proof.ts` still imports the source tree by relative path. BR-14c must replace this with a real `@entropic/llm-mesh` workspace import and migrate the application LLM runtime to that package.
+- Publication gap to close before PR: CI/CD does not yet detect `packages/llm-mesh/**` as a package surface, does not run package build/pack validation, and does not publish `@entropic/llm-mesh` on `main`.
 - Live AI validation remains split by command and credential gate; the BR-14c default OpenAI test model passed `chat-sync` and `chat-tools` on the branch test environment.
 - BR-14c leaves the model-version pivot to BR-14g and chat-service modularization above the runtime to BR-14b.
 

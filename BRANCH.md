@@ -1,10 +1,10 @@
 # Feature: BR-14c LLM Mesh SDK
 
 ## Objective
-Create the first publishable Entropic package, `@entropic/llm-mesh`, as a provider-agnostic model access SDK for OpenAI, Anthropic/Claude, Google/Gemini, Mistral, and Cohere, then cut the application LLM runtime over to that package in the same branch. BR-14c must be a refactor/isolate/publish branch, not a parallel proof-only branch.
+Create the first published Entropic package, `@entropic/llm-mesh`, as a provider-agnostic model access SDK for OpenAI, Anthropic/Claude, Google/Gemini, Mistral, and Cohere, then cut the application LLM runtime over to that package in the same branch. BR-14c must be a refactor/isolate/publish branch, not a parallel proof-only branch.
 
 ## Scope / Guardrails
-- Scope includes the LLM mesh package boundary, public TypeScript contract, provider capability model, provider adapters, authentication mode contract, package tests, and strict application runtime cutover to `@entropic/llm-mesh`.
+- Scope includes the LLM mesh package boundary, public TypeScript contract, provider capability model, provider adapters, authentication mode contract, package tests, strict application runtime cutover to `@entropic/llm-mesh`, and the CI/CD lane required to publish the first npm package under the `@entropic` scope.
 - No double runtime path: once a runtime responsibility is imported from `@entropic/llm-mesh`, the replaced app-local implementation must be removed in the same branch. No feature flag, no compatibility bridge, no fallback alias.
 - One migration max in `api/drizzle/*.sql` (not expected for this branch).
 - Make-only workflow, no direct Docker commands.
@@ -44,7 +44,7 @@ Create the first publishable Entropic package, `@entropic/llm-mesh`, as a provid
   - `TRANSITION.md`
   - `docker-compose*.yml`
   - `.cursor/rules/**`
-  - `.github/workflows/**`
+  - `.github/workflows/**` except `.github/workflows/ci.yml` covered by `BR14c-EX6`
   - `ui/chrome-ext/**`
   - `ui/vscode-ext/**`
   - `ui/src/lib/components/**`
@@ -66,6 +66,7 @@ Create the first publishable Entropic package, `@entropic/llm-mesh`, as a provid
   - `package.json`
   - `package-lock.json`
   - `PLAN.md`
+  - `.github/workflows/ci.yml`
   - `plan/14b-BRANCH_refacto-chat-service-core.md`
   - `plan/14c-BRANCH_feat-llm-mesh-sdk.md`
   - `plan/14g-BRANCH_feat-model-catalog-gpt55-opus47.md`
@@ -80,9 +81,12 @@ Create the first publishable Entropic package, `@entropic/llm-mesh`, as a provid
 - [x] `attention` BR14c-EX3 — Conditional `PLAN.md` and `plan/14g-BRANCH_feat-model-catalog-gpt55-opus47.md` changes are allowed only to schedule the user-requested downstream model catalog pivot after BR-14c. Reason: GPT-5.5 and Claude Opus 4.7 should be applied after the mesh contract is frozen, not mixed into the current package extraction. Impact: roadmap/spec planning only, no runtime model catalog changes in BR-14c. Rollback: remove BR-14g from `PLAN.md` and delete the branch pointer.
 - [x] `attention` BR14c-EX4 — Conditional `.dockerignore` changes are allowed to keep BR-14c root workspace Docker builds from sending local assistant, Playwright, dependency, data, and image artifacts in the build context. Reason: BR-14f moved API/UI builds to the repository root context, and BR-14c root UAT exposed multi-GB local context transfer from untracked state. Impact: Docker build context hygiene only, no runtime behavior. Rollback: delete `.dockerignore`.
 - [x] `attention` BR14c-EX5 — Conditional `plan/14b-BRANCH_refacto-chat-service-core.md` and `plan/14c-BRANCH_feat-llm-mesh-sdk.md` changes are allowed only to align downstream branch planning with the strict BR-14c runtime cutover decision. Reason: BR-14c now owns model-runtime migration, so BR-14b must be re-scoped before implementation continues. Impact: planning only, no runtime behavior. Rollback: restore the previous branch pointer files and BR-14b runtime wording from `main`.
+- [x] `attention` BR14c-EX6 — Conditional `.github/workflows/ci.yml` changes are allowed only to add package validation and npm publication for `@entropic/llm-mesh`. Reason: BR-14c must end with the first published `@entropic` npm library, so CI/CD publication cannot be deferred to BR-07/BR-12. Impact: workflow changes limited to package path detection, package build/pack checks, and npm publish on `main` after CI gates. Rollback: remove the llm-mesh package jobs and path filters from the workflow.
 - [x] `clarification` BR14c-R1 — Strategic review accepted on 2026-04-22. BR-14c must add package-specific make gates, a minimal `createLlmMesh` facade, model-profile-first capabilities with `supported/unsupported/partial/unknown`, server-only secret material separated from redacted auth descriptors, and a richer tool/result lifecycle compatible with MCP-style content and streamed tool arguments.
 - [x] `decision` BR14c-R2 — User clarification on 2026-05-07: BR-14c must not stop at a proof-only package. It must import `@entropic/llm-mesh` as the real workspace package and migrate the application LLM runtime in strict cutover mode. Any app-local provider/runtime function replaced by the package must be deleted in the same branch. BR-14b is re-scoped to chat-service modularization above the LLM runtime.
+- [x] `decision` BR14c-R3 — User clarification on 2026-05-08: BR-14c must include npm publication logic and CI/CD adaptation for `@entropic/llm-mesh`. End state: after merge, the first `@entropic` library is publishable and published through CI/CD, not only present as an internal workspace package.
 - [ ] `blocked` BR14c-B1 — Current proof path is insufficient: `api/src/services/llm-runtime/mesh-contract-proof.ts` imports `../../../../packages/llm-mesh/src/index.js` instead of `@entropic/llm-mesh`, and the live runtime still uses the app-local `llm-runtime` dispatch. Resolution required before PR: declare package dependency/resolution, import `@entropic/llm-mesh`, migrate runtime dispatch, and remove the replaced app-local implementation.
+- [ ] `blocked` BR14c-B2 — Package publication is not wired yet: `packages/llm-mesh/package.json` has a placeholder version and no CI publish lane exists. Resolution required before PR: define package versioning, make-backed build/pack/publish targets, CI package validation, npm token/provenance expectations, and publish-on-main behavior for `@entropic/llm-mesh`.
 
 ## AI Flaky tests
 - Acceptance rule:
@@ -235,14 +239,31 @@ Create the first publishable Entropic package, `@entropic/llm-mesh`, as a provid
     - [ ] `make test-api-ai SCOPE=tests/ai/chat-tools.test.ts API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
     - [ ] Record provider-specific pass/fail/flaky signatures in this file after the mesh runtime cutover.
 
-- [ ] **Lot 6 — Docs consolidation**
+- [ ] **Lot 6 — npm publication lane**
+  - [ ] Finalize `packages/llm-mesh/package.json` for first npm publication: stable name `@entropic/llm-mesh`, version policy, `main`, `types`, `exports`, `files`, license metadata, side-effects flag, and package README content.
+  - [ ] Add make-backed package build and pack checks, without host npm usage.
+  - [ ] Add make-backed npm publish target using CI-provided npm credentials only; no local secret files and no manual host publish.
+  - [ ] Adapt CI path filters so `packages/llm-mesh/**`, root workspace metadata, and package publish workflow changes trigger the right gates.
+  - [ ] Add PR CI package validation: typecheck, tests, build, and pack/dry-run for `@entropic/llm-mesh`.
+  - [ ] Add `main`-only CI publication after branch CI gates pass, using the configured npm token and provenance when supported by the CI environment.
+  - [ ] Keep BR-07/BR-12 ownership unchanged for UI/plugin publishing; BR-14c owns only `@entropic/llm-mesh`.
+  - [ ] Lot gate:
+    - [ ] `make typecheck-llm-mesh API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
+    - [ ] `make test-llm-mesh API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
+    - [ ] `make build-llm-mesh API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
+    - [ ] `make pack-llm-mesh API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
+    - [ ] Branch CI shows the package validation job is triggered by `packages/llm-mesh/**` changes.
+    - [ ] Post-merge CD confirms the npm publish job ran or explicitly skipped because the exact version already exists.
+
+- [ ] **Lot 7 — Docs consolidation**
   - [ ] Update `spec/SPEC_EVOL_ENTROPIC_BR14_ORCHESTRATION.md` with the strict BR-14c runtime cutover decision.
+  - [ ] Update `spec/SPEC_EVOL_ENTROPIC_BR14_ORCHESTRATION.md` and `spec/SPEC_EVOL_LLM_MESH.md` with the npm publication contract.
   - [ ] Consolidate `spec/SPEC_EVOL_LLM_MESH.md` into permanent specs after runtime cutover.
   - [ ] Re-scope BR-14b in `PLAN.md` / orchestration specs to chat-service modularization above the LLM runtime.
   - [ ] Delete temporary branch-only spec files after consolidation if applicable.
   - [ ] Update `BRANCH.md` checklist and feedback loop before final validation.
 
-- [ ] **Lot 7 — Final validation**
+- [ ] **Lot 8 — Final validation**
   - [ ] Package gates:
     - [x] Pre-cutover: `make typecheck-llm-mesh API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
     - [x] Pre-cutover: `make test-llm-mesh API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk` — 9 tests passed.
@@ -258,6 +279,10 @@ Create the first publishable Entropic package, `@entropic/llm-mesh`, as a provid
   - [ ] Build gate:
     - [x] Pre-cutover: `make build-api API_PORT=8717 UI_PORT=5117 MAILDEV_UI_PORT=1017 ENV=test-feat-llm-mesh-sdk-serial`
     - [ ] Post-cutover rerun required.
+  - [ ] Package publish gate:
+    - [ ] `make build-llm-mesh API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
+    - [ ] `make pack-llm-mesh API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
+    - [ ] Branch CI package validation job passed.
   - [ ] Retest live AI flaky tests only under acceptance rule and document pass/fail signatures after runtime cutover.
   - [ ] Root UAT: chat streaming and AI settings must exercise the mesh-backed runtime, not only prove app startup.
   - [ ] Record explicit user sign-off if any AI flaky test is accepted.

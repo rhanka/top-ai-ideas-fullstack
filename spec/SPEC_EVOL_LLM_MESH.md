@@ -1,6 +1,6 @@
 # SPEC EVOL - LLM Mesh
 
-Status: In progress for BR-14c; runtime cutover scope reopened on 2026-05-07.
+Status: In progress for BR-14c; runtime cutover scope reopened on 2026-05-07 and npm publication scope added on 2026-05-08.
 
 Owner branch: `feat/llm-mesh-sdk`.
 
@@ -8,7 +8,7 @@ Related orchestration spec: `spec/SPEC_EVOL_ENTROPIC_BR14_ORCHESTRATION.md`.
 
 ## Objective
 
-Define `@entropic/llm-mesh`, the first standalone Entropic npm service. The package must provide a provider-agnostic model access contract for OpenAI, Anthropic/Claude, Google/Gemini, Mistral, and Cohere, then become the application LLM runtime in BR-14c through a strict cutover.
+Define `@entropic/llm-mesh`, the first standalone Entropic npm service. The package must provide a provider-agnostic model access contract for OpenAI, Anthropic/Claude, Google/Gemini, Mistral, and Cohere, become the application LLM runtime in BR-14c through a strict cutover, and be published through CI/CD as the first `@entropic` npm library.
 
 This spec owns the durable classification of reusable LLM runtime functions, current code usage validation, external framework comparison, and scope decisions for BR-14c. After BR-14c, it remains the transition reference for the model catalog pivot in BR-14g and chat-service modularization above the runtime in BR-14b.
 
@@ -30,12 +30,14 @@ Current gap before BR-14c can proceed to PR:
 - `api/src/services/llm-runtime/mesh-contract-proof.ts` imports the package source by relative path instead of importing `@entropic/llm-mesh`.
 - `api/src/services/llm-runtime/index.ts` still owns live runtime dispatch.
 - App-local runtime/provider functions replaced by the mesh have not yet been deleted.
+- CI/CD does not yet build, pack, or publish `@entropic/llm-mesh`.
 
 BR-14c must now:
 
 - Import `@entropic/llm-mesh` as a real workspace package from the API.
 - Migrate `api/src/services/llm-runtime/**` to the mesh-backed runtime.
 - Delete replaced app-local provider/runtime implementations in the same branch.
+- Finalize package metadata, README, dist build, pack validation, and npm publication through CI/CD.
 - Preserve provider credential precedence, quota logic, retry behavior, streaming order, tool-call continuation, reasoning controls, trace/audit metadata, and live AI behavior.
 - Keep chat-service orchestration above the model runtime; BR-14c may update call sites but must not modularize the full chat-service reasoning/tool loop.
 
@@ -50,7 +52,7 @@ BR-14c intentionally does not:
 - Do not extract chat UI behavior. BR-14a owns `@entropic/chat`.
 - Do not keep dual runtime paths. BR-14c owns strict application runtime migration to the mesh contract.
 - Do not modularize the full chat-service reasoning/tool loop. BR-14b owns that higher-level chat-service extraction.
-- Do not execute operational DNS, repository, Scaleway, registry, or secret transitions. BR-14d owns transition operations.
+- Do not execute operational DNS, repository, Scaleway container/registry, or secret transitions. BR-14d owns transition operations. Npm publication for `@entropic/llm-mesh` is not a BR-14d transition item; it belongs to BR-14c because this is the first package branch.
 - Do not complete the final codebase naming sweep. BR-14e owns final naming cleanup.
 - Do not build a FinOps platform inside the MVP package.
 - Do not bind the package to Entropic's database, settings service, encrypted settings storage, or workspace model.
@@ -545,6 +547,37 @@ The BR-14c strategic review confirmed the direction but tightened the public con
 - `make lint-llm-mesh` if package linting is not covered by an existing target
 
 These targets are part of BR14c-EX1 because they touch make/build scaffolding, not runtime behavior.
+
+### npm Publication Lane
+
+BR-14c must finish with `@entropic/llm-mesh` publishable and published by CI/CD after merge to `main`.
+
+Required publication work:
+
+- Package metadata:
+  - Stable package name: `@entropic/llm-mesh`.
+  - Non-placeholder version policy for the first release.
+  - `main`, `types`, `exports`, `files`, side-effects, license, and README suitable for npm consumers.
+  - Built `dist/**` contents generated from the package TypeScript source, not checked in unless the package policy explicitly requires it.
+- Make targets:
+  - `make build-llm-mesh`
+  - `make pack-llm-mesh`
+  - `make publish-llm-mesh`
+  - All targets remain Docker-first and must not require host npm.
+- CI validation:
+  - `.github/workflows/ci.yml` must detect `packages/llm-mesh/**` and package publication workflow changes as package-relevant changes.
+  - Pull requests must run package typecheck, package tests, package build, and package pack/dry-run.
+  - The package validation job must block merge on real failures.
+- CI publication:
+  - Publish only from `main` after branch gates pass.
+  - Use CI-provided npm credentials only.
+  - Use npm provenance when supported by the CI environment.
+  - A publish skip is acceptable only when the exact package version already exists and the job records that reason explicitly.
+
+Scope boundary:
+
+- BR-14c owns only `@entropic/llm-mesh` npm publication.
+- BR-07 and BR-12 keep ownership of UI, Chrome, and VSCode package publication.
 
 ### SDK Facade
 
