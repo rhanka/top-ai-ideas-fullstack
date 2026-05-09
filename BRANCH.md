@@ -269,7 +269,7 @@ Create the first published Entropic package, `@entropic/llm-mesh`, as a provider
     - [x] `make test-llm-mesh API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
     - [x] `make build-llm-mesh API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
     - [x] `make pack-llm-mesh API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
-    - [ ] Branch CI shows the package validation job is triggered by `packages/llm-mesh/**` changes.
+    - [x] Branch CI shows the package validation job is triggered by `packages/llm-mesh/**` changes.
     - [ ] Post-merge CD confirms the npm publish job ran or explicitly skipped because the exact version already exists.
 
 - [x] **Lot 7 — Docs consolidation**
@@ -307,7 +307,8 @@ Create the first published Entropic package, `@entropic/llm-mesh`, as a provider
   - [ ] Package publish gate:
     - [x] `make build-llm-mesh API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
     - [x] `make pack-llm-mesh API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
-    - [ ] Branch CI package validation job passed.
+    - [x] Branch CI package validation job passed.
+      - [x] PR #141 CI run `25591586290` passed `validate-llm-mesh`: typecheck, tests, build, and pack.
   - [x] CI remediation local checks after PR #141 red run:
     - [x] `make pack-llm-mesh API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk` — passes with writable npm cache.
     - [x] `make up-api-test-ci API_PORT=8720 UI_PORT=5120 MAILDEV_UI_PORT=1020 ENV=test-feat-llm-mesh-ci` — API container healthy; `@entropic/llm-mesh/dist/index.js` resolves.
@@ -321,7 +322,8 @@ Create the first published Entropic package, `@entropic/llm-mesh`, as a provider
     - [x] No flaky acceptance used: live AI split tests passed in a fresh env.
   - [x] Final gate step 1: create/update PR using `BRANCH.md` text as PR body.
     - [x] PR #141 opened: `https://github.com/rhanka/entropic/pull/141`.
-  - [ ] Final gate step 2: run/verify branch CI on that PR and resolve remaining blockers.
+  - [x] Final gate step 2: run/verify branch CI on that PR and resolve remaining blockers.
+    - [x] PR #141 CI run `25591586290` passed after BR14c-B5 clean-workspace packaging fix.
   - [ ] Final gate step 3: once UAT + CI are both `OK`, commit removal of `BRANCH.md`, push, and merge.
 
 ## Lot 0 Audit Notes
