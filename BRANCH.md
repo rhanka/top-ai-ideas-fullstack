@@ -98,6 +98,8 @@ Create the first published Entropic package, `@entropic/llm-mesh`, as a provider
 - [x] `attention` BR14c-EX9 — Conditional `api/tests/api/docx.test.ts` changes are allowed only to stabilize the existing full endpoints gate after BR-14c rebase exposed order-dependent global `job_queue` state. Reason: the DOCX scheduler test un-mocks the global queue processor and must not consume pending chat jobs left by other endpoint files. Impact: test isolation only, no runtime behavior. Rollback: remove the local queue cleanup in the DOCX scheduler test and the exception entry.
 - [x] `resolved` BR14c-B4 — Live AI `chat-sync` initially failed because `@entropic/llm-mesh` correctly rejected `reasoning` for `openai:gpt-4.1-nano`, while the legacy OpenAI runtime had already stripped those parameters from the provider request. `mesh-dispatch.ts` now strips mesh-level reasoning for model profiles whose reasoning capability is `unsupported`, preserving the strict mesh contract without reintroducing a fallback runtime path. Validation: targeted unit runtime test, `typecheck-api`, live `chat-sync`, and live `chat-tools`.
 - [x] `attention` BR14c-EX10 — Permanent spec updates are allowed in `spec/SPEC.md` and `spec/SPEC_CHATBOT.md` only for BR-14c docs consolidation. Reason: `SPEC_EVOL_LLM_MESH.md` must be consolidated into stable architecture/chat specs before final validation. Impact: documentation only. Rollback: remove the stable spec additions and the exception entry.
+- [x] `attention` BR14c-EX11 — Conditional `Makefile` and `ui/Dockerfile` changes are allowed only to make clean CI workspace installs resolve and package `@entropic/llm-mesh`. Reason: PR CI runs from a fresh checkout, so API test startup must build the workspace package before mounting it and UI Docker builds must copy every root workspace package manifest before `npm ci --workspaces`. Impact: CI/dev packaging hygiene only, no runtime behavior. Rollback: remove the `up-api-test-ci` build dependency, npm cache env wiring, and UI package manifest copy.
+- [x] `resolved` BR14c-B5 — PR #141 CI failed before tests because clean CI installs did not build `packages/llm-mesh/dist` before mounting the workspace API runtime, `pack-llm-mesh` used an unwritable npm cache under the CI user, and the UI Docker build did not copy the new workspace package manifest before `npm ci --workspaces`. Fix: build llm-mesh before `up-api-test-ci`, set writable npm cache/HOME for pack/publish, and copy `packages/llm-mesh/package.json` in `ui/Dockerfile`. Validation: local `pack-llm-mesh`, `up-api-test-ci`, `test-api-smoke`, and `test-ui-security-sca`.
 
 ## AI Flaky tests
 - Acceptance rule:
@@ -306,6 +308,11 @@ Create the first published Entropic package, `@entropic/llm-mesh`, as a provider
     - [x] `make build-llm-mesh API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
     - [x] `make pack-llm-mesh API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
     - [ ] Branch CI package validation job passed.
+  - [x] CI remediation local checks after PR #141 red run:
+    - [x] `make pack-llm-mesh API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk` — passes with writable npm cache.
+    - [x] `make up-api-test-ci API_PORT=8720 UI_PORT=5120 MAILDEV_UI_PORT=1020 ENV=test-feat-llm-mesh-ci` — API container healthy; `@entropic/llm-mesh/dist/index.js` resolves.
+    - [x] `make test-api-smoke API_PORT=8720 UI_PORT=5120 MAILDEV_UI_PORT=1020 ENV=test-feat-llm-mesh-ci` — 2 files, 6 passed.
+    - [x] `make test-ui-security-sca API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk` — SCA passed, no findings.
   - [x] Retest live AI flaky tests only under acceptance rule and document pass/fail signatures after runtime cutover.
     - [x] `chat-sync` live split passed 4/4 in fresh env `test-feat-llm-mesh-ai`.
     - [x] `chat-tools` live split passed 6/6 in fresh env `test-feat-llm-mesh-ai`.
