@@ -101,8 +101,10 @@ BR-14c implementation snapshot:
 
 - `packages/llm-mesh` defines the public contract, static model/provider profiles, capability statuses, normalized generation and stream events, tool/result payloads, error normalization, auth descriptors, and deterministic adapter scaffolds.
 - `createLlmMesh({ registry, authResolver, hooks })` provides the minimal facade for `generate()` and `stream()`.
-- Current gap to close before PR: `api/src/services/llm-runtime/mesh-contract-proof.ts` still imports the source tree by relative path. BR-14c must replace this with a real `@entropic/llm-mesh` workspace import and migrate the application LLM runtime to that package.
-- Publication gap to close before PR: CI/CD does not yet detect `packages/llm-mesh/**` as a package surface, does not run package build/pack validation, and does not publish `@entropic/llm-mesh` on `main`.
+- The API imports `@entropic/llm-mesh` as a real workspace package through `api/src/services/llm-runtime/mesh-dispatch.ts`.
+- Application runtime dispatch for `callLLM` and `callLLMStream` is cut over to the mesh facade; replaced app-local runtime dispatch selectors are removed.
+- CI/CD detects `packages/llm-mesh/**`, validates typecheck/test/build/pack on PRs, and publishes `@entropic/llm-mesh` on `main` with CI-provided npm credentials.
+- Local dev/test startup prepares mounted workspace `node_modules` and package `dist/` artifacts before API boot, so branch UAT/dev stacks exercise the same package import boundary.
 - Live AI validation remains split by command and credential gate; the BR-14c default OpenAI test model passed `chat-sync` and `chat-tools` on the branch test environment.
 - BR-14c leaves the model-version pivot to BR-14g and chat-service modularization above the runtime to BR-14b.
 

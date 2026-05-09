@@ -1,6 +1,6 @@
 # SPEC EVOL - LLM Mesh
 
-Status: In progress for BR-14c; runtime cutover scope reopened on 2026-05-07 and npm publication scope added on 2026-05-08.
+Status: In progress for BR-14c; runtime cutover scope reopened on 2026-05-07, npm publication scope added on 2026-05-08, package/runtime cutover implemented on branch.
 
 Owner branch: `feat/llm-mesh-sdk`.
 
@@ -14,7 +14,7 @@ This spec owns the durable classification of reusable LLM runtime functions, cur
 
 ## BR-14c Implementation Snapshot
 
-BR-14c currently establishes `packages/llm-mesh` as a contract-first TypeScript package with:
+BR-14c establishes `packages/llm-mesh` as a contract-first TypeScript package with:
 
 - Public provider and model identifiers for OpenAI, Google Gemini, Anthropic Claude, Mistral, and Cohere.
 - Model-profile-first capabilities using explicit `supported`, `unsupported`, `partial`, and `unknown` states.
@@ -23,23 +23,33 @@ BR-14c currently establishes `packages/llm-mesh` as a contract-first TypeScript 
 - Codex account auth represented as an account transport, with Gemini Code Assist and Claude Code left as planned extension hooks.
 - Deterministic provider adapter scaffolds with injected clients.
 - A minimal `createLlmMesh` facade with registry, auth resolver, hooks, `generate()`, and `stream()`.
-- A thin API proof path in `api/src/services/llm-runtime/mesh-contract-proof.ts`.
+- A real API workspace import of `@entropic/llm-mesh` through `api/src/services/llm-runtime/mesh-dispatch.ts`.
+- Application runtime dispatch for `callLLM` and `callLLMStream` routed through the mesh facade.
+- Replaced app-local runtime dispatch selectors removed; provider SDK clients remain server-only implementation details behind the mesh adapter boundary.
+- Package metadata, README, dist build, pack validation, and CI/CD npm publication wiring for `@entropic/llm-mesh@0.1.0`.
+- Make-backed dev/test startup preparation for mounted workspace `node_modules` and package `dist/` artifacts, so branch UAT/dev stacks consume the real package import instead of a relative source path.
 
-Current gap before BR-14c can proceed to PR:
+Validated branch state after rebase on the post-PR #139 `main` baseline:
 
-- `api/src/services/llm-runtime/mesh-contract-proof.ts` imports the package source by relative path instead of importing `@entropic/llm-mesh`.
-- `api/src/services/llm-runtime/index.ts` still owns live runtime dispatch.
-- App-local runtime/provider functions replaced by the mesh have not yet been deleted.
-- CI/CD does not yet build, pack, or publish `@entropic/llm-mesh`.
+- `make typecheck-llm-mesh API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
+- `make test-llm-mesh API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
+- `make pack-llm-mesh API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
+- `make typecheck-api API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
+- `make lint-api API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
+- `make up-api-test API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
+- `make test-api-unit API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk` — 59 files passed, 472 passed, 8 skipped.
 
-BR-14c must now:
+Remaining before PR completion:
 
-- Import `@entropic/llm-mesh` as a real workspace package from the API.
-- Migrate `api/src/services/llm-runtime/**` to the mesh-backed runtime.
-- Delete replaced app-local provider/runtime implementations in the same branch.
-- Finalize package metadata, README, dist build, pack validation, and npm publication through CI/CD.
-- Preserve provider credential precedence, quota logic, retry behavior, streaming order, tool-call continuation, reasoning controls, trace/audit metadata, and live AI behavior.
-- Keep chat-service orchestration above the model runtime; BR-14c may update call sites but must not modularize the full chat-service reasoning/tool loop.
+- Run credential-gated live AI split tests when branch credentials are available.
+- Push the branch and verify CI package validation is triggered by `packages/llm-mesh/**`.
+- Validate root UAT chat streaming against the mesh-backed runtime before merge.
+- After merge, confirm the `main` npm publication job either publishes `@entropic/llm-mesh@0.1.0` or explicitly skips because that exact version already exists.
+
+BR-14c must keep:
+
+- Provider credential precedence, quota logic, retry behavior, streaming order, tool-call continuation, reasoning controls, trace/audit metadata, and live AI behavior.
+- Chat-service orchestration above the model runtime; BR-14c may update call sites but must not modularize the full chat-service reasoning/tool loop.
 
 BR-14c intentionally does not:
 

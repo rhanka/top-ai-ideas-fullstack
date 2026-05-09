@@ -265,32 +265,32 @@ Create the first published Entropic package, `@entropic/llm-mesh`, as a provider
     - [ ] Post-merge CD confirms the npm publish job ran or explicitly skipped because the exact version already exists.
 
 - [ ] **Lot 7 — Docs consolidation**
-  - [ ] Update `spec/SPEC_EVOL_ENTROPIC_BR14_ORCHESTRATION.md` with the strict BR-14c runtime cutover decision.
-  - [ ] Update `spec/SPEC_EVOL_ENTROPIC_BR14_ORCHESTRATION.md` and `spec/SPEC_EVOL_LLM_MESH.md` with the npm publication contract.
+  - [x] Update `spec/SPEC_EVOL_ENTROPIC_BR14_ORCHESTRATION.md` with the strict BR-14c runtime cutover decision.
+  - [x] Update `spec/SPEC_EVOL_ENTROPIC_BR14_ORCHESTRATION.md` and `spec/SPEC_EVOL_LLM_MESH.md` with the npm publication contract.
   - [ ] Consolidate `spec/SPEC_EVOL_LLM_MESH.md` into permanent specs after runtime cutover.
-  - [ ] Re-scope BR-14b in `PLAN.md` / orchestration specs to chat-service modularization above the LLM runtime.
+    - [x] `spec/SPEC_EVOL_MODEL_PROVIDERS_RUNTIME.md` records the BR-14c successor rule: app runtime model access must stay behind `@entropic/llm-mesh`.
+  - [x] Re-scope BR-14b in `PLAN.md` / orchestration specs to chat-service modularization above the LLM runtime.
   - [ ] Delete temporary branch-only spec files after consolidation if applicable.
-  - [ ] Update `BRANCH.md` checklist and feedback loop before final validation.
+  - [x] Update `BRANCH.md` checklist and feedback loop before final validation.
 
 - [ ] **Lot 8 — Final validation**
   - [ ] Package gates:
-    - [x] Pre-cutover: `make typecheck-llm-mesh API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
-    - [x] Pre-cutover: `make test-llm-mesh API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk` — 9 tests passed.
-    - [ ] Post-cutover rerun required.
+    - [x] Post-cutover: `make typecheck-llm-mesh API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
+    - [x] Post-cutover: `make test-llm-mesh API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk` — 9 tests passed.
+    - [x] Post-cutover: `make build-llm-mesh API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
+    - [x] Post-cutover: `make pack-llm-mesh API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
   - [ ] Typecheck & lint:
-    - [x] Pre-cutover: `make typecheck-api API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
-    - [x] Pre-cutover: `make lint-api API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk` — 184 warnings, 0 errors.
-    - [ ] Post-cutover rerun required.
+    - [x] Post-cutover: `make typecheck-api API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
+    - [x] Post-cutover: `make lint-api API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk` — 184 warnings, 0 errors.
   - [ ] Retest API:
-    - [x] Pre-cutover: `make test-api-unit API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk` — 472 passed, 8 skipped.
+    - [x] Post-cutover: `make test-api-unit API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk` — 59 files passed, 472 passed, 8 skipped.
     - [x] Pre-cutover: `make test-api-endpoints API_TEST_WORKERS=1 API_PORT=8717 UI_PORT=5117 MAILDEV_UI_PORT=1017 ENV=test-feat-llm-mesh-sdk-serial` — 438 passed. This mirrors CI endpoint serialization; local default workers exposed pre-existing cross-file state coupling outside BR-14c scope.
     - [ ] Post-cutover rerun required.
   - [ ] Build gate:
-    - [x] Pre-cutover: `make build-api API_PORT=8717 UI_PORT=5117 MAILDEV_UI_PORT=1017 ENV=test-feat-llm-mesh-sdk-serial`
-    - [ ] Post-cutover rerun required.
+    - [x] Post-cutover: `make build-api API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
   - [ ] Package publish gate:
-    - [ ] `make build-llm-mesh API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
-    - [ ] `make pack-llm-mesh API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
+    - [x] `make build-llm-mesh API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
+    - [x] `make pack-llm-mesh API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
     - [ ] Branch CI package validation job passed.
   - [ ] Retest live AI flaky tests only under acceptance rule and document pass/fail signatures after runtime cutover.
   - [ ] Root UAT: chat streaming and AI settings must exercise the mesh-backed runtime, not only prove app startup.
