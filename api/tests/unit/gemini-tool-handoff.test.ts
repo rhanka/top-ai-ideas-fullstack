@@ -42,6 +42,35 @@ describe('buildGeminiRequestBody', () => {
     });
   });
 
+  it('omits leaked Gemini internal thought markers from assistant history', () => {
+    const body = buildGeminiRequestBody({
+      model: 'gemini-3.1-pro-preview-customtools',
+      messages: [
+        {
+          role: 'assistant',
+          content:
+            '...94>thought CRITICAL INSTRUCTION 1: internal. CRITICAL INSTRUCTION 2: internal.OK',
+        },
+        { role: 'user', content: 'Continue' },
+      ],
+    }) as { contents: Array<Record<string, unknown>> };
+
+    expect(body.contents).toEqual([
+      {
+        role: 'model',
+        parts: [
+          {
+            text: '[Previous assistant response omitted: provider-internal reasoning marker was removed.]',
+          },
+        ],
+      },
+      {
+        role: 'user',
+        parts: [{ text: 'Continue' }],
+      },
+    ]);
+  });
+
   it('keeps textual fallback even when tool metadata is present', () => {
     const body = buildGeminiRequestBody({
       messages: [

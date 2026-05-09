@@ -193,6 +193,17 @@ const stringifyContent = (value: unknown): string => {
   }
 };
 
+const hasGeminiInternalThoughtLeak = (value: string): boolean =>
+  />thought\b/i.test(value) && /CRITICAL INSTRUCTION\s+\d+\s*:/i.test(value);
+
+const sanitizeGeminiMessageContent = (role: string, content: string): string => {
+  if (role !== 'assistant' || !hasGeminiInternalThoughtLeak(content)) {
+    return content;
+  }
+
+  return '[Previous assistant response omitted: provider-internal reasoning marker was removed.]';
+};
+
 const isFunctionTool = (
   tool: OpenAI.Chat.Completions.ChatCompletionTool
 ): tool is OpenAI.Chat.Completions.ChatCompletionFunctionTool => {
@@ -310,8 +321,9 @@ export const buildGeminiRequestBody = (
 
   for (const message of options.messages) {
     const role = message.role;
-    const content = stringifyContent(
-      (message as unknown as { content?: unknown }).content
+    const content = sanitizeGeminiMessageContent(
+      role,
+      stringifyContent((message as unknown as { content?: unknown }).content)
     );
 
     if (role === 'system' || role === 'developer') {
