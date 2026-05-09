@@ -310,8 +310,10 @@ Create the first published Entropic package, `@entropic/llm-mesh`, as a provider
     - [x] `chat-sync` live split passed 4/4 in fresh env `test-feat-llm-mesh-ai`.
     - [x] `chat-tools` live split passed 6/6 in fresh env `test-feat-llm-mesh-ai`.
   - [ ] Root UAT: chat streaming and AI settings must exercise the mesh-backed runtime, not only prove app startup.
-  - [ ] Record explicit user sign-off if any AI flaky test is accepted.
-  - [ ] Final gate step 1: create/update PR using `BRANCH.md` text as PR body.
+  - [x] Record explicit user sign-off if any AI flaky test is accepted.
+    - [x] No flaky acceptance used: live AI split tests passed in a fresh env.
+  - [x] Final gate step 1: create/update PR using `BRANCH.md` text as PR body.
+    - [x] PR #141 opened: `https://github.com/rhanka/entropic/pull/141`.
   - [ ] Final gate step 2: run/verify branch CI on that PR and resolve remaining blockers.
   - [ ] Final gate step 3: once UAT + CI are both `OK`, commit removal of `BRANCH.md`, push, and merge.
 
