@@ -559,11 +559,31 @@ typecheck-api: ## Run API type checks
 
 .PHONY: typecheck-llm-mesh
 typecheck-llm-mesh: ## Run @entropic/llm-mesh type checks
-	@docker run --rm -v "$(PWD):/workspace" -w /workspace/packages/llm-mesh $(LLM_MESH_NODE_IMAGE) sh -lc 'npm_config_cache=/tmp/npm-cache npx --yes -p typescript@5.4.5 -p @types/node tsc --noEmit -p tsconfig.json'
+	@docker run --rm -v "$(CURDIR):/workspace" -w /workspace/packages/llm-mesh $(LLM_MESH_NODE_IMAGE) sh -lc 'set -eu; tool_dir="$$(mktemp -d)"; npm_config_cache=/tmp/npm-cache npm install --prefix "$$tool_dir" --no-save --no-audit --no-fund typescript@5.4.5 @types/node >/dev/null; "$$tool_dir/node_modules/.bin/tsc" --noEmit -p tsconfig.json'
 
 .PHONY: build-llm-mesh
 build-llm-mesh: ## Build @entropic/llm-mesh dist package
-	@docker run --rm -u "$$(id -u):$$(id -g)" -v "$(PWD):/workspace" -w /workspace/packages/llm-mesh $(LLM_MESH_NODE_IMAGE) sh -lc 'npm_config_cache=/tmp/npm-cache npx --yes -p typescript@5.4.5 -p @types/node tsc -p tsconfig.json'
+	@docker run --rm -u "$$(id -u):$$(id -g)" -v "$(CURDIR):/workspace" -w /workspace/packages/llm-mesh $(LLM_MESH_NODE_IMAGE) sh -lc 'set -eu; tool_dir="$$(mktemp -d)"; npm_config_cache=/tmp/npm-cache npm install --prefix "$$tool_dir" --no-save --no-audit --no-fund typescript@5.4.5 @types/node >/dev/null; "$$tool_dir/node_modules/.bin/tsc" -p tsconfig.json'
+
+.PHONY: pack-llm-mesh
+pack-llm-mesh: build-llm-mesh ## Validate @entropic/llm-mesh npm package contents without publishing
+	@docker run --rm -u "$$(id -u):$$(id -g)" -v "$(CURDIR):/workspace" -w /workspace/packages/llm-mesh $(LLM_MESH_NODE_IMAGE) sh -lc 'npm pack --dry-run'
+
+.PHONY: publish-llm-mesh
+publish-llm-mesh: build-llm-mesh ## Publish @entropic/llm-mesh from CI-provided npm credentials
+	@docker run --rm \
+		-u "$$(id -u):$$(id -g)" \
+		-e NODE_AUTH_TOKEN \
+		-e NPM_CONFIG_PROVENANCE=true \
+		-e GITHUB_ACTIONS \
+		-e GITHUB_REPOSITORY \
+		-e GITHUB_REF \
+		-e GITHUB_SHA \
+		-e ACTIONS_ID_TOKEN_REQUEST_URL \
+		-e ACTIONS_ID_TOKEN_REQUEST_TOKEN \
+		-v "$(CURDIR):/workspace" \
+		-w /workspace/packages/llm-mesh \
+		$(LLM_MESH_NODE_IMAGE) sh -lc 'set -eu; test -n "$${NODE_AUTH_TOKEN:-}" || { echo "NODE_AUTH_TOKEN is required"; exit 2; }; version="$$(node -p "require(\"./package.json\").version")"; if npm view @entropic/llm-mesh@"$$version" version >/dev/null 2>&1; then echo "@entropic/llm-mesh@$$version already exists; skipping publish"; else npm publish --access public --provenance; fi'
 
 .PHONY: lint
 lint: lint-ui lint-api ## Run all linters
@@ -598,7 +618,7 @@ test: test-api test-ui test-e2e ## Run all tests
 
 .PHONY: test-llm-mesh
 test-llm-mesh: ## Run @entropic/llm-mesh tests
-	@docker run --rm -v "$(PWD):/workspace" -w /workspace/packages/llm-mesh $(LLM_MESH_NODE_IMAGE) sh -lc 'npm_config_cache=/tmp/npm-cache npx --yes -p vitest@4.0.18 -p typescript@5.4.5 -p @types/node vitest run tests --environment node'
+	@docker run --rm -v "$(CURDIR):/workspace" -w /workspace/packages/llm-mesh $(LLM_MESH_NODE_IMAGE) sh -lc 'set -eu; tool_dir="$$(mktemp -d)"; npm_config_cache=/tmp/npm-cache npm install --prefix "$$tool_dir" --no-save --no-audit --no-fund vitest@4.0.18 typescript@5.4.5 @types/node >/dev/null; NODE_PATH="$$tool_dir/node_modules" "$$tool_dir/node_modules/.bin/vitest" run tests --environment node'
 
 .PHONY: test-ui
 test-ui: up-ui ## Run UI tests (usage: make test-ui, SCOPE=tests/stores/session.test.ts make test-ui)

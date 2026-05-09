@@ -1,8 +1,14 @@
 {
   "name": "@entropic/llm-mesh",
-  "version": "0.0.0",
-  "description": "Provider-agnostic LLM access contracts for Entropic.",
+  "version": "0.1.0",
+  "description": "Provider-agnostic LLM access runtime SDK for Entropic.",
   "type": "module",
+  "license": "SEE LICENSE IN LICENSE",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rhanka/entropic.git",
+    "directory": "packages/llm-mesh"
+  },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -13,8 +19,12 @@
   },
   "files": [
     "dist",
-    "README.md"
+    "README.md",
+    "LICENSE"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "sideEffects": false,
   "scripts": {
     "build": "tsc -p tsconfig.json",

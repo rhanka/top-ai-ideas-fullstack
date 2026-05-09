@@ -88,7 +88,7 @@ Create the first published Entropic package, `@entropic/llm-mesh`, as a provider
 - [x] `decision` BR14c-R2 — User clarification on 2026-05-07: BR-14c must not stop at a proof-only package. It must import `@entropic/llm-mesh` as the real workspace package and migrate the application LLM runtime in strict cutover mode. Any app-local provider/runtime function replaced by the package must be deleted in the same branch. BR-14b is re-scoped to chat-service modularization above the LLM runtime.
 - [x] `decision` BR14c-R3 — User clarification on 2026-05-08: BR-14c must include npm publication logic and CI/CD adaptation for `@entropic/llm-mesh`. End state: after merge, the first `@entropic` library is publishable and published through CI/CD, not only present as an internal workspace package.
 - [ ] `blocked` BR14c-B1 — Runtime cutover is still incomplete. Resolved so far: the API declares `@entropic/llm-mesh` as a workspace dependency and the proof path imports `@entropic/llm-mesh` directly. Remaining before PR: migrate live `api/src/services/llm-runtime/**` dispatch to the package and remove the replaced app-local implementation.
-- [ ] `blocked` BR14c-B2 — Package publication is not wired yet: `packages/llm-mesh/package.json` has a placeholder version and no CI publish lane exists. Resolution required before PR: define package versioning, make-backed build/pack/publish targets, CI package validation, npm token/provenance expectations, and publish-on-main behavior for `@entropic/llm-mesh`.
+- [x] `resolved` BR14c-B2 — Package publication lane is wired: `@entropic/llm-mesh` starts at `0.1.0`, package metadata includes repository/license/files/publish config, make-backed `build-llm-mesh`, `pack-llm-mesh`, and `publish-llm-mesh` targets exist, and `.github/workflows/ci.yml` adds PR validation plus `main`-only npm publication with `NPM_TOKEN` and provenance support.
 - [ ] `blocked` BR14c-B3 — `make typecheck-api` is currently blocked before TypeScript by Docker `npm audit --omit=dev --workspaces --include-workspace-root`: high advisory on `fast-xml-builder <=1.1.6` through `xml-js`, plus moderate `hono` and `uuid` advisories. Branch impact: API image build cannot complete until the security lane is fixed or the baseline dependency is updated.
 
 ## AI Flaky tests
@@ -243,18 +243,18 @@ Create the first published Entropic package, `@entropic/llm-mesh`, as a provider
     - [ ] Record provider-specific pass/fail/flaky signatures in this file after the mesh runtime cutover.
 
 - [ ] **Lot 6 — npm publication lane**
-  - [ ] Finalize `packages/llm-mesh/package.json` for first npm publication: stable name `@entropic/llm-mesh`, version policy, `main`, `types`, `exports`, `files`, license metadata, side-effects flag, and package README content.
-  - [ ] Add make-backed package build and pack checks, without host npm usage.
-  - [ ] Add make-backed npm publish target using CI-provided npm credentials only; no local secret files and no manual host publish.
-  - [ ] Adapt CI path filters so `packages/llm-mesh/**`, root workspace metadata, and package publish workflow changes trigger the right gates.
-  - [ ] Add PR CI package validation: typecheck, tests, build, and pack/dry-run for `@entropic/llm-mesh`.
-  - [ ] Add `main`-only CI publication after branch CI gates pass, using the configured npm token and provenance when supported by the CI environment.
-  - [ ] Keep BR-07/BR-12 ownership unchanged for UI/plugin publishing; BR-14c owns only `@entropic/llm-mesh`.
+  - [x] Finalize `packages/llm-mesh/package.json` for first npm publication: stable name `@entropic/llm-mesh`, version policy, `main`, `types`, `exports`, `files`, license metadata, side-effects flag, and package README content.
+  - [x] Add make-backed package build and pack checks, without host npm usage.
+  - [x] Add make-backed npm publish target using CI-provided npm credentials only; no local secret files and no manual host publish.
+  - [x] Adapt CI path filters so `packages/llm-mesh/**`, root workspace metadata, and package publish workflow changes trigger the right gates.
+  - [x] Add PR CI package validation: typecheck, tests, build, and pack/dry-run for `@entropic/llm-mesh`.
+  - [x] Add `main`-only CI publication after branch CI gates pass, using the configured npm token and provenance when supported by the CI environment.
+  - [x] Keep BR-07/BR-12 ownership unchanged for UI/plugin publishing; BR-14c owns only `@entropic/llm-mesh`.
   - [ ] Lot gate:
-    - [ ] `make typecheck-llm-mesh API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
-    - [ ] `make test-llm-mesh API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
+    - [x] `make typecheck-llm-mesh API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
+    - [x] `make test-llm-mesh API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
     - [x] `make build-llm-mesh API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
-    - [ ] `make pack-llm-mesh API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
+    - [x] `make pack-llm-mesh API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
     - [ ] Branch CI shows the package validation job is triggered by `packages/llm-mesh/**` changes.
     - [ ] Post-merge CD confirms the npm publish job ran or explicitly skipped because the exact version already exists.
 
