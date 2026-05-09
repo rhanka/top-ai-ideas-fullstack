@@ -247,6 +247,7 @@ Create the first published Entropic package, `@entropic/llm-mesh`, as a provider
   - [x] Add make-backed package build and pack checks, without host npm usage.
   - [x] Add make-backed npm publish target using CI-provided npm credentials only; no local secret files and no manual host publish.
   - [x] Adapt CI path filters so `packages/llm-mesh/**`, root workspace metadata, and package publish workflow changes trigger the right gates.
+  - [x] Include `packages/llm-mesh/**`, root `package.json`, and root `package-lock.json` inputs in `API_VERSION` so API image tags change when the runtime package changes.
   - [x] Add PR CI package validation: typecheck, tests, build, and pack/dry-run for `@entropic/llm-mesh`.
   - [x] Add `main`-only CI publication after branch CI gates pass, using the configured npm token and provenance when supported by the CI environment.
   - [x] Keep BR-07/BR-12 ownership unchanged for UI/plugin publishing; BR-14c owns only `@entropic/llm-mesh`.
