@@ -266,13 +266,16 @@ Create the first published Entropic package, `@entropic/llm-mesh`, as a provider
     - [ ] Branch CI shows the package validation job is triggered by `packages/llm-mesh/**` changes.
     - [ ] Post-merge CD confirms the npm publish job ran or explicitly skipped because the exact version already exists.
 
-- [ ] **Lot 7 — Docs consolidation**
+- [x] **Lot 7 — Docs consolidation**
   - [x] Update `spec/SPEC_EVOL_ENTROPIC_BR14_ORCHESTRATION.md` with the strict BR-14c runtime cutover decision.
   - [x] Update `spec/SPEC_EVOL_ENTROPIC_BR14_ORCHESTRATION.md` and `spec/SPEC_EVOL_LLM_MESH.md` with the npm publication contract.
-  - [ ] Consolidate `spec/SPEC_EVOL_LLM_MESH.md` into permanent specs after runtime cutover.
+  - [x] Consolidate `spec/SPEC_EVOL_LLM_MESH.md` into permanent specs after runtime cutover.
+    - [x] `spec/SPEC.md` records the durable `@entropic/llm-mesh` model-access runtime boundary.
+    - [x] `spec/SPEC_CHATBOT.md` records the chat/model runtime contract and keeps chat orchestration above the mesh boundary.
     - [x] `spec/SPEC_EVOL_MODEL_PROVIDERS_RUNTIME.md` records the BR-14c successor rule: app runtime model access must stay behind `@entropic/llm-mesh`.
   - [x] Re-scope BR-14b in `PLAN.md` / orchestration specs to chat-service modularization above the LLM runtime.
-  - [ ] Delete temporary branch-only spec files after consolidation if applicable.
+  - [x] Delete temporary branch-only spec files after consolidation if applicable.
+    - [x] No deletion applicable: `spec/SPEC_EVOL_LLM_MESH.md` remains the BR-14 transition reference for BR-14g/BR-14b follow-up scope.
   - [x] Update `BRANCH.md` checklist and feedback loop before final validation.
 
 - [ ] **Lot 8 — Final validation**
