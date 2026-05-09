@@ -55,6 +55,7 @@ Create the first published Entropic package, `@entropic/llm-mesh`, as a provider
   - `plan/14e-BRANCH_*.md`
 - **Conditional Paths (allowed only with explicit exception when not already listed in Allowed Paths)**:
   - `.dockerignore`
+  - `api/Dockerfile`
   - `Makefile`
   - `api/package.json`
   - `api/package-lock.json`
@@ -82,11 +83,13 @@ Create the first published Entropic package, `@entropic/llm-mesh`, as a provider
 - [x] `attention` BR14c-EX4 — Conditional `.dockerignore` changes are allowed to keep BR-14c root workspace Docker builds from sending local assistant, Playwright, dependency, data, and image artifacts in the build context. Reason: BR-14f moved API/UI builds to the repository root context, and BR-14c root UAT exposed multi-GB local context transfer from untracked state. Impact: Docker build context hygiene only, no runtime behavior. Rollback: delete `.dockerignore`.
 - [x] `attention` BR14c-EX5 — Conditional `plan/14b-BRANCH_refacto-chat-service-core.md` and `plan/14c-BRANCH_feat-llm-mesh-sdk.md` changes are allowed only to align downstream branch planning with the strict BR-14c runtime cutover decision. Reason: BR-14c now owns model-runtime migration, so BR-14b must be re-scoped before implementation continues. Impact: planning only, no runtime behavior. Rollback: restore the previous branch pointer files and BR-14b runtime wording from `main`.
 - [x] `attention` BR14c-EX6 — Conditional `.github/workflows/ci.yml` changes are allowed only to add package validation and npm publication for `@entropic/llm-mesh`. Reason: BR-14c must end with the first published `@entropic` npm library, so CI/CD publication cannot be deferred to BR-07/BR-12. Impact: workflow changes limited to package path detection, package build/pack checks, and npm publish on `main` after CI gates. Rollback: remove the llm-mesh package jobs and path filters from the workflow.
+- [x] `attention` BR14c-EX7 — Conditional `api/Dockerfile` changes are allowed only to make the API image install and build the `@entropic/llm-mesh` workspace package. Reason: after the API imports the package by name, Docker builds must copy the package manifest before `npm ci` and build the package before the API bundle. Impact: Docker build wiring only, no runtime behavior. Rollback: remove the llm-mesh package manifest copy and package build step.
 - [x] `clarification` BR14c-R1 — Strategic review accepted on 2026-04-22. BR-14c must add package-specific make gates, a minimal `createLlmMesh` facade, model-profile-first capabilities with `supported/unsupported/partial/unknown`, server-only secret material separated from redacted auth descriptors, and a richer tool/result lifecycle compatible with MCP-style content and streamed tool arguments.
 - [x] `decision` BR14c-R2 — User clarification on 2026-05-07: BR-14c must not stop at a proof-only package. It must import `@entropic/llm-mesh` as the real workspace package and migrate the application LLM runtime in strict cutover mode. Any app-local provider/runtime function replaced by the package must be deleted in the same branch. BR-14b is re-scoped to chat-service modularization above the LLM runtime.
 - [x] `decision` BR14c-R3 — User clarification on 2026-05-08: BR-14c must include npm publication logic and CI/CD adaptation for `@entropic/llm-mesh`. End state: after merge, the first `@entropic` library is publishable and published through CI/CD, not only present as an internal workspace package.
-- [ ] `blocked` BR14c-B1 — Current proof path is insufficient: `api/src/services/llm-runtime/mesh-contract-proof.ts` imports `../../../../packages/llm-mesh/src/index.js` instead of `@entropic/llm-mesh`, and the live runtime still uses the app-local `llm-runtime` dispatch. Resolution required before PR: declare package dependency/resolution, import `@entropic/llm-mesh`, migrate runtime dispatch, and remove the replaced app-local implementation.
+- [ ] `blocked` BR14c-B1 — Runtime cutover is still incomplete. Resolved so far: the API declares `@entropic/llm-mesh` as a workspace dependency and the proof path imports `@entropic/llm-mesh` directly. Remaining before PR: migrate live `api/src/services/llm-runtime/**` dispatch to the package and remove the replaced app-local implementation.
 - [ ] `blocked` BR14c-B2 — Package publication is not wired yet: `packages/llm-mesh/package.json` has a placeholder version and no CI publish lane exists. Resolution required before PR: define package versioning, make-backed build/pack/publish targets, CI package validation, npm token/provenance expectations, and publish-on-main behavior for `@entropic/llm-mesh`.
+- [ ] `blocked` BR14c-B3 — `make typecheck-api` is currently blocked before TypeScript by Docker `npm audit --omit=dev --workspaces --include-workspace-root`: high advisory on `fast-xml-builder <=1.1.6` through `xml-js`, plus moderate `hono` and `uuid` advisories. Branch impact: API image build cannot complete until the security lane is fixed or the baseline dependency is updated.
 
 ## AI Flaky tests
 - Acceptance rule:
@@ -200,8 +203,8 @@ Create the first published Entropic package, `@entropic/llm-mesh`, as a provider
   - [x] Add minimal SDK facade: `createLlmMesh({ registry, authResolver, hooks })`, `mesh.generate()`, and `mesh.stream()`.
   - [x] Support `provider:model` aliases and explicit `{ providerId, modelId }` selection.
   - [x] Validate requested features against model profile capabilities before adapter execution.
-  - [ ] Declare `@entropic/llm-mesh` as a real workspace package dependency for the API and update lockfiles consistently.
-  - [ ] Replace the relative proof import with `@entropic/llm-mesh`.
+  - [x] Declare `@entropic/llm-mesh` as a real workspace package dependency for the API and update lockfiles consistently.
+  - [x] Replace the relative proof import with `@entropic/llm-mesh`.
   - [ ] Migrate `api/src/services/llm-runtime/**` dispatch to `@entropic/llm-mesh`.
   - [ ] Delete app-local provider/runtime code that is replaced by the package. No double run, no feature flag, no fallback alias.
   - [ ] Preserve provider credential precedence, quota checks, retry behavior, streaming event order, tool-call continuation, reasoning controls, trace/audit metadata, and live AI command behavior.
@@ -209,8 +212,8 @@ Create the first published Entropic package, `@entropic/llm-mesh`, as a provider
   - [x] Avoid defining any chat SDK provider abstraction in this branch.
   - [ ] Keep all existing API behavior stable after cutover.
   - [ ] Lot gate:
-    - [ ] `make typecheck-llm-mesh API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
-    - [ ] `make test-llm-mesh API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
+    - [x] `make typecheck-llm-mesh API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
+    - [x] `make test-llm-mesh API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
     - [ ] `make typecheck-api API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
     - [ ] `make lint-api API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
     - [ ] **Package/API tests**
@@ -250,7 +253,7 @@ Create the first published Entropic package, `@entropic/llm-mesh`, as a provider
   - [ ] Lot gate:
     - [ ] `make typecheck-llm-mesh API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
     - [ ] `make test-llm-mesh API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
-    - [ ] `make build-llm-mesh API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
+    - [x] `make build-llm-mesh API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
     - [ ] `make pack-llm-mesh API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
     - [ ] Branch CI shows the package validation job is triggered by `packages/llm-mesh/**` changes.
     - [ ] Post-merge CD confirms the npm publish job ran or explicitly skipped because the exact version already exists.

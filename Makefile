@@ -561,6 +561,10 @@ typecheck-api: ## Run API type checks
 typecheck-llm-mesh: ## Run @entropic/llm-mesh type checks
 	@docker run --rm -v "$(PWD):/workspace" -w /workspace/packages/llm-mesh $(LLM_MESH_NODE_IMAGE) sh -lc 'npm_config_cache=/tmp/npm-cache npx --yes -p typescript@5.4.5 -p @types/node tsc --noEmit -p tsconfig.json'
 
+.PHONY: build-llm-mesh
+build-llm-mesh: ## Build @entropic/llm-mesh dist package
+	@docker run --rm -u "$$(id -u):$$(id -g)" -v "$(PWD):/workspace" -w /workspace/packages/llm-mesh $(LLM_MESH_NODE_IMAGE) sh -lc 'npm_config_cache=/tmp/npm-cache npx --yes -p typescript@5.4.5 -p @types/node tsc -p tsconfig.json'
+
 .PHONY: lint
 lint: lint-ui lint-api ## Run all linters
 

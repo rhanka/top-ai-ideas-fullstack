@@ -4,7 +4,7 @@ import {
   createProviderRegistry,
   type LlmMesh,
   type ProviderId,
-} from '../../../../packages/llm-mesh/src/index.js';
+} from '@entropic/llm-mesh';
 
 export type ApiMeshContractProof = {
   providers: readonly ProviderId[];
