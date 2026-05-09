@@ -62,6 +62,7 @@ Create the first published Entropic package, `@entropic/llm-mesh`, as a provider
   - `api/package-lock.json`
   - `api/tsconfig.json`
   - `api/vitest.config.ts`
+  - `api/tests/api/docx.test.ts`
   - `api/drizzle/*.sql`
   - `ui/**`
   - `e2e/**`
@@ -92,6 +93,7 @@ Create the first published Entropic package, `@entropic/llm-mesh`, as a provider
 - [x] `resolved` BR14c-R4 — Runtime dispatch cutover is implemented in `api/src/services/llm-runtime/**`: `callLLM` and `callLLMStream` now dispatch generation/stream requests through `@entropic/llm-mesh` with server-side provider clients injected behind the mesh adapter boundary. The removed app-local dispatch helpers are the `get*Provider()` direct runtime selectors in `llm-runtime/index.ts`; provider SDK clients remain server-only implementation details behind the mesh.
 - [x] `resolved` BR14c-B2 — Package publication lane is wired: `@entropic/llm-mesh` starts at `0.1.0`, package metadata includes repository/license/files/publish config, make-backed `build-llm-mesh`, `pack-llm-mesh`, and `publish-llm-mesh` targets exist, and `.github/workflows/ci.yml` adds PR validation plus `main`-only npm publication with `NPM_TOKEN` and provenance support.
 - [x] `resolved` BR14c-B3 — Rebase on `origin/main` after PR #139 resolved the blocking `fast-xml-builder` high advisory. `make typecheck-api` now completes through Docker `npm audit --omit=dev --workspaces --include-workspace-root` with the high threshold satisfied; remaining `hono` and `uuid` advisories are moderate and do not block the configured gate.
+- [x] `attention` BR14c-EX9 — Conditional `api/tests/api/docx.test.ts` changes are allowed only to stabilize the existing full endpoints gate after BR-14c rebase exposed order-dependent global `job_queue` state. Reason: the DOCX scheduler test un-mocks the global queue processor and must not consume pending chat jobs left by other endpoint files. Impact: test isolation only, no runtime behavior. Rollback: remove the local queue cleanup in the DOCX scheduler test and the exception entry.
 
 ## AI Flaky tests
 - Acceptance rule:
@@ -285,7 +287,12 @@ Create the first published Entropic package, `@entropic/llm-mesh`, as a provider
   - [ ] Retest API:
     - [x] Post-cutover: `make test-api-unit API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk` — 59 files passed, 472 passed, 8 skipped.
     - [x] Pre-cutover: `make test-api-endpoints API_TEST_WORKERS=1 API_PORT=8717 UI_PORT=5117 MAILDEV_UI_PORT=1017 ENV=test-feat-llm-mesh-sdk-serial` — 438 passed. This mirrors CI endpoint serialization; local default workers exposed pre-existing cross-file state coupling outside BR-14c scope.
-    - [ ] Post-cutover rerun required.
+    - [x] Post-cutover DOCX isolation check: `make test-api-endpoints SCOPE=tests/api/docx.test.ts API_TEST_WORKERS=1 API_PORT=8718 UI_PORT=5118 MAILDEV_UI_PORT=1018 ENV=test-feat-llm-mesh-docx-clean` — 15 passed.
+    - [x] Post-cutover CI-shaped endpoints shard 1/4: `make test-api-endpoints API_TEST_WORKERS=1 API_TEST_ARGS="--shard=1/4" API_PORT=8718 UI_PORT=5118 MAILDEV_UI_PORT=1018 ENV=test-feat-llm-mesh-docx-clean` — 15 files, 154 passed.
+    - [x] Post-cutover CI-shaped endpoints shard 2/4: `make test-api-endpoints API_TEST_WORKERS=1 API_TEST_ARGS="--shard=2/4" API_PORT=8718 UI_PORT=5118 MAILDEV_UI_PORT=1018 ENV=test-feat-llm-mesh-docx-clean` — 15 files, 115 passed.
+    - [x] Post-cutover CI-shaped endpoints shard 3/4: `make test-api-endpoints API_TEST_WORKERS=1 API_TEST_ARGS="--shard=3/4" API_PORT=8718 UI_PORT=5118 MAILDEV_UI_PORT=1018 ENV=test-feat-llm-mesh-docx-clean` — 15 files, 74 passed.
+    - [x] Post-cutover CI-shaped endpoints shard 4/4: `make test-api-endpoints API_TEST_WORKERS=1 API_TEST_ARGS="--shard=4/4" API_PORT=8718 UI_PORT=5118 MAILDEV_UI_PORT=1018 ENV=test-feat-llm-mesh-docx-clean` — 14 files, 95 passed.
+    - [x] Scoped guard after unsharded local run exposed another order-sensitive endpoint file: `make test-api-endpoints SCOPE=tests/api/generic-dispatch.test.ts API_TEST_WORKERS=1 API_PORT=8718 UI_PORT=5118 MAILDEV_UI_PORT=1018 ENV=test-feat-llm-mesh-docx-clean` — 11 passed. The CI gate uses the four sharded commands above.
   - [ ] Build gate:
     - [x] Post-cutover: `make build-api API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
   - [ ] Package publish gate:
