@@ -801,6 +801,44 @@ describe('LLM stream event normalization', () => {
     expect(doneEvents).toHaveLength(1);
   });
 
+  it('should keep Gemini thought parts out of assistant content', async () => {
+    const { providerRegistry } = await import('../../src/services/provider-registry');
+    const provider = providerRegistry.requireProvider('gemini');
+    vi.spyOn(provider, 'streamGenerate').mockResolvedValue(
+      (async function* () {
+        yield {
+          candidates: [{
+            content: {
+              parts: [
+                { text: 'hidden planning', thought: true },
+                { text: 'Visible answer' },
+              ],
+            },
+            finishReason: 'STOP',
+          }],
+        };
+      })(),
+    );
+
+    const { callLLMStream } = await import('../../src/services/llm-runtime');
+
+    const events = await collectStreamEvents(
+      callLLMStream({
+        messages: [{ role: 'user', content: 'Answer' }],
+        providerId: 'gemini',
+        model: 'gemini-3.1-pro-preview-customtools',
+      }),
+    );
+
+    const contentDeltas = events.filter((e) => e.type === 'content_delta');
+    expect(contentDeltas).toHaveLength(1);
+    expect((contentDeltas[0].data as { delta: string }).delta).toBe('Visible answer');
+
+    const reasoningDeltas = events.filter((e) => e.type === 'reasoning_delta');
+    expect(reasoningDeltas).toHaveLength(1);
+    expect((reasoningDeltas[0].data as { delta: string }).delta).toBe('hidden planning');
+  });
+
   it('should strip mesh reasoning for GPT-4.1 Nano when chat passes reasoning options', async () => {
     const { providerRegistry } = await import('../../src/services/provider-registry');
     const provider = providerRegistry.requireProvider('openai');

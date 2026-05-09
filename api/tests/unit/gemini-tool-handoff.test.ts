@@ -3,6 +3,45 @@ import { describe, expect, it } from 'vitest';
 import { buildGeminiRequestBody } from '../../src/services/llm-runtime';
 
 describe('buildGeminiRequestBody', () => {
+  it('keeps Gemini 3 thoughts out of visible response parts by default', () => {
+    const body = buildGeminiRequestBody({
+      model: 'gemini-3.1-pro-preview-customtools',
+      messages: [{ role: 'user', content: 'Say OK' }],
+    }) as {
+      generationConfig: {
+        thinkingConfig: {
+          thinkingLevel: string;
+          includeThoughts: boolean;
+        };
+      };
+    };
+
+    expect(body.generationConfig.thinkingConfig).toEqual({
+      thinkingLevel: 'low',
+      includeThoughts: false,
+    });
+  });
+
+  it('uses high Gemini 3 thinking without exposing thought summaries', () => {
+    const body = buildGeminiRequestBody({
+      model: 'gemini-3.1-pro-preview-customtools',
+      messages: [{ role: 'user', content: 'Analyze deeply' }],
+      reasoningEffort: 'high',
+    }) as {
+      generationConfig: {
+        thinkingConfig: {
+          thinkingLevel: string;
+          includeThoughts: boolean;
+        };
+      };
+    };
+
+    expect(body.generationConfig.thinkingConfig).toEqual({
+      thinkingLevel: 'high',
+      includeThoughts: false,
+    });
+  });
+
   it('keeps textual fallback even when tool metadata is present', () => {
     const body = buildGeminiRequestBody({
       messages: [

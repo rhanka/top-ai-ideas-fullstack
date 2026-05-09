@@ -168,6 +168,7 @@ export interface StreamEvent {
 }
 
 type GeminiRequestBuildOptions = {
+  model?: string;
   messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[];
   tools?: OpenAI.Chat.Completions.ChatCompletionTool[];
   toolChoice?: 'auto' | 'required' | 'none';
@@ -213,6 +214,36 @@ const toGeminiToolDeclarations = (
       parameters: tool.function?.parameters ?? { type: 'object', properties: {} },
     }))
     .filter((tool) => typeof tool.name === 'string' && tool.name.length > 0);
+};
+
+const buildGeminiThinkingConfig = (
+  model: string | undefined,
+  reasoningEffort: string | undefined,
+): Record<string, unknown> | undefined => {
+  const normalizedModel = (model ?? '').toLowerCase();
+  const normalizedEffort = reasoningEffort && reasoningEffort !== 'none'
+    ? reasoningEffort
+    : undefined;
+
+  if (normalizedModel.startsWith('gemini-3')) {
+    return {
+      thinkingLevel: normalizedEffort === 'high' || normalizedEffort === 'xhigh' ? 'high' : 'low',
+      includeThoughts: false,
+    };
+  }
+
+  if (!normalizedEffort) {
+    return {
+      thinkingBudget: 0,
+      includeThoughts: false,
+    };
+  }
+
+  const budgetMap: Record<string, number> = { low: 2048, medium: 4096, high: 8192, xhigh: 16384 };
+  return {
+    thinkingBudget: budgetMap[normalizedEffort] ?? 8192,
+    includeThoughts: false,
+  };
 };
 
 const GEMINI_UNSUPPORTED_RESPONSE_SCHEMA_KEYS = new Set<string>([
@@ -342,13 +373,9 @@ export const buildGeminiRequestBody = (
       options.structuredOutput.schema
     );
   }
-  // Gemini 3.1 reasoning: enable thinking when reasoning is requested
-  if (options.reasoningEffort && options.reasoningEffort !== 'none') {
-    const budgetMap: Record<string, number> = { low: 2048, medium: 4096, high: 8192, xhigh: 16384 };
-    generationConfig.thinkingConfig = {
-      thinkingBudget: budgetMap[options.reasoningEffort] ?? 8192,
-      includeThoughts: true,
-    };
+  const thinkingConfig = buildGeminiThinkingConfig(options.model, options.reasoningEffort);
+  if (thinkingConfig) {
+    generationConfig.thinkingConfig = thinkingConfig;
   }
 
   const functionDeclarations = toGeminiToolDeclarations(
@@ -770,6 +797,7 @@ export const callLLM = async (options: CallLLMOptions): Promise<OpenAI.Chat.Comp
         requestOptions: {
           model: selection.model,
           body: buildGeminiRequestBody({
+            model: selection.model,
             messages,
             tools: filteredTools,
             toolChoice: normalizedToolChoice,
@@ -1064,6 +1092,7 @@ export async function* callLLMStream(
   if (selection.providerId === 'gemini') {
     const responseId = previousResponseId || `gemini_${createId()}`;
     const requestBody = buildGeminiRequestBody({
+      model: selectedModel,
       messages,
       tools: filteredTools,
       toolChoice: normalizedToolChoice,
