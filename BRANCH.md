@@ -87,9 +87,9 @@ Create the first published Entropic package, `@entropic/llm-mesh`, as a provider
 - [x] `clarification` BR14c-R1 — Strategic review accepted on 2026-04-22. BR-14c must add package-specific make gates, a minimal `createLlmMesh` facade, model-profile-first capabilities with `supported/unsupported/partial/unknown`, server-only secret material separated from redacted auth descriptors, and a richer tool/result lifecycle compatible with MCP-style content and streamed tool arguments.
 - [x] `decision` BR14c-R2 — User clarification on 2026-05-07: BR-14c must not stop at a proof-only package. It must import `@entropic/llm-mesh` as the real workspace package and migrate the application LLM runtime in strict cutover mode. Any app-local provider/runtime function replaced by the package must be deleted in the same branch. BR-14b is re-scoped to chat-service modularization above the LLM runtime.
 - [x] `decision` BR14c-R3 — User clarification on 2026-05-08: BR-14c must include npm publication logic and CI/CD adaptation for `@entropic/llm-mesh`. End state: after merge, the first `@entropic` library is publishable and published through CI/CD, not only present as an internal workspace package.
-- [ ] `blocked` BR14c-B1 — Runtime cutover is still incomplete. Resolved so far: the API declares `@entropic/llm-mesh` as a workspace dependency and the proof path imports `@entropic/llm-mesh` directly. Remaining before PR: migrate live `api/src/services/llm-runtime/**` dispatch to the package and remove the replaced app-local implementation.
+- [x] `resolved` BR14c-R4 — Runtime dispatch cutover is implemented in `api/src/services/llm-runtime/**`: `callLLM` and `callLLMStream` now dispatch generation/stream requests through `@entropic/llm-mesh` with server-side provider clients injected behind the mesh adapter boundary. The removed app-local dispatch helpers are the `get*Provider()` direct runtime selectors in `llm-runtime/index.ts`; provider SDK clients remain server-only implementation details behind the mesh.
 - [x] `resolved` BR14c-B2 — Package publication lane is wired: `@entropic/llm-mesh` starts at `0.1.0`, package metadata includes repository/license/files/publish config, make-backed `build-llm-mesh`, `pack-llm-mesh`, and `publish-llm-mesh` targets exist, and `.github/workflows/ci.yml` adds PR validation plus `main`-only npm publication with `NPM_TOKEN` and provenance support.
-- [ ] `blocked` BR14c-B3 — `make typecheck-api` is currently blocked before TypeScript by Docker `npm audit --omit=dev --workspaces --include-workspace-root`: high advisory on `fast-xml-builder <=1.1.6` through `xml-js`, plus moderate `hono` and `uuid` advisories. Branch impact: API image build cannot complete until the security lane is fixed or the baseline dependency is updated.
+- [ ] `blocked` BR14c-B3 — `make typecheck-api` is currently blocked before TypeScript by Docker `npm audit --omit=dev --workspaces --include-workspace-root`: high advisory on `fast-xml-builder <=1.1.6` through `xml-js`, plus moderate `hono` and `uuid` advisories. Branch impact: API image build cannot complete until the security lane is fixed or the baseline dependency is updated. Cutover-specific isolated checks passed on 2026-05-08: TypeScript after building `@entropic/llm-mesh`, plus `provider-mesh-contract-proof.test.ts` and `llm-runtime-stream.test.ts`.
 
 ## AI Flaky tests
 - Acceptance rule:
@@ -205,10 +205,10 @@ Create the first published Entropic package, `@entropic/llm-mesh`, as a provider
   - [x] Validate requested features against model profile capabilities before adapter execution.
   - [x] Declare `@entropic/llm-mesh` as a real workspace package dependency for the API and update lockfiles consistently.
   - [x] Replace the relative proof import with `@entropic/llm-mesh`.
-  - [ ] Migrate `api/src/services/llm-runtime/**` dispatch to `@entropic/llm-mesh`.
-  - [ ] Delete app-local provider/runtime code that is replaced by the package. No double run, no feature flag, no fallback alias.
+  - [x] Migrate `api/src/services/llm-runtime/**` dispatch to `@entropic/llm-mesh`.
+  - [x] Delete app-local provider/runtime code that is replaced by the package. No double run, no feature flag, no fallback alias.
   - [ ] Preserve provider credential precedence, quota checks, retry behavior, streaming event order, tool-call continuation, reasoning controls, trace/audit metadata, and live AI command behavior.
-  - [ ] Keep chat orchestration behavior in `chat-service.ts`; BR-14c may update call sites but must not modularize the whole chat-service reasoning/tool loop.
+  - [x] Keep chat orchestration behavior in `chat-service.ts`; BR-14c may update call sites but must not modularize the whole chat-service reasoning/tool loop.
   - [x] Avoid defining any chat SDK provider abstraction in this branch.
   - [ ] Keep all existing API behavior stable after cutover.
   - [ ] Lot gate:
@@ -217,8 +217,8 @@ Create the first published Entropic package, `@entropic/llm-mesh`, as a provider
     - [ ] `make typecheck-api API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
     - [ ] `make lint-api API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
     - [ ] **Package/API tests**
-      - [ ] Update `api/tests/unit/llm-runtime-stream.test.ts` for mesh-backed runtime dispatch.
-      - [ ] Update `api/tests/unit/provider-mesh-contract-proof.test.ts` to assert package import/resolution through `@entropic/llm-mesh`.
+      - [x] Update `api/tests/unit/llm-runtime-stream.test.ts` for mesh-backed runtime dispatch.
+      - [x] Update `api/tests/unit/provider-mesh-contract-proof.test.ts` to assert package import/resolution through `@entropic/llm-mesh`.
       - [ ] Add or update `api/tests/unit/chat-service-tools.test.ts` because the runtime cutover changes tool-call runtime wiring.
       - [ ] Re-run provider tests affected by deleted app-local provider code.
       - [ ] Scoped run: `make test-api-unit SCOPE=tests/unit/llm-runtime-stream.test.ts API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`.
