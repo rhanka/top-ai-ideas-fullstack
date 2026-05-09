@@ -319,7 +319,7 @@ Create the first published Entropic package, `@entropic/llm-mesh`, as a provider
     - [x] `chat-sync` live split passed 4/4 in fresh env `test-feat-llm-mesh-ai`.
     - [x] `chat-tools` live split passed 6/6 in fresh env `test-feat-llm-mesh-ai`.
   - [ ] Root UAT: chat streaming and AI settings must exercise the mesh-backed runtime, not only prove app startup.
-    - [ ] Repeat Playwright chat smoke after BR14c-B6 and confirm no Gemini thought marker appears in assistant content.
+    - [x] Repeat Playwright chat smoke after BR14c-B6 and confirm no Gemini thought marker appears in assistant content.
   - [x] Record explicit user sign-off if any AI flaky test is accepted.
     - [x] No flaky acceptance used: live AI split tests passed in a fresh env.
   - [x] Final gate step 1: create/update PR using `BRANCH.md` text as PR body.
