@@ -174,9 +174,8 @@ export const providerProfiles = {
     label: 'Cohere',
     status: 'planned',
     capabilities: capabilities({
-      reasoningTier: 'none',
+      reasoningTier: 'advanced',
       structuredOutputLevel: 'tool-input-schema',
-      supportsReasoning: false,
     }),
   },
 } as const satisfies Record<ProviderId, ProviderDescriptor>;
@@ -294,17 +293,17 @@ export const modelProfiles = [
     providerId: 'cohere',
     modelId: 'command-a-03-2025',
     label: 'Command A',
-    reasoningTier: 'none',
+    reasoningTier: 'standard',
     defaultTaskHints: ['chat'],
-    capabilities: modelCapabilities('cohere', 'none'),
+    capabilities: modelCapabilities('cohere', 'standard'),
   },
   {
     providerId: 'cohere',
     modelId: 'command-a-reasoning-08-2025',
     label: 'Command A R.',
-    reasoningTier: 'none',
+    reasoningTier: 'advanced',
     defaultTaskHints: ['chat', 'structured', 'summary'],
-    capabilities: modelCapabilities('cohere', 'none'),
+    capabilities: modelCapabilities('cohere', 'advanced'),
   },
 ] as const satisfies readonly ModelProfile[];
 

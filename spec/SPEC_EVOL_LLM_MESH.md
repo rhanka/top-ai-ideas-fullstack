@@ -57,6 +57,53 @@ BR-14c intentionally does not:
 - Modularize the full chat-service reasoning/tool loop. BR-14b owns chat-service core modularization above the mesh runtime.
 - Update GPT-5.4 / Claude Opus 4.6 catalog versions; BR-14g owns the GPT-5.5 / Opus 4.7 pivot.
 
+## As-Is Runtime Contract Inventory and BR-14c Test Mapping
+
+This inventory is the BR-14c freeze point for the application model-access contract. The package contract must map the current application runtime behavior; it must not reinterpret provider semantics while extracting `@entropic/llm-mesh`.
+
+Contract sources:
+
+- Stable app runtime catalog: `api/src/services/providers/*-provider.ts`.
+- Stable app stream normalizer: `api/src/services/llm-runtime/index.ts`.
+- Stable chat-visible boundary: assistant message `content` is built from `content_delta`; reasoning is stored separately from `reasoning_delta`.
+- Package boundary: `packages/llm-mesh/src/*`.
+
+Normalized event rules:
+
+- Provider-visible text becomes `content_delta`.
+- Provider-native thinking, thought, reasoning, tool-plan, or reasoning-summary chunks become `reasoning_delta`.
+- Provider-native function/tool calls become `tool_call_start` and, when the provider streams arguments, `tool_call_delta`.
+- Local tool execution results remain above the model runtime and are emitted by chat orchestration as `tool_call_result`.
+- `reasoning_delta` must never be concatenated into assistant visible content.
+- Gemini reasoning requests keep the legacy provider contract: when `reasoningEffort` is present and not `none`, `generationConfig.thinkingConfig` contains `thinkingBudget` and `includeThoughts: true`; when reasoning is not requested, no Gemini thinking config is sent.
+
+Coverage invariant:
+
+- `api/tests/unit/llm-runtime-stream.test.ts` owns the provider stream normalization matrix.
+- The matrix must include every model returned by `providerRegistry.listModels()`.
+- If a catalog model advertises `supportsTools`, the matrix must include a tool fixture for that exact model.
+- If a catalog model has `reasoningTier !== "none"`, the matrix must include a reasoning fixture for that exact model.
+- `api/tests/unit/provider-mesh-contract-proof.test.ts` must verify that package model profiles stay aligned with the application runtime catalog for provider ID, model ID, label, reasoning tier, and non-unsupported advertised tools/streaming/reasoning capabilities.
+- `packages/llm-mesh/tests/facade.test.ts` must verify that reasoning-capable package models are not marked as `unsupported`.
+
+| Provider/model | As-is provider stream shape | Normalized contract | Required tests |
+| --- | --- | --- | --- |
+| OpenAI `gpt-4.1-nano` | Responses `response.output_text.delta`; function-call item and argument deltas; no reasoning tier. | `content_delta`, `tool_call_start`, `tool_call_delta`, no `reasoning_delta` requirement. | `llm-runtime-stream` matrix content/tool row; GPT-4.1 Nano reasoning stripping test. |
+| OpenAI `gpt-5.4` | Responses output text, reasoning text / reasoning summary events, function-call argument deltas. | `content_delta`, `reasoning_delta`, `tool_call_start`, `tool_call_delta`, `status.response_created`, `done`. | `llm-runtime-stream` matrix content/tool/reasoning row. |
+| OpenAI `gpt-5.4-nano` | Same Responses family as GPT-5.4 with standard reasoning tier. | Same normalized contract as GPT-5.4, with model-specific capability tier. | `llm-runtime-stream` matrix content/tool/reasoning row. |
+| Gemini `gemini-3.1-flash-lite-preview` | Generate Content `parts[].text`, `parts[].thought`, `parts[].functionCall`. | text without `thought` -> `content_delta`; `thought: true` -> `reasoning_delta`; `functionCall` -> `tool_call_start`. | `gemini-tool-handoff` request-body tests; `llm-runtime-stream` matrix content/tool/reasoning row. |
+| Gemini `gemini-3.1-pro-preview-customtools` | Same Generate Content shape; reasoning is requested through `thinkingConfig.includeThoughts: true` when app reasoning is requested. | Same Gemini normalized contract; thoughts are visible only through `reasoning_delta`, not assistant content. | `gemini-tool-handoff` includeThoughts test; `llm-runtime-stream` matrix content/tool/reasoning row and thought-routing test. |
+| Anthropic `claude-sonnet-4-6` | Messages stream `text_delta`, `thinking_delta`, `tool_use`, `input_json_delta`. | `content_delta`, `reasoning_delta`, `tool_call_start`, `tool_call_delta`. | `llm-runtime-stream` matrix content/tool/reasoning row. |
+| Anthropic `claude-opus-4-6` | Same Claude stream shape with advanced reasoning tier. | Same normalized contract as Sonnet, with advanced tier. | `llm-runtime-stream` matrix content/tool/reasoning row. |
+| Mistral `mistral-small-2603` | Chat stream text deltas, typed thinking/text content arrays, OpenAI-like tool call deltas. | `content_delta`, `reasoning_delta`, `tool_call_start`, `tool_call_delta`. | `llm-runtime-stream` matrix content/tool/reasoning row. |
+| Mistral `magistral-medium-2509` | Same Mistral stream family with advanced reasoning tier. | Same normalized contract as Mistral Small, with advanced tier. | `llm-runtime-stream` matrix content/tool/reasoning row. |
+| Cohere `command-a-03-2025` | V2 chat `content-delta` with `text` or `thinking`, `tool-plan-delta`, `tool-call-start`, `tool-call-delta`. | text -> `content_delta`; thinking/tool plan -> `reasoning_delta`; tool events -> `tool_call_start`/`tool_call_delta`. | `llm-runtime-stream` matrix content/tool/reasoning row. |
+| Cohere `command-a-reasoning-08-2025` | Same Cohere stream family with advanced reasoning tier. | Same normalized contract as Command A, with advanced tier and package capability not `unsupported`. | `llm-runtime-stream` matrix content/tool/reasoning row; package catalog alignment tests. |
+
+Known non-goal for BR-14c:
+
+- Provider-specific thought signatures, token usage accounting, and durable reasoning export remain represented in package capability fields but are not fully implemented beyond current app behavior. They remain future package evolution work, not justification to suppress provider thoughts from the current reasoning stream.
+
 ## Non-Goals
 
 - Do not extract chat UI behavior. BR-14a owns `@entropic/chat`.

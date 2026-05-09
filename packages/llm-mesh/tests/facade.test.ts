@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { createLlmMesh } from '../src/mesh.js';
 import { createProviderRegistry, type ProviderAdapter } from '../src/registry.js';
-import { getProviderProfile } from '../src/catalog.js';
+import { getModelProfile, getProviderProfile } from '../src/catalog.js';
 import type { GenerateResponse, StreamResult } from '../src/generation.js';
 import type { ModelProfile } from '../src/catalog.js';
 import type { StreamEvent } from '../src/streaming.js';
@@ -113,5 +113,15 @@ describe('createLlmMesh', () => {
       }),
     ).rejects.toThrow('Tool use is unsupported');
     expect(adapter.generate).not.toHaveBeenCalled();
+  });
+
+  it('does not mark reasoning catalog models as unsupported', () => {
+    const cohereReasoning = getModelProfile('cohere', 'command-a-reasoning-08-2025');
+    const geminiPro = getModelProfile('gemini', 'gemini-3.1-pro-preview-customtools');
+
+    expect(cohereReasoning?.reasoningTier).toBe('advanced');
+    expect(cohereReasoning?.capabilities.reasoning.support).not.toBe('unsupported');
+    expect(geminiPro?.reasoningTier).toBe('advanced');
+    expect(geminiPro?.capabilities.reasoning.support).not.toBe('unsupported');
   });
 });

@@ -3,26 +3,16 @@ import { describe, expect, it } from 'vitest';
 import { buildGeminiRequestBody } from '../../src/services/llm-runtime';
 
 describe('buildGeminiRequestBody', () => {
-  it('keeps Gemini 3 thoughts out of visible response parts by default', () => {
+  it('does not request Gemini thoughts when reasoning is not requested', () => {
     const body = buildGeminiRequestBody({
       model: 'gemini-3.1-pro-preview-customtools',
       messages: [{ role: 'user', content: 'Say OK' }],
-    }) as {
-      generationConfig: {
-        thinkingConfig: {
-          thinkingLevel: string;
-          includeThoughts: boolean;
-        };
-      };
-    };
+    }) as Record<string, unknown>;
 
-    expect(body.generationConfig.thinkingConfig).toEqual({
-      thinkingLevel: 'low',
-      includeThoughts: false,
-    });
+    expect(body).not.toHaveProperty('generationConfig.thinkingConfig');
   });
 
-  it('uses high Gemini 3 thinking without exposing thought summaries', () => {
+  it('requests Gemini thoughts when reasoning is requested', () => {
     const body = buildGeminiRequestBody({
       model: 'gemini-3.1-pro-preview-customtools',
       messages: [{ role: 'user', content: 'Analyze deeply' }],
@@ -30,19 +20,19 @@ describe('buildGeminiRequestBody', () => {
     }) as {
       generationConfig: {
         thinkingConfig: {
-          thinkingLevel: string;
+          thinkingBudget: number;
           includeThoughts: boolean;
         };
       };
     };
 
     expect(body.generationConfig.thinkingConfig).toEqual({
-      thinkingLevel: 'high',
-      includeThoughts: false,
+      thinkingBudget: 8192,
+      includeThoughts: true,
     });
   });
 
-  it('omits leaked Gemini internal thought markers from assistant history', () => {
+  it('preserves assistant history content without provider-specific rewriting', () => {
     const body = buildGeminiRequestBody({
       model: 'gemini-3.1-pro-preview-customtools',
       messages: [
@@ -60,7 +50,8 @@ describe('buildGeminiRequestBody', () => {
         role: 'model',
         parts: [
           {
-            text: '[Previous assistant response omitted: provider-internal reasoning marker was removed.]',
+            text:
+              '...94>thought CRITICAL INSTRUCTION 1: internal. CRITICAL INSTRUCTION 2: internal.OK',
           },
         ],
       },

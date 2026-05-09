@@ -193,17 +193,6 @@ const stringifyContent = (value: unknown): string => {
   }
 };
 
-const hasGeminiInternalThoughtLeak = (value: string): boolean =>
-  />thought\b/i.test(value) && /CRITICAL INSTRUCTION\s+\d+\s*:/i.test(value);
-
-const sanitizeGeminiMessageContent = (role: string, content: string): string => {
-  if (role !== 'assistant' || !hasGeminiInternalThoughtLeak(content)) {
-    return content;
-  }
-
-  return '[Previous assistant response omitted: provider-internal reasoning marker was removed.]';
-};
-
 const isFunctionTool = (
   tool: OpenAI.Chat.Completions.ChatCompletionTool
 ): tool is OpenAI.Chat.Completions.ChatCompletionFunctionTool => {
@@ -228,32 +217,13 @@ const toGeminiToolDeclarations = (
 };
 
 const buildGeminiThinkingConfig = (
-  model: string | undefined,
   reasoningEffort: string | undefined,
 ): Record<string, unknown> | undefined => {
-  const normalizedModel = (model ?? '').toLowerCase();
-  const normalizedEffort = reasoningEffort && reasoningEffort !== 'none'
-    ? reasoningEffort
-    : undefined;
-
-  if (normalizedModel.startsWith('gemini-3')) {
-    return {
-      thinkingLevel: normalizedEffort === 'high' || normalizedEffort === 'xhigh' ? 'high' : 'low',
-      includeThoughts: false,
-    };
-  }
-
-  if (!normalizedEffort) {
-    return {
-      thinkingBudget: 0,
-      includeThoughts: false,
-    };
-  }
-
+  if (!reasoningEffort || reasoningEffort === 'none') return undefined;
   const budgetMap: Record<string, number> = { low: 2048, medium: 4096, high: 8192, xhigh: 16384 };
   return {
-    thinkingBudget: budgetMap[normalizedEffort] ?? 8192,
-    includeThoughts: false,
+    thinkingBudget: budgetMap[reasoningEffort] ?? 8192,
+    includeThoughts: true,
   };
 };
 
@@ -321,9 +291,8 @@ export const buildGeminiRequestBody = (
 
   for (const message of options.messages) {
     const role = message.role;
-    const content = sanitizeGeminiMessageContent(
-      role,
-      stringifyContent((message as unknown as { content?: unknown }).content)
+    const content = stringifyContent(
+      (message as unknown as { content?: unknown }).content
     );
 
     if (role === 'system' || role === 'developer') {
@@ -385,7 +354,7 @@ export const buildGeminiRequestBody = (
       options.structuredOutput.schema
     );
   }
-  const thinkingConfig = buildGeminiThinkingConfig(options.model, options.reasoningEffort);
+  const thinkingConfig = buildGeminiThinkingConfig(options.reasoningEffort);
   if (thinkingConfig) {
     generationConfig.thinkingConfig = thinkingConfig;
   }
