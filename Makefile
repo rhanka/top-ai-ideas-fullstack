@@ -309,7 +309,7 @@ logs-dev-vscode: ## Stream OpenVSCode mounted dev lane logs
 	$(DOCKER_COMPOSE) -f docker-compose.yml -f docker-compose.dev.yml --profile vscode logs -f openvscode-dev
 
 .PHONY: up-dev-playwright
-up-dev-playwright: ## Start or reuse the Playwright dev helper on top of the standard dev stack
+up-dev-playwright: prepare-node-workspace ## Start or reuse the Playwright dev helper on top of the standard dev stack
 	@playwright_ui_port="$${PLAYWRIGHT_DEV_UI_PORT:-5174}"; \
 	playwright_ui_base_url="$${PLAYWRIGHT_UI_BASE_URL:-http://host.docker.internal:$$playwright_ui_port}"; \
 	playwright_api_base_url="$${PLAYWRIGHT_API_BASE_URL:-http://host.docker.internal:$(API_PORT)}"; \
@@ -781,8 +781,13 @@ clean-db: ## Clean database files and restart services [SKIP_CONFIRM=true to ski
 # -----------------------------------------------------------------------------
 # Development environment
 # -----------------------------------------------------------------------------
+.PHONY: prepare-node-workspace
+prepare-node-workspace: ## Prepare mounted workspace node_modules and package dist for dev/test runtime
+	$(DOCKER_COMPOSE) -f docker-compose.yml -f docker-compose.dev.yml build api
+	$(DOCKER_COMPOSE) -f docker-compose.yml -f docker-compose.dev.yml run --rm --no-deps api sh -lc 'cd /workspace && npm ci --workspaces --include-workspace-root --ignore-scripts --audit=false && npm --workspace @entropic/llm-mesh run build'
+
 .PHONY: dev
-dev: ## Start UI and API in watch mode
+dev: prepare-node-workspace ## Start UI and API in watch mode
 	DISABLE_RATE_LIMIT=true $(DOCKER_COMPOSE) -f docker-compose.yml -f docker-compose.dev.yml up --build -d
 
 .PHONY: dev-ui
@@ -790,11 +795,11 @@ dev-ui:
 	$(DOCKER_COMPOSE) up --build ui
 
 .PHONY: dev-api
-dev-api:
+dev-api: prepare-node-workspace
 	$(DOCKER_COMPOSE) up --build api
 
 .PHONY: up
-up: ## Start the full stack in detached mode
+up: prepare-node-workspace ## Start the full stack in detached mode
 	$(DOCKER_COMPOSE) -f docker-compose.yml -f docker-compose.dev.yml up --build -d --wait
 
 .PHONY: up-e2e
@@ -818,11 +823,11 @@ logs-e2e-vscode: ## Stream VSCode E2E logs
 	$(DOCKER_COMPOSE) -f docker-compose.yml -f docker-compose.test.yml -f docker-compose.e2e-vscode.yml logs -f
 
 .PHONY: up-api
-up-api: ## Start the api stack in detached mode
+up-api: prepare-node-workspace ## Start the api stack in detached mode
 	$(DOCKER_COMPOSE) -f docker-compose.yml -f docker-compose.dev.yml up --build -d api --wait api
 
 .PHONY: up-api-test
-up-api-test: ## Start the api stack in detached mode with DISABLE_RATE_LIMIT=true
+up-api-test: prepare-node-workspace ## Start the api stack in detached mode with DISABLE_RATE_LIMIT=true
 	DISABLE_RATE_LIMIT=true $(DOCKER_COMPOSE) -f docker-compose.yml -f docker-compose.dev.yml up --build -d api --wait api
 
 .PHONY: up-api-test-ci
