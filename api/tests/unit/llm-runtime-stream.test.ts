@@ -800,4 +800,35 @@ describe('LLM stream event normalization', () => {
     const doneEvents = events.filter((e) => e.type === 'done');
     expect(doneEvents).toHaveLength(1);
   });
+
+  it('should strip mesh reasoning for GPT-4.1 Nano when chat passes reasoning options', async () => {
+    const { providerRegistry } = await import('../../src/services/provider-registry');
+    const provider = providerRegistry.requireProvider('openai');
+    let capturedRequest: unknown;
+    vi.spyOn(provider, 'streamGenerate').mockImplementation(async (request) => {
+      capturedRequest = request;
+      return (async function* () {
+        yield { type: 'response.created', response: { id: 'resp_no_reasoning' } };
+        yield { type: 'response.output_text.delta', delta: 'No reasoning params' };
+        yield { type: 'response.completed' };
+      })();
+    });
+
+    const { callLLMStream } = await import('../../src/services/llm-runtime');
+
+    const events = await collectStreamEvents(
+      callLLMStream({
+        messages: [{ role: 'user', content: 'Hi' }],
+        providerId: 'openai',
+        model: 'gpt-4.1-nano',
+        reasoningEffort: 'medium',
+        reasoningSummary: 'auto',
+      }),
+    );
+
+    const requestOptions = (capturedRequest as { requestOptions?: { reasoning?: unknown } }).requestOptions;
+    expect(requestOptions?.reasoning).toBeUndefined();
+    expect(events.some((event) => event.type === 'content_delta')).toBe(true);
+    expect(events.some((event) => event.type === 'done')).toBe(true);
+  });
 });

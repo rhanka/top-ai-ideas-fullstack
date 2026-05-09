@@ -36,6 +36,8 @@ Create the first published Entropic package, `@entropic/llm-mesh`, as a provider
   - `api/tests/api/models.test.ts`
   - `api/tests/api/ai-settings.test.ts`
   - `api/tests/ai/**`
+  - `spec/SPEC.md`
+  - `spec/SPEC_CHATBOT.md`
   - `spec/SPEC_EVOL_ENTROPIC_BR14_ORCHESTRATION.md`
   - `spec/SPEC_EVOL_LLM_MESH.md`
 - **Forbidden Paths (must not change in this branch)**:
@@ -94,6 +96,8 @@ Create the first published Entropic package, `@entropic/llm-mesh`, as a provider
 - [x] `resolved` BR14c-B2 — Package publication lane is wired: `@entropic/llm-mesh` starts at `0.1.0`, package metadata includes repository/license/files/publish config, make-backed `build-llm-mesh`, `pack-llm-mesh`, and `publish-llm-mesh` targets exist, and `.github/workflows/ci.yml` adds PR validation plus `main`-only npm publication with `NPM_TOKEN` and provenance support.
 - [x] `resolved` BR14c-B3 — Rebase on `origin/main` after PR #139 resolved the blocking `fast-xml-builder` high advisory. `make typecheck-api` now completes through Docker `npm audit --omit=dev --workspaces --include-workspace-root` with the high threshold satisfied; remaining `hono` and `uuid` advisories are moderate and do not block the configured gate.
 - [x] `attention` BR14c-EX9 — Conditional `api/tests/api/docx.test.ts` changes are allowed only to stabilize the existing full endpoints gate after BR-14c rebase exposed order-dependent global `job_queue` state. Reason: the DOCX scheduler test un-mocks the global queue processor and must not consume pending chat jobs left by other endpoint files. Impact: test isolation only, no runtime behavior. Rollback: remove the local queue cleanup in the DOCX scheduler test and the exception entry.
+- [x] `resolved` BR14c-B4 — Live AI `chat-sync` initially failed because `@entropic/llm-mesh` correctly rejected `reasoning` for `openai:gpt-4.1-nano`, while the legacy OpenAI runtime had already stripped those parameters from the provider request. `mesh-dispatch.ts` now strips mesh-level reasoning for model profiles whose reasoning capability is `unsupported`, preserving the strict mesh contract without reintroducing a fallback runtime path. Validation: targeted unit runtime test, `typecheck-api`, live `chat-sync`, and live `chat-tools`.
+- [x] `attention` BR14c-EX10 — Permanent spec updates are allowed in `spec/SPEC.md` and `spec/SPEC_CHATBOT.md` only for BR-14c docs consolidation. Reason: `SPEC_EVOL_LLM_MESH.md` must be consolidated into stable architecture/chat specs before final validation. Impact: documentation only. Rollback: remove the stable spec additions and the exception entry.
 
 ## AI Flaky tests
 - Acceptance rule:
@@ -236,18 +240,18 @@ Create the first published Entropic package, `@entropic/llm-mesh`, as a provider
     - [ ] **E2E tests**
       - [ ] No E2E updates expected by default, but root UAT must validate real chat streaming because runtime dispatch changes.
 
-- [ ] **Lot 5 — Live-provider split strategy**
+- [x] **Lot 5 — Live-provider split strategy**
   - [x] Document live provider commands and credential requirements.
     - [x] Provider split command form: `make test-api-ai SCOPE=tests/ai/chat-sync.test.ts TEST_MODEL=<provider-model-id> API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`.
     - [x] Provider split command form: `make test-api-ai SCOPE=tests/ai/chat-tools.test.ts TEST_MODEL=<provider-model-id> API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`.
     - [x] Credential gate: run a provider split only when the branch test environment has that provider credential or account transport configured.
   - [x] Keep deterministic package/API tests independent from live credentials.
   - [x] Split live tests by provider so one failed provider does not hide another provider status.
-  - [ ] Run live AI tests after runtime cutover when credentials are available.
-  - [ ] Lot gate:
-    - [ ] `make test-api-ai SCOPE=tests/ai/chat-sync.test.ts API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
-    - [ ] `make test-api-ai SCOPE=tests/ai/chat-tools.test.ts API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
-    - [ ] Record provider-specific pass/fail/flaky signatures in this file after the mesh runtime cutover.
+  - [x] Run live AI tests after runtime cutover when credentials are available.
+  - [x] Lot gate:
+    - [x] `make test-api-ai SCOPE=tests/ai/chat-sync.test.ts API_PORT=8719 UI_PORT=5119 MAILDEV_UI_PORT=1019 ENV=test-feat-llm-mesh-ai` — 4 passed.
+    - [x] `make test-api-ai SCOPE=tests/ai/chat-tools.test.ts API_PORT=8719 UI_PORT=5119 MAILDEV_UI_PORT=1019 ENV=test-feat-llm-mesh-ai` — 6 passed.
+    - [x] Provider-specific pass/fail/flaky signatures recorded: OpenAI `gpt-4.1-nano` live chat and tool flows passed after mesh reasoning stripping for unsupported profiles. No flaky signature observed in the fresh env.
 
 - [ ] **Lot 6 — npm publication lane**
   - [x] Finalize `packages/llm-mesh/package.json` for first npm publication: stable name `@entropic/llm-mesh`, version policy, `main`, `types`, `exports`, `files`, license metadata, side-effects flag, and package README content.
@@ -302,7 +306,9 @@ Create the first published Entropic package, `@entropic/llm-mesh`, as a provider
     - [x] `make build-llm-mesh API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
     - [x] `make pack-llm-mesh API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
     - [ ] Branch CI package validation job passed.
-  - [ ] Retest live AI flaky tests only under acceptance rule and document pass/fail signatures after runtime cutover.
+  - [x] Retest live AI flaky tests only under acceptance rule and document pass/fail signatures after runtime cutover.
+    - [x] `chat-sync` live split passed 4/4 in fresh env `test-feat-llm-mesh-ai`.
+    - [x] `chat-tools` live split passed 6/6 in fresh env `test-feat-llm-mesh-ai`.
   - [ ] Root UAT: chat streaming and AI settings must exercise the mesh-backed runtime, not only prove app startup.
   - [ ] Record explicit user sign-off if any AI flaky test is accepted.
   - [ ] Final gate step 1: create/update PR using `BRANCH.md` text as PR body.

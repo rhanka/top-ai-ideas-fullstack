@@ -264,6 +264,23 @@ const applicationLlmMesh = createLlmMesh({
   ),
 });
 
+const toMeshReasoning = (
+  options: Pick<MeshDispatchOptions, 'providerId' | 'model' | 'reasoningEffort' | 'reasoningSummary'>,
+): StreamRequest['reasoning'] => {
+  if (!options.reasoningEffort && !options.reasoningSummary) return undefined;
+  if (options.reasoningEffort === 'none' && !options.reasoningSummary) return undefined;
+
+  const profile = applicationLlmMesh
+    .listModels()
+    .find((model) => model.providerId === options.providerId && model.modelId === options.model);
+  if (profile?.capabilities.reasoning.support === 'unsupported') return undefined;
+
+  return {
+    effort: options.reasoningEffort,
+    summary: options.reasoningSummary,
+  };
+};
+
 const buildMeshRequest = (options: MeshDispatchOptions): StreamRequest => {
   const auth = toMeshAuthInput(options);
   return {
@@ -274,13 +291,7 @@ const buildMeshRequest = (options: MeshDispatchOptions): StreamRequest => {
     tools: toMeshTools(options.tools),
     toolChoice: toMeshToolChoice(options.toolChoice),
     responseFormat: toMeshResponseFormat(options.responseFormat, options.structuredOutput),
-    reasoning:
-      options.reasoningEffort || options.reasoningSummary
-        ? {
-            effort: options.reasoningEffort,
-            summary: options.reasoningSummary,
-          }
-        : undefined,
+    reasoning: toMeshReasoning(options),
     maxOutputTokens: options.maxOutputTokens,
     signal: options.signal,
     previousResponseId: options.previousResponseId,
