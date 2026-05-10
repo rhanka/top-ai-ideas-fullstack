@@ -37,7 +37,7 @@ export E2E_VERSION    ?= $(shell echo "e2e/tests e2e/helpers e2e/global.setup.ts
 export API_IMAGE_NAME ?= top-ai-ideas-api
 export UI_IMAGE_NAME  ?= top-ai-ideas-ui
 export E2E_IMAGE_NAME ?= top-ai-ideas-e2e
-export LLM_MESH_NODE_IMAGE ?= node:20-bookworm-slim
+export LLM_MESH_NODE_IMAGE ?= node:24-bookworm-slim
 
 .DEFAULT_GOAL := help
 
@@ -571,13 +571,11 @@ pack-llm-mesh: build-llm-mesh ## Validate @entropic/llm-mesh npm package content
 	@docker run --rm -u "$$(id -u):$$(id -g)" -e HOME=/tmp -e npm_config_cache=/tmp/npm-cache -v "$(CURDIR):/workspace" -w /workspace/packages/llm-mesh $(LLM_MESH_NODE_IMAGE) sh -lc 'npm pack --dry-run'
 
 .PHONY: publish-llm-mesh
-publish-llm-mesh: build-llm-mesh ## Publish @entropic/llm-mesh from CI-provided npm credentials
+publish-llm-mesh: build-llm-mesh ## Publish @entropic/llm-mesh from CI OIDC trusted publishing
 	@docker run --rm \
 		-u "$$(id -u):$$(id -g)" \
 		-e HOME=/tmp \
 		-e npm_config_cache=/tmp/npm-cache \
-		-e NODE_AUTH_TOKEN \
-		-e NPM_CONFIG_PROVENANCE=true \
 		-e GITHUB_ACTIONS \
 		-e GITHUB_REPOSITORY \
 		-e GITHUB_REF \
@@ -586,7 +584,7 @@ publish-llm-mesh: build-llm-mesh ## Publish @entropic/llm-mesh from CI-provided 
 		-e ACTIONS_ID_TOKEN_REQUEST_TOKEN \
 		-v "$(CURDIR):/workspace" \
 		-w /workspace/packages/llm-mesh \
-		$(LLM_MESH_NODE_IMAGE) sh -lc 'set -eu; test -n "$${NODE_AUTH_TOKEN:-}" || { echo "NODE_AUTH_TOKEN is required"; exit 2; }; version="$$(node -p "require(\"./package.json\").version")"; if npm view @entropic/llm-mesh@"$$version" version >/dev/null 2>&1; then echo "@entropic/llm-mesh@$$version already exists; skipping publish"; else npm publish --access public --provenance; fi'
+		$(LLM_MESH_NODE_IMAGE) sh -lc 'set -eu; version="$$(node -p "require(\"./package.json\").version")"; if npm view @entropic/llm-mesh@"$$version" version >/dev/null 2>&1; then echo "@entropic/llm-mesh@$$version already exists; skipping publish"; else npm publish --access public; fi'
 
 .PHONY: lint
 lint: lint-ui lint-api ## Run all linters

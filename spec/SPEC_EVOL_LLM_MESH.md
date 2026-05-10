@@ -628,8 +628,8 @@ Required publication work:
   - The package validation job must block merge on real failures.
 - CI publication:
   - Publish only from `main` after branch gates pass.
-  - Use CI-provided npm credentials only.
-  - Use npm provenance when supported by the CI environment.
+  - Use npm Trusted Publishing through GitHub OIDC only; do not require a long-lived npm publish token.
+  - Use automatic npm provenance when supported by the CI environment.
   - A publish skip is acceptable only when the exact package version already exists and the job records that reason explicitly.
 
 Scope boundary:

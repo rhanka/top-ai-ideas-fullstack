@@ -570,8 +570,6 @@ jobs:
       - name: Setup Docker
         uses: docker/setup-buildx-action@v3
       - name: Publish LLM Mesh
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: make publish-llm-mesh
 
   # Deploy API
