@@ -211,7 +211,7 @@ Create the first published Entropic package, `@entropic/llm-mesh`, as a provider
     - [x] **E2E tests**
       - [x] No E2E test updates expected in Lot 3.
 
-- [ ] **Lot 4 — Application runtime cutover**
+- [x] **Lot 4 — Application runtime cutover**
   - [x] Add minimal SDK facade: `createLlmMesh({ registry, authResolver, hooks })`, `mesh.generate()`, and `mesh.stream()`.
   - [x] Support `provider:model` aliases and explicit `{ providerId, modelId }` selection.
   - [x] Validate requested features against model profile capabilities before adapter execution.
@@ -223,7 +223,7 @@ Create the first published Entropic package, `@entropic/llm-mesh`, as a provider
   - [x] Keep chat orchestration behavior in `chat-service.ts`; BR-14c may update call sites but must not modularize the whole chat-service reasoning/tool loop.
   - [x] Avoid defining any chat SDK provider abstraction in this branch.
   - [x] Keep all existing API behavior stable after cutover.
-  - [ ] Lot gate:
+  - [x] Lot gate:
     - [x] `make typecheck-llm-mesh API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
     - [x] `make test-llm-mesh API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
     - [x] `make typecheck-api API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
@@ -248,8 +248,8 @@ Create the first published Entropic package, `@entropic/llm-mesh`, as a provider
       - [x] Scoped run: `make test-api-unit SCOPE='tests/unit/claude-provider.test.ts tests/unit/gemini-provider-sse.test.ts tests/unit/mistral-provider.test.ts tests/unit/cohere-provider.test.ts tests/unit/provider-registry-expansion.test.ts tests/unit/provider-credentials.test.ts' API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk` — 63 passed.
     - [x] **UI tests (TypeScript only)**
       - [x] No UI test updates expected.
-    - [ ] **E2E tests**
-      - [ ] No E2E updates expected by default, but root UAT must validate real chat streaming because runtime dispatch changes.
+    - [x] **E2E tests**
+      - [x] No E2E updates expected by default, but root UAT must validate real chat streaming because runtime dispatch changes.
 
 - [x] **Lot 5 — Live-provider split strategy**
   - [x] Document live provider commands and credential requirements.
@@ -327,8 +327,9 @@ Create the first published Entropic package, `@entropic/llm-mesh`, as a provider
   - [x] Retest live AI flaky tests only under acceptance rule and document pass/fail signatures after runtime cutover.
     - [x] `chat-sync` live split passed 4/4 in fresh env `test-feat-llm-mesh-ai`.
     - [x] `chat-tools` live split passed 6/6 in fresh env `test-feat-llm-mesh-ai`.
-  - [ ] Root UAT: chat streaming and AI settings must exercise the mesh-backed runtime, not only prove app startup.
+  - [x] Root UAT: chat streaming and AI settings must exercise the mesh-backed runtime, not only prove app startup.
     - [x] Repeat Playwright chat smoke after BR14c-B6 and confirm no Gemini thought marker appears in assistant content.
+    - [x] Root smoke on commit `113824b8`: `make exec-api` authenticated via local magic-link, selected shared workspace `00000000-0000-0000-0000-000000000001`, sent a Gemini `gemini-3.1-pro-preview-customtools` chat message on folder `623d703d-8d4f-4b19-a0bf-fef53d317f08` with `initiatives_list`; result `done=true`, `eventCount=19`, `toolOk=true`, `reasoningObserved=true`, and no visible reasoning/thought leak in assistant content.
   - [x] Record explicit user sign-off if any AI flaky test is accepted.
     - [x] No flaky acceptance used: live AI split tests passed in a fresh env.
   - [x] Final gate step 1: create/update PR using `BRANCH.md` text as PR body.
