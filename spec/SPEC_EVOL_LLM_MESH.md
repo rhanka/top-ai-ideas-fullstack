@@ -26,6 +26,7 @@ BR-14c establishes `packages/llm-mesh` as a contract-first TypeScript package wi
 - A real API workspace import of `@entropic/llm-mesh` through `api/src/services/llm-runtime/mesh-dispatch.ts`.
 - Application runtime dispatch for `callLLM` and `callLLMStream` routed through the mesh facade.
 - Replaced app-local runtime dispatch selectors removed; provider SDK clients remain server-only implementation details behind the mesh adapter boundary.
+- API provider runtimes derive provider descriptors, model lists, and capability booleans from the `@entropic/llm-mesh` catalog; there is no second app-local model/capability catalog.
 - Package metadata, README, dist build, pack validation, and CI/CD npm publication wiring for `@entropic/llm-mesh@0.1.0`.
 - Make-backed dev/test startup preparation for mounted workspace `node_modules` and package `dist/` artifacts, so branch UAT/dev stacks consume the real package import instead of a relative source path.
 
@@ -63,7 +64,7 @@ This inventory is the BR-14c freeze point for the application model-access contr
 
 Contract sources:
 
-- Stable app runtime catalog: `api/src/services/providers/*-provider.ts`.
+- Stable runtime catalog: `@entropic/llm-mesh` model profiles, exposed to the API through `api/src/services/provider-runtime.ts` and `api/src/services/provider-registry.ts`.
 - Stable app stream normalizer: `api/src/services/llm-runtime/index.ts`.
 - Stable chat-visible boundary: assistant message `content` is built from `content_delta`; reasoning is stored separately from `reasoning_delta`.
 - Package boundary: `packages/llm-mesh/src/*`.
@@ -182,14 +183,14 @@ Current exports:
 - `ProviderRuntime`
 - `providerIds`
 - `isProviderId`
+- `listRuntimeModelsByProvider`
+- `buildRuntimeProviderDescriptor`
 
 Reusable in `@entropic/llm-mesh`:
 
-- Provider identifier model.
-- Provider descriptor shape.
-- Model catalog entry shape.
-- Capability flags.
-- Reasoning tier abstraction.
+- Provider identifier model, now imported from the package.
+- Provider descriptor and model profile source data, now imported from the package.
+- Capability flags and reasoning tier abstraction, now imported from the package.
 - Credential validation result shape.
 - Normalized provider error shape.
 
@@ -273,7 +274,7 @@ Current files:
 
 Reusable in `@entropic/llm-mesh`:
 
-- Provider model lists as initial static capability data.
+- Provider model lists and capability profiles are now owned by the package catalog.
 - SDK request/stream entry points.
 - Error normalization patterns.
 - Mocked-client test patterns.

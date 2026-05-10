@@ -235,14 +235,17 @@ Create the first published Entropic package, `@entropic/llm-mesh`, as a provider
       - [x] Update `api/tests/unit/provider-mesh-contract-proof.test.ts` to assert package import/resolution through `@entropic/llm-mesh`.
       - [x] Update `api/tests/unit/gemini-tool-handoff.test.ts` to assert Gemini `includeThoughts: true` when reasoning is requested.
       - [x] Update `packages/llm-mesh/tests/facade.test.ts` to assert reasoning-capable catalog models are not marked unsupported.
+      - [x] Remove API-local duplicated provider/model capability catalogs; provider runtimes now derive model lists and provider descriptors from `@entropic/llm-mesh`.
       - [x] Add or update `api/tests/unit/chat-service-tools.test.ts` because the runtime cutover changes tool-call runtime wiring.
       - [x] Re-run provider tests affected by deleted app-local provider code.
       - [x] Scoped run: `make test-api-unit SCOPE=tests/unit/llm-runtime-stream.test.ts API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk` — 48 passed, 1 skipped.
       - [x] Scoped run: `make test-api-unit SCOPE=tests/unit/gemini-tool-handoff.test.ts API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk` — 5 passed.
       - [x] Scoped run: `make test-api-unit SCOPE=tests/unit/provider-mesh-contract-proof.test.ts API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk` — 2 passed after rebuilding `@entropic/llm-mesh` dist.
+      - [x] Scoped run after catalogue deduplication: `make test-api-unit SCOPE=tests/unit/provider-mesh-contract-proof.test.ts API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk` — 2 passed.
+      - [x] Scoped run after catalogue deduplication: `make test-api-endpoints SCOPE=tests/api/models.test.ts API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk` — 3 passed.
       - [x] Scoped run: `make test-llm-mesh API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk` — 10 passed.
       - [x] Scoped run: `make test-api-unit SCOPE=tests/unit/chat-service-tools.test.ts API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`.
-      - [x] Scoped run: `make test-api-unit SCOPE='tests/unit/claude-provider.test.ts tests/unit/gemini-provider-sse.test.ts tests/unit/mistral-provider.test.ts tests/unit/cohere-provider.test.ts tests/unit/provider-registry-expansion.test.ts tests/unit/provider-credentials.test.ts' API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`.
+      - [x] Scoped run: `make test-api-unit SCOPE='tests/unit/claude-provider.test.ts tests/unit/gemini-provider-sse.test.ts tests/unit/mistral-provider.test.ts tests/unit/cohere-provider.test.ts tests/unit/provider-registry-expansion.test.ts tests/unit/provider-credentials.test.ts' API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk` — 63 passed.
     - [x] **UI tests (TypeScript only)**
       - [x] No UI test updates expected.
     - [ ] **E2E tests**
@@ -298,6 +301,7 @@ Create the first published Entropic package, `@entropic/llm-mesh`, as a provider
     - [x] Post-cutover: `make pack-llm-mesh API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
   - [ ] Typecheck & lint:
     - [x] Post-cutover: `make typecheck-api API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
+    - [x] Post-catalog-deduplication: `make typecheck-api API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk`
     - [x] Post-cutover: `make lint-api API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk` — 184 warnings, 0 errors.
   - [ ] Retest API:
     - [x] Post-cutover: `make test-api-unit API_PORT=8714 UI_PORT=5114 MAILDEV_UI_PORT=1014 ENV=test-feat-llm-mesh-sdk` — 59 files passed, 472 passed, 8 skipped.
