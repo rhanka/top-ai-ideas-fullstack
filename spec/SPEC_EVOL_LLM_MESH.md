@@ -4,11 +4,11 @@ Status: In progress for BR-14c; runtime cutover scope reopened on 2026-05-07, np
 
 Owner branch: `feat/llm-mesh-sdk`.
 
-Related orchestration spec: `spec/SPEC_EVOL_ENTROPIC_BR14_ORCHESTRATION.md`.
+Related orchestration spec: `spec/SPEC_EVOL_SENTROPIC_BR14_ORCHESTRATION.md`.
 
 ## Objective
 
-Define `@entropic/llm-mesh`, the first standalone Entropic npm service. The package must provide a provider-agnostic model access contract for OpenAI, Anthropic/Claude, Google/Gemini, Mistral, and Cohere, become the application LLM runtime in BR-14c through a strict cutover, and be published through CI/CD as the first `@entropic` npm library.
+Define `@sentropic/llm-mesh`, the first standalone Sentropic npm service. The package must provide a provider-agnostic model access contract for OpenAI, Anthropic/Claude, Google/Gemini, Mistral, and Cohere, become the application LLM runtime in BR-14c through a strict cutover, and be published through CI/CD as the first `@sentropic` npm library.
 
 This spec owns the durable classification of reusable LLM runtime functions, current code usage validation, external framework comparison, and scope decisions for BR-14c. After BR-14c, it remains the transition reference for the model catalog pivot in BR-14g and chat-service modularization above the runtime in BR-14b.
 
@@ -23,11 +23,11 @@ BR-14c establishes `packages/llm-mesh` as a contract-first TypeScript package wi
 - Codex account auth represented as an account transport, with Gemini Code Assist and Claude Code left as planned extension hooks.
 - Deterministic provider adapter scaffolds with injected clients.
 - A minimal `createLlmMesh` facade with registry, auth resolver, hooks, `generate()`, and `stream()`.
-- A real API workspace import of `@entropic/llm-mesh` through `api/src/services/llm-runtime/mesh-dispatch.ts`.
+- A real API workspace import of `@sentropic/llm-mesh` through `api/src/services/llm-runtime/mesh-dispatch.ts`.
 - Application runtime dispatch for `callLLM` and `callLLMStream` routed through the mesh facade.
 - Replaced app-local runtime dispatch selectors removed; provider SDK clients remain server-only implementation details behind the mesh adapter boundary.
-- API provider runtimes derive provider descriptors, model lists, and capability booleans from the `@entropic/llm-mesh` catalog; there is no second app-local model/capability catalog.
-- Package metadata, README, dist build, pack validation, and CI/CD npm publication wiring for `@entropic/llm-mesh@0.1.0`.
+- API provider runtimes derive provider descriptors, model lists, and capability booleans from the `@sentropic/llm-mesh` catalog; there is no second app-local model/capability catalog.
+- Package metadata, README, dist build, pack validation, and CI/CD npm publication wiring for `@sentropic/llm-mesh@0.1.0`.
 - Make-backed dev/test startup preparation for mounted workspace `node_modules` and package `dist/` artifacts, so branch UAT/dev stacks consume the real package import instead of a relative source path.
 
 Validated branch state after rebase on the post-PR #139 `main` baseline:
@@ -45,7 +45,7 @@ Remaining before PR completion:
 - Run credential-gated live AI split tests when branch credentials are available.
 - Push the branch and verify CI package validation is triggered by `packages/llm-mesh/**`.
 - Validate root UAT chat streaming against the mesh-backed runtime before merge.
-- After merge, confirm the `main` npm publication job either publishes `@entropic/llm-mesh@0.1.0` or explicitly skips because that exact version already exists.
+- After merge, confirm the `main` npm publication job either publishes `@sentropic/llm-mesh@0.1.0` or explicitly skips because that exact version already exists.
 
 BR-14c must keep:
 
@@ -54,17 +54,17 @@ BR-14c must keep:
 
 BR-14c intentionally does not:
 
-- Extract chat UI behavior. BR-14a owns `@entropic/chat`.
+- Extract chat UI behavior. BR-14a owns `@sentropic/chat`.
 - Modularize the full chat-service reasoning/tool loop. BR-14b owns chat-service core modularization above the mesh runtime.
 - Update GPT-5.4 / Claude Opus 4.6 catalog versions; BR-14g owns the GPT-5.5 / Opus 4.7 pivot.
 
 ## As-Is Runtime Contract Inventory and BR-14c Test Mapping
 
-This inventory is the BR-14c freeze point for the application model-access contract. The package contract must map the current application runtime behavior; it must not reinterpret provider semantics while extracting `@entropic/llm-mesh`.
+This inventory is the BR-14c freeze point for the application model-access contract. The package contract must map the current application runtime behavior; it must not reinterpret provider semantics while extracting `@sentropic/llm-mesh`.
 
 Contract sources:
 
-- Stable runtime catalog: `@entropic/llm-mesh` model profiles, exposed to the API through `api/src/services/provider-runtime.ts` and `api/src/services/provider-registry.ts`.
+- Stable runtime catalog: `@sentropic/llm-mesh` model profiles, exposed to the API through `api/src/services/provider-runtime.ts` and `api/src/services/provider-registry.ts`.
 - Stable app stream normalizer: `api/src/services/llm-runtime/index.ts`.
 - Stable chat-visible boundary: assistant message `content` is built from `content_delta`; reasoning is stored separately from `reasoning_delta`.
 - Package boundary: `packages/llm-mesh/src/*`.
@@ -107,13 +107,13 @@ Known non-goal for BR-14c:
 
 ## Non-Goals
 
-- Do not extract chat UI behavior. BR-14a owns `@entropic/chat`.
+- Do not extract chat UI behavior. BR-14a owns `@sentropic/chat`.
 - Do not keep dual runtime paths. BR-14c owns strict application runtime migration to the mesh contract.
 - Do not modularize the full chat-service reasoning/tool loop. BR-14b owns that higher-level chat-service extraction.
-- Do not execute operational DNS, repository, Scaleway container/registry, or secret transitions. BR-14d owns transition operations. Npm publication for `@entropic/llm-mesh` is not a BR-14d transition item; it belongs to BR-14c because this is the first package branch.
+- Do not execute operational DNS, repository, Scaleway container/registry, or secret transitions. BR-14d owns transition operations. Npm publication for `@sentropic/llm-mesh` is not a BR-14d transition item; it belongs to BR-14c because this is the first package branch.
 - Do not complete the final codebase naming sweep. BR-14e owns final naming cleanup.
 - Do not build a FinOps platform inside the MVP package.
-- Do not bind the package to Entropic's database, settings service, encrypted settings storage, or workspace model.
+- Do not bind the package to Sentropic's database, settings service, encrypted settings storage, or workspace model.
 
 ## Graphify Validation
 
@@ -157,7 +157,7 @@ Graphify review analysis for provider adapters returned:
 
 Interpretation:
 
-- `@entropic/llm-mesh` is not a shallow type extraction. The current code mixes provider contracts, provider SDK adapters, credential resolution, Codex account transport, model selection, schema transforms, streaming normalization, and chat/application orchestration.
+- `@sentropic/llm-mesh` is not a shallow type extraction. The current code mixes provider contracts, provider SDK adapters, credential resolution, Codex account transport, model selection, schema transforms, streaming normalization, and chat/application orchestration.
 - BR-14c should define the stable package contract, extract reusable primitives, and cut over the application LLM runtime to those primitives. It should avoid broad chat-service rewiring, but it must not leave a duplicate model runtime behind.
 - Graphify did not surface every exported function by name. For example, `resolveProviderCredential` was not directly matched as a node, so direct source inspection remains required for function-level precision.
 
@@ -186,7 +186,7 @@ Current exports:
 - `listRuntimeModelsByProvider`
 - `buildRuntimeProviderDescriptor`
 
-Reusable in `@entropic/llm-mesh`:
+Reusable in `@sentropic/llm-mesh`:
 
 - Provider identifier model, now imported from the package.
 - Provider descriptor and model profile source data, now imported from the package.
@@ -212,7 +212,7 @@ Current role:
 - Lists providers and models.
 - Resolves providers by ID.
 
-Reusable in `@entropic/llm-mesh`:
+Reusable in `@sentropic/llm-mesh`:
 
 - Registry interface.
 - Provider/model listing contract.
@@ -243,7 +243,7 @@ Current role:
 - Applies legacy model cutover rules.
 - Exposes reasoning helpers.
 
-Reusable in `@entropic/llm-mesh`:
+Reusable in `@sentropic/llm-mesh`:
 
 - Provider/model selection primitives.
 - Capability matrix.
@@ -259,7 +259,7 @@ App-specific compatibility layer:
 Package direction:
 
 - Define a provider-neutral model profile format.
-- Keep legacy Entropic model cutovers in the app or a compatibility adapter, not in package core.
+- Keep legacy Sentropic model cutovers in the app or a compatibility adapter, not in package core.
 - Add a capability source that can be static in MVP and extensible later.
 
 ### Provider Adapters
@@ -272,7 +272,7 @@ Current files:
 - `api/src/services/providers/mistral-provider.ts`
 - `api/src/services/providers/cohere-provider.ts`
 
-Reusable in `@entropic/llm-mesh`:
+Reusable in `@sentropic/llm-mesh`:
 
 - Provider model lists and capability profiles are now owned by the package catalog.
 - SDK request/stream entry points.
@@ -309,7 +309,7 @@ Current exported/publicly useful concepts:
 - `callLLM`
 - `callLLMStream`
 
-Reusable in `@entropic/llm-mesh`:
+Reusable in `@sentropic/llm-mesh`:
 
 - Normalized stream event taxonomy.
 - Tool-call normalization rules.
@@ -321,7 +321,7 @@ App-local until BR-14c runtime cutover:
 
 - Chat message conversion tied to OpenAI Chat Completions shapes.
 - Runtime selection from user/workspace settings.
-- Credential resolution from Entropic services.
+- Credential resolution from Sentropic services.
 - Retry and continuation orchestration tied to chat service flow.
 - Chat-service context budgeting.
 - Direct provider singleton calls.
@@ -349,7 +349,7 @@ Current precedence:
 - Environment.
 - None.
 
-Reusable in `@entropic/llm-mesh`:
+Reusable in `@sentropic/llm-mesh`:
 
 - Auth source enum.
 - Resolver contract.
@@ -369,7 +369,7 @@ App-specific after BR-14c package cutover:
 Package direction:
 
 - Core should define auth contracts and transport interfaces.
-- Entropic app should implement resolvers.
+- Sentropic app should implement resolvers.
 - Future managed SSO/account flows should be plugins or app-level integrations, not package core.
 
 ## External Framework Benchmark
@@ -380,11 +380,11 @@ Only official sources are used for final decisions.
 
 ### Cross-Framework Decision Matrix
 
-| System | Primary shape | Strong ideas to reuse | Scope boundary for Entropic |
+| System | Primary shape | Strong ideas to reuse | Scope boundary for Sentropic |
 | --- | --- | --- | --- |
-| Vercel AI SDK | TypeScript app SDK | Generation/streaming facade, typed tool lifecycle, provider registry, middleware, telemetry hooks | Good reference for `@entropic/llm-mesh` core API |
+| Vercel AI SDK | TypeScript app SDK | Generation/streaming facade, typed tool lifecycle, provider registry, middleware, telemetry hooks | Good reference for `@sentropic/llm-mesh` core API |
 | Vercel AI Gateway | Hosted gateway | BYOK, model fallbacks, provider timeouts, spend/model usage logs | Defer hosted gateway behavior; expose metadata/hooks only |
-| LangChain JS / LangGraph | Agent/workflow framework | Model profiles, stream modes, structured output strategies | Keep orchestration in `@entropic/flow`, not mesh core |
+| LangChain JS / LangGraph | Agent/workflow framework | Model profiles, stream modes, structured output strategies | Keep orchestration in `@sentropic/flow`, not mesh core |
 | Google Gemini / Vertex AI | Provider-native model APIs | Function calling limits, streamed tool arguments, schema subset limits, thinking signatures | Encode as capability metadata and provider adapter behavior |
 | LiteLLM | SDK plus proxy/gateway | Virtual keys, budgets, routing, SSO, callbacks, provider failover | Treat as FinOps/gateway inspiration, not MVP package scope |
 | Portkey / Cloudflare / OpenRouter / Helicone | Gateways | Fallbacks, retry, cache, cost analytics, OpenAI-compatible routing | Later gateway or deployment layer; package should remain embeddable |
@@ -392,10 +392,10 @@ Only official sources are used for final decisions.
 
 Decision:
 
-- BR-14c should create a small embeddable SDK contract, not an Entropic-hosted gateway.
+- BR-14c should create a small embeddable SDK contract, not an Sentropic-hosted gateway.
 - The package must expose enough metadata and lifecycle events for later FinOps and observability.
 - Cost accounting, budgets, SSO, gateway-managed virtual keys, persistent traces, and dashboards are separate systems.
-- Application-level orchestration remains outside `@entropic/llm-mesh`.
+- Application-level orchestration remains outside `@sentropic/llm-mesh`.
 
 ### Vercel AI SDK
 
@@ -420,7 +420,7 @@ Observed design:
 - Error handling distinguishes simple stream errors from full stream error parts.
 - Provider-specific options are available, but the core facade stays provider-neutral.
 
-Implications for Entropic:
+Implications for Sentropic:
 
 - Copy the separation between generation facade, provider registry, and middleware hooks.
 - Adopt typed tool-call lifecycle events.
@@ -445,9 +445,9 @@ Observed design:
 - Gateway behavior includes provider fallbacks, provider-specific timeouts, BYOK, usage, spend logs, and request observability.
 - Timeout and fallback behavior can have billing side effects because timed-out provider requests may still be charged depending on provider cancellation behavior.
 
-Implications for Entropic:
+Implications for Sentropic:
 
-- Keep `@entropic/llm-mesh` gateway-compatible but not gateway-owned.
+- Keep `@sentropic/llm-mesh` gateway-compatible but not gateway-owned.
 - Add request metadata needed for later gateway routing: correlation ID, tenant/workspace/user IDs, selected model, attempted providers, fallback reason, timing, token usage, and cost estimates.
 - Defer persistent gateway state, dashboard, BYOK vault, and org-level spend governance.
 
@@ -470,11 +470,11 @@ Observed design:
 - Model profile data can describe tool calling, structured output, modalities, and token limits.
 - Observability is integrated through LangSmith tracing and captures agent/model/tool steps when enabled.
 
-Implications for Entropic:
+Implications for Sentropic:
 
 - Separate model streaming from agent/workflow streaming.
 - Adopt model profiles/capability records as first-class data.
-- Do not put LangGraph-like orchestration into `llm-mesh`; that belongs to `@entropic/flow`.
+- Do not put LangGraph-like orchestration into `llm-mesh`; that belongs to `@sentropic/flow`.
 - Consider a stream mode abstraction, but keep BR-14c focused on model stream events.
 - Keep trace export as a generic hook so LangSmith-style backends remain pluggable.
 
@@ -501,7 +501,7 @@ Observed design:
 - Thinking models expose thought signatures and thought token counts; thought signatures must be preserved correctly across tool/function turns.
 - Vertex AI auth is primarily cloud/project oriented through Google Cloud credentials, service accounts, OAuth, and the Google Gen AI SDK configuration.
 
-Implications for Entropic:
+Implications for Sentropic:
 
 - Capability matrix must represent schema subset limits, streamed tool-call-argument support, parallel tool calls, thought signatures, and thought token accounting.
 - Reasoning cannot be a single boolean. It needs controls, summaries, hidden signatures, visible summaries, and usage accounting.
@@ -530,7 +530,7 @@ Observed design:
 - Observability is callback-based and integrates with tools such as Langfuse, LangSmith, Helicone, Traceloop, Sentry, PostHog, Arize, and OpenTelemetry.
 - Admin UI SSO supports providers such as Okta, Google, Microsoft, and generic OAuth/OIDC, with roles and team/org management.
 
-Implications for Entropic:
+Implications for Sentropic:
 
 - LiteLLM is closer to a gateway/FinOps product than a small TypeScript SDK.
 - BR-14c should not clone LiteLLM proxy concerns.
@@ -562,10 +562,10 @@ Observed design:
 - Observability platforms converge around traces, spans, token/cost/latency capture, prompt/version linkage, evaluation datasets, and asynchronous export.
 - Some systems combine gateway and observability; others keep SDK, gateway, and observability separate.
 
-Implications for Entropic:
+Implications for Sentropic:
 
 - `llm-mesh` should not own the policy engine, cache store, or trace database.
-- `llm-mesh` should emit enough structured events to let a future Entropic gateway, LiteLLM, Portkey, Cloudflare AI Gateway, Langfuse, Braintrust, LangSmith, Helicone, or OpenTelemetry exporter consume the same lifecycle.
+- `llm-mesh` should emit enough structured events to let a future Sentropic gateway, LiteLLM, Portkey, Cloudflare AI Gateway, Langfuse, Braintrust, LangSmith, Helicone, or OpenTelemetry exporter consume the same lifecycle.
 - The package contract should include redaction controls before any prompt/completion payload can be exported.
 
 ### OpenAI Agents SDK
@@ -583,12 +583,12 @@ Observed design:
 - ZDR policy can make tracing unavailable.
 - Handoffs are modeled as tool-like transfers between agents.
 
-Implications for Entropic:
+Implications for Sentropic:
 
 - Tracing should be designed as an exportable event/span hook.
 - Privacy and zero-retention constraints must be explicit.
 - `llm-mesh` should not assume a single hosted trace dashboard.
-- Agent handoffs belong in `@entropic/flow`; mesh only needs model/tool event support.
+- Agent handoffs belong in `@sentropic/flow`; mesh only needs model/tool event support.
 
 ## Recommended Scope Split
 
@@ -608,12 +608,12 @@ These targets are part of BR14c-EX1 because they touch make/build scaffolding, n
 
 ### npm Publication Lane
 
-BR-14c must finish with `@entropic/llm-mesh` publishable and published by CI/CD after merge to `main`.
+BR-14c must finish with `@sentropic/llm-mesh` publishable and published by CI/CD after merge to `main`.
 
 Required publication work:
 
 - Package metadata:
-  - Stable package name: `@entropic/llm-mesh`.
+  - Stable package name: `@sentropic/llm-mesh`.
   - Non-placeholder version policy for the first release.
   - `main`, `types`, `exports`, `files`, side-effects, license, and README suitable for npm consumers.
   - Built `dist/**` contents generated from the package TypeScript source, not checked in unless the package policy explicitly requires it.
@@ -634,7 +634,7 @@ Required publication work:
 
 Scope boundary:
 
-- BR-14c owns only `@entropic/llm-mesh` npm publication.
+- BR-14c owns only `@sentropic/llm-mesh` npm publication.
 - BR-07 and BR-12 keep ownership of UI, Chrome, and VSCode package publication.
 
 ### SDK Facade
@@ -688,7 +688,7 @@ Required stance:
 - Every non-trivial feature should be represented as `supported`, `unsupported`, `partial`, or `unknown`; booleans may exist only as derived helpers.
 - `unknown` is the default when the behavior has not been verified against official docs or tests.
 - `partial` must carry limits, such as unsupported JSON Schema keywords, missing strict mode, no streamed tool argument deltas, no parallel calls, no thought signatures, or provider-specific continuation limits.
-- Model IDs must distinguish provider-native model IDs from Entropic aliases.
+- Model IDs must distinguish provider-native model IDs from Sentropic aliases.
 
 This avoids over-promising to BR-14b and prevents runtime code from making unsafe assumptions such as "Google supports every tool feature" or "Anthropic structured output is equivalent to OpenAI JSON Schema strict mode."
 
@@ -703,7 +703,7 @@ Rules:
 
 - `AuthResolver` may return secret material to the server-side mesh execution path.
 - Public lifecycle events, stream metadata, traces, errors, and usage records must receive only `AuthDescriptor`.
-- Browser-safe entry points must never accept or expose refresh tokens, account tokens, or provider API keys unless the caller explicitly opts into a direct client-side provider integration outside Entropic's default path.
+- Browser-safe entry points must never accept or expose refresh tokens, account tokens, or provider API keys unless the caller explicitly opts into a direct client-side provider integration outside Sentropic's default path.
 - Request-level direct token overrides are allowed for server SDK use, but they must be excluded from exported metadata and must never be copied into provider-native chunks.
 - Codex account remains an experimental account transport. Gemini Code Assist and Claude Code remain interface hooks only until a dedicated auth branch defines enrollment and storage.
 
@@ -728,14 +728,14 @@ Required contract direction:
   - embedded resources where safe,
   - typed tool errors,
   - annotations such as title, audience, cacheability, sensitivity, and display hints.
-- Provider-native call IDs and Entropic call IDs must both be preserved so continuation can resume correctly across OpenAI, Gemini, Anthropic, and MCP-style tools.
+- Provider-native call IDs and Sentropic call IDs must both be preserved so continuation can resume correctly across OpenAI, Gemini, Anthropic, and MCP-style tools.
 - Stream events may keep the current high-level event taxonomy, but the `tool_call_*` payloads must contain enough lifecycle detail to render partial arguments, execute tools deterministically, and continue generation without provider-specific leakage.
 
 BR-14c does not need to implement a full MCP client. It must avoid freezing a contract that would make MCP-compatible tools or streamed tool input lifecycle impossible later.
 
 ### BR-14c MVP
 
-- Package boundary for `@entropic/llm-mesh`.
+- Package boundary for `@sentropic/llm-mesh`.
 - Public TypeScript contract.
 - Provider IDs and model profiles.
 - Capability matrix with explicit per-model capabilities.
@@ -749,7 +749,7 @@ BR-14c does not need to implement a full MCP client. It must avoid freezing a co
 - Correlation IDs and per-call lifecycle events.
 - Usage metadata envelope with provider-native raw usage preserved.
 - Deterministic unit tests for contracts and stream normalization.
-- Real application runtime cutover to `@entropic/llm-mesh`.
+- Real application runtime cutover to `@sentropic/llm-mesh`.
 - Deletion of replaced app-local provider/runtime implementation.
 - Runtime UAT proving chat generation uses the mesh-backed path.
 
@@ -770,7 +770,7 @@ BR-14c does not need to implement a full MCP client. It must avoid freezing a co
 - Modularize chat-service behavior above the mesh runtime.
 - Extract reasoning-loop, tool-loop, continuation, cancellation, and retry orchestration boundaries where they are reusable.
 - Preserve chat streaming, local-tool handoff, tool-result continuation, cancellation, checkpoints, traces, audit, and current API behavior.
-- Avoid redefining provider/model access; all model access must continue through `@entropic/llm-mesh`.
+- Avoid redefining provider/model access; all model access must continue through `@sentropic/llm-mesh`.
 
 ### BR-14d
 
@@ -778,7 +778,7 @@ BR-14c does not need to implement a full MCP client. It must avoid freezing a co
 - DNS and deployment transition.
 - Secrets and environment variable names.
 - OAuth callback URLs and allowed redirect URIs.
-- Gateway/proxy deployment names if Entropic later adds a hosted mesh gateway.
+- Gateway/proxy deployment names if Sentropic later adds a hosted mesh gateway.
 
 ### Later FinOps and Observability Branch
 
@@ -787,19 +787,19 @@ BR-14c does not need to implement a full MCP client. It must avoid freezing a co
 - Rate limits and throttling policy.
 - Fallback routing based on cost, latency, availability, or quotas.
 - Observability storage, dashboards, and admin UI.
-- Integration with Langfuse, LangSmith, Helicone, OpenTelemetry, or a custom Entropic trace store.
-- Virtual keys or managed gateway keys if Entropic chooses a proxy architecture.
+- Integration with Langfuse, LangSmith, Helicone, OpenTelemetry, or a custom Sentropic trace store.
+- Virtual keys or managed gateway keys if Sentropic chooses a proxy architecture.
 
 ## Open Product Questions
 
 - Q1: Should BR-14c include a minimal executable fallback engine, or only define fallback policy contracts and retryable error metadata?
 - Q2: Should JSON Schema be the canonical package schema, with Zod/Pydantic adapters kept peripheral?
-- Q3: Is `codex-account` a public v1 auth mode or an experimental Entropic adapter until the account transport contract is stable?
+- Q3: Is `codex-account` a public v1 auth mode or an experimental Sentropic adapter until the account transport contract is stable?
 - Q4: How much reasoning should the public contract expose: hidden signatures only, visible summaries, reasoning token counts, or provider-native reasoning payloads?
 - Q5: Should streaming expose fine-grained tool-call argument deltas, or a simplified `tool_call_delta` event with provider-native deltas in metadata?
 - Q6: Should the first package be Node-only, or include a browser-safe subset with no secret-bearing transports?
 - Q7: What is the default redaction policy for prompts, completions, tool payloads, and provider-native chunks before observability export?
-- Q8: Should `@entropic/llm-mesh` expose a Vercel-like `generateText` / `streamText` API, or an Entropic-specific `mesh.generate` / `mesh.stream` API?
+- Q8: Should `@sentropic/llm-mesh` expose a Vercel-like `generateText` / `streamText` API, or an Sentropic-specific `mesh.generate` / `mesh.stream` API?
 - Q9: Should model IDs be `provider:model` strings, separate `{ providerId, modelId }` pairs, or both?
 - Q10: Should OpenAI-compatible gateways such as LiteLLM/OpenRouter be first-class providers in BR-14c, or deferred as adapter examples?
 - Q11: Should app contexts such as `chat`, `summary`, and `doc` remain outside the package, or become generic task profiles?
@@ -810,7 +810,7 @@ Use BR-14c to build a small SDK core and cut the current app runtime over to it,
 
 - Core API: normalized generation, streaming, tools, structured output, reasoning controls, provider/model registry, capability matrix, auth hooks.
 - Optional hooks: observability, usage, cost metadata, routing policy, retry/fallback policy, redaction policy.
-- Strict cutover: API imports `@entropic/llm-mesh`; replaced app-local runtime code is removed in the same branch.
+- Strict cutover: API imports `@sentropic/llm-mesh`; replaced app-local runtime code is removed in the same branch.
 - Deferred systems: SSO, managed virtual keys, budgets, dashboards, persistent traces, billing, and gateway deployment.
 
-This keeps `@entropic/llm-mesh` useful as an npm library while leaving enough contract surface for later FinOps and observability without forcing those systems into the MVP.
+This keeps `@sentropic/llm-mesh` useful as an npm library while leaving enough contract surface for later FinOps and observability without forcing those systems into the MVP.

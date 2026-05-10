@@ -1,8 +1,8 @@
-# @entropic/llm-mesh
+# @sentropic/llm-mesh
 
-Provider-agnostic TypeScript contracts for Entropic model access.
+Provider-agnostic TypeScript contracts for Sentropic model access.
 
-This package boundary is the BR-14c model-access runtime extraction. It defines public provider/model IDs, capability metadata, normalized generation and streaming shapes, tool-use types, structured-output flags, authentication source types, deterministic provider adapter scaffolds, and retryable error metadata. BR-14c also cuts the Entropic application LLM runtime over to this package and prepares the package for npm publication.
+This package boundary is the BR-14c model-access runtime extraction. It defines public provider/model IDs, capability metadata, normalized generation and streaming shapes, tool-use types, structured-output flags, authentication source types, deterministic provider adapter scaffolds, and retryable error metadata. BR-14c also cuts the Sentropic application LLM runtime over to this package and prepares the package for npm publication.
 
 ## Public Scope
 

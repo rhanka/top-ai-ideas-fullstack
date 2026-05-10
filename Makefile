@@ -558,20 +558,20 @@ typecheck-api: ## Run API type checks
 	@$(DOCKER_COMPOSE) -f docker-compose.yml run --rm --no-deps api npm run typecheck
 
 .PHONY: typecheck-llm-mesh
-typecheck-llm-mesh: ## Run @entropic/llm-mesh type checks
+typecheck-llm-mesh: ## Run @sentropic/llm-mesh type checks
 	@docker run --rm -v "$(CURDIR):/workspace" -w /workspace/packages/llm-mesh $(LLM_MESH_NODE_IMAGE) sh -lc 'set -eu; tool_dir="$$(mktemp -d)"; npm_config_cache=/tmp/npm-cache npm install --prefix "$$tool_dir" --no-save --no-audit --no-fund typescript@5.4.5 @types/node >/dev/null; "$$tool_dir/node_modules/.bin/tsc" --noEmit -p tsconfig.json'
 
 .PHONY: build-llm-mesh
-build-llm-mesh: ## Build @entropic/llm-mesh dist package
+build-llm-mesh: ## Build @sentropic/llm-mesh dist package
 	@docker run --rm -v "$(CURDIR):/workspace" -w /workspace/packages/llm-mesh $(LLM_MESH_NODE_IMAGE) sh -lc 'rm -rf dist'
 	@docker run --rm -u "$$(id -u):$$(id -g)" -v "$(CURDIR):/workspace" -w /workspace/packages/llm-mesh $(LLM_MESH_NODE_IMAGE) sh -lc 'set -eu; tool_dir="$$(mktemp -d)"; npm_config_cache=/tmp/npm-cache npm install --prefix "$$tool_dir" --no-save --no-audit --no-fund typescript@5.4.5 @types/node >/dev/null; "$$tool_dir/node_modules/.bin/tsc" -p tsconfig.json'
 
 .PHONY: pack-llm-mesh
-pack-llm-mesh: build-llm-mesh ## Validate @entropic/llm-mesh npm package contents without publishing
+pack-llm-mesh: build-llm-mesh ## Validate @sentropic/llm-mesh npm package contents without publishing
 	@docker run --rm -u "$$(id -u):$$(id -g)" -e HOME=/tmp -e npm_config_cache=/tmp/npm-cache -v "$(CURDIR):/workspace" -w /workspace/packages/llm-mesh $(LLM_MESH_NODE_IMAGE) sh -lc 'npm pack --dry-run'
 
 .PHONY: publish-llm-mesh
-publish-llm-mesh: build-llm-mesh ## Publish @entropic/llm-mesh from CI OIDC trusted publishing
+publish-llm-mesh: build-llm-mesh ## Publish @sentropic/llm-mesh from CI OIDC trusted publishing
 	@docker run --rm \
 		-u "$$(id -u):$$(id -g)" \
 		-e HOME=/tmp \
@@ -584,7 +584,7 @@ publish-llm-mesh: build-llm-mesh ## Publish @entropic/llm-mesh from CI OIDC trus
 		-e ACTIONS_ID_TOKEN_REQUEST_TOKEN \
 		-v "$(CURDIR):/workspace" \
 		-w /workspace/packages/llm-mesh \
-		$(LLM_MESH_NODE_IMAGE) sh -lc 'set -eu; version="$$(node -p "require(\"./package.json\").version")"; if npm view @entropic/llm-mesh@"$$version" version >/dev/null 2>&1; then echo "@entropic/llm-mesh@$$version already exists; skipping publish"; else npm publish --access public; fi'
+		$(LLM_MESH_NODE_IMAGE) sh -lc 'set -eu; version="$$(node -p "require(\"./package.json\").version")"; if npm view @sentropic/llm-mesh@"$$version" version >/dev/null 2>&1; then echo "@sentropic/llm-mesh@$$version already exists; skipping publish"; else npm publish --access public; fi'
 
 .PHONY: lint
 lint: lint-ui lint-api ## Run all linters
@@ -618,7 +618,7 @@ audit:
 test: test-api test-ui test-e2e ## Run all tests
 
 .PHONY: test-llm-mesh
-test-llm-mesh: ## Run @entropic/llm-mesh tests
+test-llm-mesh: ## Run @sentropic/llm-mesh tests
 	@docker run --rm -v "$(CURDIR):/workspace" -w /workspace/packages/llm-mesh $(LLM_MESH_NODE_IMAGE) sh -lc 'set -eu; tool_dir="$$(mktemp -d)"; npm_config_cache=/tmp/npm-cache npm install --prefix "$$tool_dir" --no-save --no-audit --no-fund vitest@4.0.18 typescript@5.4.5 @types/node >/dev/null; NODE_PATH="$$tool_dir/node_modules" "$$tool_dir/node_modules/.bin/vitest" run tests --environment node'
 
 .PHONY: test-ui

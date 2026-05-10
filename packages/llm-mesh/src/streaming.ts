@@ -71,7 +71,7 @@ export interface StatusEvent {
     status: 'started' | 'selected_model' | 'retrying' | 'tool_calling' | 'completed' | (string & {});
     providerId?: ProviderId;
     modelId?: ModelId;
-    entropicResponseId?: string;
+    sentropicResponseId?: string;
     providerResponseId?: string;
     message?: string;
     metadata?: Record<string, unknown>;
@@ -89,7 +89,7 @@ export interface DoneEvent {
     finishReason?: FinishReason;
     usage?: TokenUsage;
     responseId?: string;
-    entropicResponseId?: string;
+    sentropicResponseId?: string;
     providerResponseId?: string;
     providerId?: ProviderId;
     modelId?: ModelId;

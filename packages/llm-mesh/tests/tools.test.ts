@@ -7,7 +7,7 @@ describe('tool lifecycle payloads', () => {
   it('keeps streamed input lifecycle and dual call identifiers', () => {
     const call: ToolCall = {
       toolCallId: 'tool_123',
-      entropicCallId: 'mesh_call_123',
+      sentropicCallId: 'mesh_call_123',
       providerCallId: 'provider_call_123',
       name: 'search_web',
       argumentsText: '{"query":"graph clusters"}',
@@ -20,7 +20,7 @@ describe('tool lifecycle payloads', () => {
 
     const delta: ToolCallDelta = {
       toolCallId: 'tool_123',
-      entropicCallId: 'mesh_call_123',
+      sentropicCallId: 'mesh_call_123',
       providerCallId: 'provider_call_123',
       delta: '"clusters"}',
       accumulatedArgumentsText: '{"query":"graph clusters"}',
@@ -35,7 +35,7 @@ describe('tool lifecycle payloads', () => {
   it('supports rich tool results with continuation metadata', () => {
     const result: ToolResult = {
       toolCallId: 'tool_123',
-      entropicCallId: 'mesh_call_123',
+      sentropicCallId: 'mesh_call_123',
       providerCallId: 'provider_call_123',
       name: 'search_web',
       output: { ok: true },
@@ -50,7 +50,7 @@ describe('tool lifecycle payloads', () => {
       ],
       continuation: {
         state: 'submitted',
-        entropicResponseId: 'resp_mesh_123',
+        sentropicResponseId: 'resp_mesh_123',
         providerResponseId: 'resp_provider_123',
       },
       annotations: {

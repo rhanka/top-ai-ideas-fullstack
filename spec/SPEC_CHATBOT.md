@@ -131,8 +131,8 @@
 
 BR-14c adds the permanent runtime boundary for model access:
 
-- The API runtime imports `@entropic/llm-mesh` as a workspace package and routes `callLLM` / `callLLMStream` through the mesh-backed `api/src/services/llm-runtime` boundary.
-- `@entropic/llm-mesh` provides the public TypeScript contract for provider/model IDs, model capability profiles, normalized generation and streaming events, tool calls, structured output, retryable provider errors, and redacted auth descriptors.
+- The API runtime imports `@sentropic/llm-mesh` as a workspace package and routes `callLLM` / `callLLMStream` through the mesh-backed `api/src/services/llm-runtime` boundary.
+- `@sentropic/llm-mesh` provides the public TypeScript contract for provider/model IDs, model capability profiles, normalized generation and streaming events, tool calls, structured output, retryable provider errors, and redacted auth descriptors.
 - Provider SDK clients, decrypted credentials, quota enforcement, persistence, traces, and chat/session state remain server-side in the API.
 - Chat orchestration remains above the model runtime: reasoning loops, tool continuation, context assembly, and session behavior stay in the chat service until the dedicated chat-service modularization branch.
 - Future model catalog pivots and provider additions must consume the mesh contract instead of adding a second app-local provider abstraction.

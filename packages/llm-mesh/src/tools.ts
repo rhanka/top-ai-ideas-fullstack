@@ -36,7 +36,7 @@ export type ToolChoice =
 
 export interface ToolCall {
   toolCallId: string;
-  entropicCallId?: string;
+  sentropicCallId?: string;
   providerCallId?: string;
   name: string;
   argumentsText: string;
@@ -48,7 +48,7 @@ export interface ToolCall {
 
 export interface ToolCallDelta {
   toolCallId: string;
-  entropicCallId?: string;
+  sentropicCallId?: string;
   providerCallId?: string;
   delta: string;
   name?: string;
@@ -116,14 +116,14 @@ export type ToolResultContent =
 
 export interface ToolContinuation {
   state: 'not_required' | 'pending' | 'submitted' | 'skipped';
-  entropicResponseId?: string;
+  sentropicResponseId?: string;
   providerResponseId?: string;
   metadata?: Record<string, unknown>;
 }
 
 export interface ToolResult {
   toolCallId: string;
-  entropicCallId?: string;
+  sentropicCallId?: string;
   providerCallId?: string;
   name?: string;
   output: unknown;

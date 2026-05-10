@@ -15,7 +15,7 @@ import {
   type StreamResult,
   type ToolChoice,
   type ToolDefinition,
-} from '@entropic/llm-mesh';
+} from '@sentropic/llm-mesh';
 import type OpenAI from 'openai';
 
 import { providerRegistry } from '../provider-registry';

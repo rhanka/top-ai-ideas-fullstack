@@ -2,7 +2,7 @@
 
 Current coordination source:
 
-- `spec/SPEC_EVOL_ENTROPIC_BR14_ORCHESTRATION.md`
+- `spec/SPEC_EVOL_SENTROPIC_BR14_ORCHESTRATION.md`
 - `spec/SPEC_EVOL_LLM_MESH.md`
 - `BRANCH.md` in `tmp/feat-llm-mesh-sdk`
 
@@ -13,20 +13,20 @@ Branch:
 Ordering rule:
 
 - BR-14c is the first BR-14 implementation branch.
-- It defines the `@entropic/llm-mesh` public model-access contract, cuts the application LLM runtime over to that package, and publishes the first `@entropic` npm library before BR-14b chat-service modularization and BR-14a chat SDK extraction.
+- It defines the `@sentropic/llm-mesh` public model-access contract, cuts the application LLM runtime over to that package, and publishes the first `@sentropic` npm library before BR-14b chat-service modularization and BR-14a chat SDK extraction.
 
 Scope summary:
 
-- Published npm package boundary for `@entropic/llm-mesh`.
+- Published npm package boundary for `@sentropic/llm-mesh`.
 - Providers: OpenAI, Anthropic/Claude, Google/Gemini, Mistral, Cohere.
 - Auth modes: direct token, user token, Codex-account mode.
 - Later account targets prepared: Gemini Code Assist, Claude Code.
 - Normalized streaming, tool capability, and model capability contracts.
-- Real API workspace import of `@entropic/llm-mesh`; relative source imports are not sufficient.
+- Real API workspace import of `@sentropic/llm-mesh`; relative source imports are not sufficient.
 - Strict application LLM runtime cutover to the package.
 - Deletion of replaced app-local provider/runtime implementation in the same branch.
 - Preservation of credential precedence, quotas, retries, streaming order, tool-call continuation, reasoning controls, traces/audit metadata, and live AI behavior.
-- CI/CD package validation and npm publication for `@entropic/llm-mesh`.
+- CI/CD package validation and npm publication for `@sentropic/llm-mesh`.
 
 Lot outline:
 
@@ -47,8 +47,8 @@ Lot outline:
   - Keep Gemini Code Assist and Claude Code as future account transport hooks.
   - Preserve current credential precedence.
 - Lot 4 — Application runtime cutover:
-  - Declare `@entropic/llm-mesh` as a real workspace dependency for the API.
-  - Replace relative proof imports with `@entropic/llm-mesh`.
+  - Declare `@sentropic/llm-mesh` as a real workspace dependency for the API.
+  - Replace relative proof imports with `@sentropic/llm-mesh`.
   - Migrate `api/src/services/llm-runtime/**` dispatch to the package.
   - Delete app-local provider/runtime code replaced by the package; no dual path, no feature flag, no fallback alias.
   - Preserve quotas, retries, streaming order, tool-call continuation, reasoning controls, trace/audit metadata, and live AI behavior.
@@ -71,7 +71,7 @@ Lot outline:
 
 Exit criteria:
 
-- The API imports `@entropic/llm-mesh` as a real workspace package.
+- The API imports `@sentropic/llm-mesh` as a real workspace package.
 - The live app LLM runtime uses the package, and replaced app-local runtime/provider code is removed.
 - The package builds, packs, and validates in CI.
-- On merge to `main`, CI/CD can publish `@entropic/llm-mesh` as the first `@entropic` npm library.
+- On merge to `main`, CI/CD can publish `@sentropic/llm-mesh` as the first `@sentropic` npm library.

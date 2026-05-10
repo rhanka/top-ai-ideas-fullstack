@@ -2,7 +2,7 @@
 
 Current coordination source:
 
-- `spec/SPEC_EVOL_ENTROPIC_BR14_ORCHESTRATION.md`
+- `spec/SPEC_EVOL_SENTROPIC_BR14_ORCHESTRATION.md`
 
 Branch:
 
@@ -10,7 +10,7 @@ Branch:
 
 Ordering rule:
 
-- BR-14g starts after BR-14c freezes and activates the `@entropic/llm-mesh` public model-profile contract in the live application runtime.
+- BR-14g starts after BR-14c freezes and activates the `@sentropic/llm-mesh` public model-profile contract in the live application runtime.
 - BR-14g must land before BR-14b modularizes chat-service behavior above the mesh runtime.
 - BR-14g must not perform runtime dispatch migration or chat extraction; BR-14c owns runtime migration and BR-14a owns chat extraction.
 

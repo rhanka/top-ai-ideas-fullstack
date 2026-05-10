@@ -6,7 +6,7 @@ import {
   type ModelProfile,
   type ProviderId as MeshProviderId,
   type ReasoningTier as MeshReasoningTier,
-} from '@entropic/llm-mesh';
+} from '@sentropic/llm-mesh';
 
 export type ProviderId = MeshProviderId;
 

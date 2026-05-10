@@ -1,12 +1,12 @@
 {
-  "name": "@entropic/llm-mesh",
+  "name": "@sentropic/llm-mesh",
   "version": "0.1.0",
-  "description": "Provider-agnostic LLM access runtime SDK for Entropic.",
+  "description": "Provider-agnostic LLM access runtime SDK for Sentropic.",
   "type": "module",
   "license": "SEE LICENSE IN LICENSE",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/rhanka/entropic.git",
+    "url": "git+https://github.com/rhanka/sentropic.git",
     "directory": "packages/llm-mesh"
   },
   "main": "./dist/index.js",
