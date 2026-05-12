@@ -31,16 +31,16 @@
 
 ## Lot 0 - Inventory
 
-- [ ] Identify every GitHub Action version in `.github/workflows/**`.
-- [ ] Identify every `setup-node` usage and requested Node version.
+- [x] Identify every GitHub Action version in `.github/workflows/**`.
+- [x] Identify every `setup-node` usage and requested Node version.
 - [ ] Identify actions that embed Node 20 or older runtime assumptions.
 - [ ] Confirm OIDC publish job for `@sentropic/llm-mesh` is preserved.
 
 ## Lot 1 - Upgrade
 
-- [ ] Upgrade official actions to Node 24-compatible maintained versions where available.
-- [ ] Preserve permissions blocks, concurrency, environments, secrets, and OIDC settings.
-- [ ] Avoid unrelated YAML formatting churn.
+- [x] Upgrade official actions to Node 24-compatible maintained versions where available.
+- [x] Preserve permissions blocks, concurrency, environments, secrets, and OIDC settings.
+- [x] Avoid unrelated YAML formatting churn.
 
 ## Lot 2 - Behavior preservation
 
