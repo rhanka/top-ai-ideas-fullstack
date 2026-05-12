@@ -586,6 +586,20 @@ publish-llm-mesh: build-llm-mesh ## Publish @sentropic/llm-mesh from CI OIDC tru
 		-w /workspace/packages/llm-mesh \
 		$(LLM_MESH_NODE_IMAGE) sh -lc 'set -eu; version="$$(node -p "require(\"./package.json\").version")"; if npm view @sentropic/llm-mesh@"$$version" version >/dev/null 2>&1; then echo "@sentropic/llm-mesh@$$version already exists; skipping publish"; else npm publish --access public; fi'
 
+NPM_TOKEN_FILE ?= /tmp/sentropic-npm-token
+
+.PHONY: publish-llm-mesh-token
+publish-llm-mesh-token: build-llm-mesh ## Publish @sentropic/llm-mesh using a token read from NPM_TOKEN_FILE (bootstrap only; prefer OIDC publish-llm-mesh in CI)
+	@test -s "$(NPM_TOKEN_FILE)" || { echo "ERROR: $(NPM_TOKEN_FILE) is missing or empty"; exit 1; }
+	@docker run --rm \
+		-u "$$(id -u):$$(id -g)" \
+		-e HOME=/tmp \
+		-e npm_config_cache=/tmp/npm-cache \
+		-v "$(CURDIR):/workspace" \
+		-v "$(NPM_TOKEN_FILE):/run/npm-token:ro" \
+		-w /workspace/packages/llm-mesh \
+		$(LLM_MESH_NODE_IMAGE) sh -lc 'set -eu; token="$$(cat /run/npm-token)"; printf "//registry.npmjs.org/:_authToken=%s\n" "$$token" > /tmp/.npmrc; export NPM_CONFIG_USERCONFIG=/tmp/.npmrc; npm whoami --registry=https://registry.npmjs.org; version="$$(node -p "require(\"./package.json\").version")"; if npm view @sentropic/llm-mesh@"$$version" version >/dev/null 2>&1; then echo "@sentropic/llm-mesh@$$version already exists; skipping publish"; else npm publish --access public; fi'
+
 .PHONY: lint
 lint: lint-ui lint-api ## Run all linters
 
