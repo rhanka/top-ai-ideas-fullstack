@@ -38,10 +38,10 @@
 
 - [ ] Confirm branch starts from post-BR14c/post-hotfix `origin/main`.
 - [x] Locate catalog/default/profile source of truth in mesh package, API, and UI.
-- [ ] Confirm exact OpenAI GPT-5.5 API model identifier.
+- [x] Confirm exact OpenAI GPT-5.5 API model identifier. Responses simulation accepted `gpt-5.5` and returned `gpt-5.5-2026-04-23`.
 - [ ] Confirm exact OpenAI GPT-5.4 Nano API model identifier.
 - [x] Confirm exact Anthropic Claude Opus 4.7 API model identifier.
-- [ ] Record identifiers in branch notes without exposing secrets. OpenAI static docs did not expose `gpt-5.5` through curl; Anthropic public docs expose `claude-opus-4-7`.
+- [ ] Record identifiers in branch notes without exposing secrets. OpenAI Responses simulation accepted `gpt-5.5` and returned `gpt-5.5-2026-04-23`; Anthropic public docs expose `claude-opus-4-7`.
 
 ## Lot 1 - Catalog
 
