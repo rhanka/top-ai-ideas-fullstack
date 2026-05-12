@@ -1,4 +1,4 @@
-# SPEC_VOL - Best-of-Breed Agent Methods, Skills, and Publication
+# SPEC_STUDY - Best-of-Breed Agent Methods, Skills, and Publication
 
 ## Intention
 
@@ -33,12 +33,12 @@ This branch is about developer-agent operating methods, rules, specs, skills, pl
 The method should publish as layered artifacts:
 
 - Rules: repo-local policy for commands, branches, commits, tests, and security.
-- Specs: `SPEC_VOL` for intent and `SPEC_EVOL` for controlled evolution.
+- Specs: validated `SPEC_VOL` for intent and `SPEC_EVOL` for controlled evolution after review.
 - Skills/plugins: reusable agent behaviors for planning, conductor reports, verification, graphification, and release discipline.
 - Templates: branch plans, PR bodies, benchmark matrices, and decision records.
 - CLI/API hooks: optional enforcement points for projects that want stricter automation.
 
-## spec_evol rules
+## study_evol rules
 
 - Keep developer-agent skills separate from BR19 product skills until integration is explicitly designed.
 - Prefer public, reusable primitives over project-specific rituals when publishing.
