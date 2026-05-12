@@ -61,8 +61,8 @@
 
 - [ ] Update visible model names and descriptions in selectors/cards/docs.
 - [ ] Preserve stable keys if UI preferences are stored by model id.
-- [ ] Update focused catalog/profile/default tests.
-- [ ] Add regression coverage only if current tests do not cover default model selection.
+- [x] Update focused catalog/profile/default tests.
+- [x] Add regression coverage only if current tests do not cover default model selection. Existing coverage updated; no new tests needed.
 
 ## Lot 4 - Final
 
