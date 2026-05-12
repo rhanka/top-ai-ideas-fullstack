@@ -37,9 +37,9 @@
 
 ## Lot 0 - Re-benchmark frame
 
-- [ ] Define benchmark dimensions: intention capture, spec evolution, planning, loop control, verification, branch discipline, memory, plugin distribution, and public reuse.
-- [ ] Define baseline: current rules, conductor report, `BRANCH.md`, `PLAN.md`, `spec_vol`, `spec_evol`, and BR04B incident learnings.
-- [ ] Define difference between developer-agent skills and product user-facing skills.
+- [x] Define benchmark dimensions: intention capture, spec evolution, planning, loop control, verification, branch discipline, memory, plugin distribution, and public reuse.
+- [x] Define baseline: current rules, conductor report, `BRANCH.md`, `PLAN.md`, `spec_vol`, `spec_evol`, and BR04B incident learnings.
+- [x] Define difference between developer-agent skills and product user-facing skills.
 
 ## Lot 1 - External benchmark refresh
 
