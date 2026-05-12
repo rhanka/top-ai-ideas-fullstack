@@ -50,8 +50,8 @@ class MistralHttpError extends Error {
   constructor(message: string, options: { status?: number; code?: string } = {}) {
     super(message);
     this.name = 'MistralHttpError';
-    this.status = options.status;
-    this.code = options.code;
+    if (typeof options.status === 'number') this.status = options.status;
+    if (options.code) this.code = options.code;
   }
 }
 
@@ -143,7 +143,12 @@ export class MistralProviderRuntime implements ProviderRuntime {
       throw new Error(validation.message || 'Mistral API key is not configured');
     }
 
-    return apiKeyOverride || env.MISTRAL_API_KEY;
+    const apiKey = apiKeyOverride || env.MISTRAL_API_KEY;
+    if (!apiKey) {
+      throw new Error('Mistral API key is not configured');
+    }
+
+    return apiKey;
   }
 
   private normalizeRequestOptions(
