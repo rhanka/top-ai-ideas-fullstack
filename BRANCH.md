@@ -43,25 +43,25 @@
 
 ## Lot 1 - External benchmark refresh
 
-- [ ] Review Graphify patterns for knowledge graph extraction, clustering, audit trail, and visual publication.
-- [ ] Review Superpowers patterns for brainstorming, plans, TDD, verification, worktrees, and subagent workflows.
-- [ ] Review GSD-style execution trends for high-discipline agentic delivery loops.
-- [ ] Review GitHub Spec Kit patterns for specs, plans, tasks, and implementation discipline.
-- [ ] Review Codex, Claude, Gemini, and related plugin/skill ecosystems for distribution and interoperability.
+- [x] Review Graphify patterns for knowledge graph extraction, clustering, audit trail, and visual publication.
+- [x] Review Superpowers patterns for brainstorming, plans, TDD, verification, worktrees, and subagent workflows.
+- [x] Review GSD-style execution trends for high-discipline agentic delivery loops.
+- [x] Review GitHub Spec Kit patterns for specs, plans, tasks, and implementation discipline.
+- [x] Review Codex, Claude, Gemini, and related plugin/skill ecosystems for distribution and interoperability.
 
 ## Lot 2 - Entropiq method synthesis
 
-- [ ] Identify what our conductor model does better than external references.
-- [ ] Identify what external references do better than our conductor model.
-- [ ] Define the minimum durable method: `spec_vol`, `spec_evol`, branch plan, loop control, verification, publication.
-- [ ] Define naming and file conventions that can be reused outside this repo.
+- [x] Identify what our conductor model does better than external references.
+- [x] Identify what external references do better than our conductor model.
+- [x] Define the minimum durable method: `spec_vol`, `spec_evol`, branch plan, loop control, verification, publication.
+- [x] Define naming and file conventions that can be reused outside this repo.
 
 ## Lot 3 - Publication strategy
 
-- [ ] Decide whether outputs should be published as Codex skills, Claude commands, MCP servers, npm packages, GitHub templates, docs, or Graphify reports.
-- [ ] Define what can be open and useful to everyone without leaking project-specific context.
-- [ ] Define what remains private repo policy.
-- [ ] Define compatibility with future Entropiq CLI and BR19 product skill catalog.
+- [x] Decide whether outputs should be published as Codex skills, Claude commands, MCP servers, npm packages, GitHub templates, docs, or Graphify reports.
+- [x] Define what can be open and useful to everyone without leaking project-specific context.
+- [x] Define what remains private repo policy.
+- [x] Define compatibility with future Entropiq CLI and BR19 product skill catalog.
 
 ## Lot 4 - Mechanical enforcement candidates
 
