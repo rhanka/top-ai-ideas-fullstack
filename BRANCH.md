@@ -37,23 +37,23 @@
 ## Lot 0 - Baseline
 
 - [ ] Confirm branch starts from post-BR14c/post-hotfix `origin/main`.
-- [ ] Locate catalog/default/profile source of truth in mesh package, API, and UI.
+- [x] Locate catalog/default/profile source of truth in mesh package, API, and UI.
 - [ ] Confirm exact OpenAI GPT-5.5 API model identifier.
 - [ ] Confirm exact OpenAI GPT-5.4 Nano API model identifier.
-- [ ] Confirm exact Anthropic Claude Opus 4.7 API model identifier.
-- [ ] Record identifiers in branch notes without exposing secrets.
+- [x] Confirm exact Anthropic Claude Opus 4.7 API model identifier.
+- [ ] Record identifiers in branch notes without exposing secrets. OpenAI static docs did not expose `gpt-5.5` through curl; Anthropic public docs expose `claude-opus-4-7`.
 
 ## Lot 1 - Catalog
 
-- [ ] Add or update GPT-5.5 catalog entry with provider id, label, family, capabilities, and constraints.
-- [ ] Preserve GPT-5.4 Nano entry and intentional low-cost references.
-- [ ] Add or update Claude Opus 4.7 catalog entry with provider id, label, family, capabilities, and constraints.
+- [x] Add or update GPT-5.5 catalog entry with provider id, label, family, capabilities, and constraints.
+- [x] Preserve GPT-5.4 Nano entry and intentional low-cost references.
+- [x] Add or update Claude Opus 4.7 catalog entry with provider id, label, family, capabilities, and constraints.
 - [ ] Deprecate or demote GPT-5.4 and Opus 4.6 only where catalog semantics require it.
 
 ## Lot 2 - Defaults
 
-- [ ] Pivot default reasoning profile from GPT-5.4 to GPT-5.5.
-- [ ] Pivot Anthropic top-tier profile from Opus 4.6 to Opus 4.7.
+- [x] Pivot default reasoning profile from GPT-5.4 to GPT-5.5.
+- [x] Pivot Anthropic top-tier profile from Opus 4.6 to Opus 4.7.
 - [ ] Update budget tiers, aliases, and fallback labels impacted by the pivot.
 - [ ] Keep persisted-setting compatibility rules explicit.
 
