@@ -142,6 +142,16 @@ Recommended categories:
 
 BR25 should later propose mechanical prompts/checks that prevent agents from claiming "done" without stating which category was used or why verification was intentionally skipped.
 
+### Merge readiness and UAT gate
+
+CI success is necessary but not sufficient for product branches. A branch that changes user-visible behavior, runtime defaults, package behavior, or operational publication must not be merged until one of these states is recorded in the branch report:
+
+- `uat_passed`: user or delegated UAT validated the relevant surfaces on the exact commit under qualification.
+- `uat_waived`: the user explicitly waived UAT and the branch records the reason and risk.
+- `uat_not_applicable`: the branch is non-user-facing and records why UAT does not apply.
+
+The conductor report should surface this state next to CI and dirty status. The final merge command should be treated as blocked when the UAT state is empty. This is a governance rule, not a flaky-test workaround: a green CI run cannot replace a missing human checkpoint when the branch changes runtime behavior or product semantics.
+
 ### Mechanical enforcement
 
 Text rules fail when violations are easy to make under speed pressure. Candidate enforcement should target repeated, objective failures:
