@@ -73,5 +73,5 @@
 
 - [x] Produce a best-of-breed recommendation document.
 - [x] Produce roadmap updates for BR19, BR23, BR24, BR10, and future CLI work.
-- [ ] Produce a small mechanical-enforcement implementation plan if approved.
+- [x] Produce a small mechanical-enforcement implementation plan if approved.
 - [ ] Remove `BRANCH.md` before merge unless project explicitly keeps it.
