@@ -74,4 +74,16 @@
 - [x] Produce a best-of-breed recommendation document.
 - [x] Produce roadmap updates for BR19, BR23, BR24, BR10, and future CLI work.
 - [x] Produce a small mechanical-enforcement implementation plan if approved.
-- [ ] Remove `BRANCH.md` before merge unless project explicitly keeps it.
+- [ ] Remove `BRANCH.md` before merge unless project explicitly keeps it. (Deferred to merge step per `rules/workflow.md` PR Creation sequence; not removed during synthesis close.)
+
+## Closure
+
+- [x] Lot 4 + Lot 5 work items closed. Final BRANCH.md deletion is the last merge-prep step per `rules/workflow.md`.
+- [x] Outputs landed on this branch:
+  - `spec/SPEC_STUDY_BEST_OF_BREED_AGENT_METHODS.md` (Lot 1-3 + Lot 4 candidates source).
+  - `spec/SPEC_STUDY_BR25_ENFORCEMENT_CANDIDATES.md` (Lot 4 candidate list).
+  - `spec/SPEC_BR25_BEST_OF_BREED.md` (Lot 5 decision output, D1-D7 pending approval).
+  - `spec/SPEC_STUDY_BR25_ENFORCEMENT_PLAN.md` (Lot 5 staged implementation plan).
+  - `PLAN.md` §8 BR-25 roadmap updates (advisory inputs to BR19/23/24/10/CLI).
+  - Per-branch handoff notes added to `plan/19-*.md`, `plan/23-*.md`, `plan/10-*.md`.
+- [x] Pending human review: BR25 D1-D7 in `spec/SPEC_BR25_BEST_OF_BREED.md` before any rule, skill, or hook lands.
