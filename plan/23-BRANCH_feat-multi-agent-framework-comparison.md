@@ -3,6 +3,9 @@
 ## Objective
 Compare LangGraph, Agno, and Temporal for multi-agent orchestration. Produce a recommendation and plan the runtime extensions needed to implement it.
 
+## BR-25 handoff inputs (advisory)
+Score each candidate framework against the BR-25 evaluation dimensions (`spec/SPEC_BR25_BEST_OF_BREED.md`): intention capture, loop control, verification, branch discipline, memory and context, publication, interoperability. Add a row for human approval and merge-readiness UAT state so framework selection is judged on operating-method fit, not only runtime features.
+
 ## Scope / Guardrails
 - Make-only workflow, no direct Docker commands.
 - Root workspace `~/src/top-ai-ideas-fullstack` is reserved for user dev/UAT (`ENV=dev`) and must remain stable.

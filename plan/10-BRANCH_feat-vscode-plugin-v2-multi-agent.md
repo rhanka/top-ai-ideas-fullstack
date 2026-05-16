@@ -7,6 +7,9 @@ Must depend on BR-04. Multi-agent orchestration depends on workspace type for to
 Deliver VSCode plugin v2 with multi-agent and multi-model orchestration while reusing shared chat core and API orchestration source of truth.
 Include background/detached tool execution lifecycle (without requiring explicit agent lane UX for the operator).
 
+## BR-25 handoff inputs (advisory)
+Adopt the subagent launch-packet template, branch-scope visibility, named stop conditions, and handoff report format from `spec/SPEC_BR25_BEST_OF_BREED.md`. The plugin should surface current branch identity, allowed paths, UAT state, and verification category before any write. No direct dependency; advisory until BR-25 D1-D7 are approved.
+
 ## Scope / Guardrails
 - Scope limited to VSCode plugin orchestration UX, agent lanes, model assignment, execution trace.
 - Scope includes background tool lifecycle contracts for long-running tool actions (`start/status/cancel/resume/result`), queue/audit-backed.

@@ -339,3 +339,15 @@ User UAT on root workspace (`ENV=dev`). Branch development and automated tests r
 - `spec/SPEC_EVOL_VSCODE_PLUGIN.md`
 - `spec/SPEC_EVOL_RELEASE_QA_PIPELINE.md`
 - `spec/SPEC_EVOL_MODEL_AUTH_PROVIDERS.md`
+
+## 8) BR-25 roadmap updates (pending review)
+
+BR-25 produced `spec/SPEC_BR25_BEST_OF_BREED.md` and `spec/SPEC_STUDY_BR25_ENFORCEMENT_CANDIDATES.md`. The following downstream branches receive non-blocking inputs that must be considered when their Lot 0 starts. None of these change BR-25 scope; they are handoff notes recorded in PLAN.md for traceability.
+
+- BR-19 (agent sandbox + skill catalog): consume the skill manifest lessons (name, purpose, inputs, outputs, permissions, examples, audit trail), runtime safety lessons (sandbox + explicit allowed capabilities + reviewable execution logs), catalog UX lessons (intent, trust level, permissions, expected artifact type), and memory boundary lessons. BR-19 owns implementation; BR-25 only contributes vocabulary and review-state model.
+- BR-23 (multi-agent framework comparison): use the BR-25 evaluation dimensions (intention capture, loop control, verification, branch discipline, memory) when scoring LangGraph/Agno/Temporal. Add a row for "human approval and merge readiness UAT state" so framework selection is judged on operating-method fit, not only runtime features.
+- BR-24 (Node 24 actions upgrade): preserve room for future enforcement hooks and report targets. Do not remove or rename existing make targets that BR-25 enforcement candidates plan to wrap (`make commit`, `make scope-check`, `make branch-md-check` once added). No direct dependency.
+- BR-10 (VSCode plugin v2 multi-agent): adopt the subagent launch-packet template, branch-scope visibility, named stop conditions, and handoff report format from BR-25. The plugin should surface the current branch identity, allowed paths, UAT state, and verification category before any write.
+- Future Entropiq CLI work: the BR-25 enforcement candidate list (C1-C10) is the entry-point backlog. CLI shipping order is templates → skills/commands → make-backed checks → optional standalone CLI. CLI checks must not replace human product-spec validation; they only enforce objective failures.
+
+These updates are advisory until each downstream branch opens its own scoping lot. `spec/SPEC_BR25_BEST_OF_BREED.md` D1-D7 decisions remain pending human approval; downstream branches must not assume adoption.

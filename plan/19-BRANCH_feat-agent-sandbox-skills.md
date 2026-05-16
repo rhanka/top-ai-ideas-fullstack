@@ -10,6 +10,17 @@ Replace hardcoded tool dispatch with a skill catalog backed by V8 sandbox execut
 
 `spec/SPEC_VOL_AGENT_SANDBOX_SKILLS.md`
 
+## BR-25 handoff inputs (advisory)
+
+BR-25 (`spec/SPEC_BR25_BEST_OF_BREED.md`) recommends consuming the following developer-agent vocabulary when designing the product skill catalog:
+
+- Skill manifest fields: name, purpose, inputs, outputs, permissions, examples, audit trail.
+- Runtime safety: sandbox + explicit allowed capabilities + reviewable execution logs.
+- Catalog UX: surface intent, trust level, permissions, expected artifact type.
+- Memory boundary: durable user/project memory; agent-local memory is never source of truth.
+
+Adoption is optional. BR-19 owns implementation; BR-25 only contributes the review-state model and naming conventions.
+
 ## Dependencies
 
 | Dependency | Type | Impact |
