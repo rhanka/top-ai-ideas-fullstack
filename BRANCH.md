@@ -66,8 +66,8 @@
 ## Lot 4 - Mechanical enforcement candidates
 
 - [x] Propose rule checks for branch scope, forbidden commands, `ENV` placement, `BRANCH.md` shape, commit size, conductor lanes, and merge readiness UAT state.
-- [ ] Propose hook or make-target enforcement only after benchmark decision.
-- [ ] Keep each enforcement change separately reviewable.
+- [x] Propose hook or make-target enforcement only after benchmark decision.
+- [x] Keep each enforcement change separately reviewable.
 
 ## Lot 5 - Decision output
 
