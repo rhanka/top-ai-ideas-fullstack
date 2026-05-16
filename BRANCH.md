@@ -71,7 +71,7 @@
 
 ## Lot 5 - Decision output
 
-- [ ] Produce a best-of-breed recommendation document.
+- [x] Produce a best-of-breed recommendation document.
 - [ ] Produce roadmap updates for BR19, BR23, BR24, BR10, and future CLI work.
 - [ ] Produce a small mechanical-enforcement implementation plan if approved.
 - [ ] Remove `BRANCH.md` before merge unless project explicitly keeps it.
